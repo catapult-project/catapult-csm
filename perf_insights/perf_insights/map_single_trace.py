@@ -94,6 +94,8 @@ def MapSingleTrace(results, trace_handle, map_function_handle):
       os.path.join(pi_path, 'perf_insights', 'map_single_trace_cmdline.html'),
       source_paths=all_source_paths,
       js_args=js_args)
+    import pdb
+    pdb.set_trace()
   finally:
     trace_file.close()
 
