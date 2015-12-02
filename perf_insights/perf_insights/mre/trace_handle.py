@@ -29,3 +29,4 @@ class TraceHandle(object):
 
   def Open(self):
     # Returns a with-able object containing a name.
+    raise NotImplementedError()

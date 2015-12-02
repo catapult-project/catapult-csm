@@ -7,7 +7,7 @@ class Failure(object):
 
   def __init__(self, job, function_handle, trace_handle,
                failure_type_name, description, stack):
-    self.job = jobj
+    self.job = job
     self.function_handle = function_handle
     self.trace_handle = trace_handle
     self.failure_type_name = failure_type_name

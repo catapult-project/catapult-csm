@@ -10,14 +10,14 @@ from perf_insights.mre import trace_handle
 class GCSTraceHandle(trace_handle.TraceHandle):
   def __init__(self, url, display_name, metadata, cache_directory):
     super(GCSTraceHandle, self).__init__(url, display_name, metadata)
-    file_name = run_info.run_id.split('/')[-1]
+    file_name = url.split('/')[-1]
     self.cache_file = os.path.join(
         cache_directory, file_name + '.gz')
 
   def Open(self):
     if not os.path.exists(self.cache_file):
       try:
-        cloud_storage.Copy(self.run_info.url, self.cache_file)
+        cloud_storage.Copy(self._url, self.cache_file)
       except cloud_storage.CloudStorageError:
         return None
     return open(self.cache_file, 'r')
