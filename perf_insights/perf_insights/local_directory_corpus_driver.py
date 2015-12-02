@@ -81,7 +81,7 @@ class LocalDirectoryCorpusDriver(corpus_driver.CorpusDriver):
         url = _DefaultUrlResover(filename)
 
       th = local_file_trace_handle.LocalFileTraceHandle(url, rel_filename,
-                                                        metadata,filename)
+                                                        metadata, filename)
       trace_handles.append(th)
 
     return trace_handles

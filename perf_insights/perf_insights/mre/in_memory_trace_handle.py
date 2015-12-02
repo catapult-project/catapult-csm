@@ -4,12 +4,12 @@
 import os
 import tempfile
 
-from perf_insights import trace_handle
+from perf_insights.mre import trace_handle
 
 
 class InMemoryTraceHandle(trace_handle.TraceHandle):
-  def __init__(self, run_info, data):
-    super(InMemoryTraceHandle, self).__init__(run_info)
+  def __init__(self, url, display_name, metadata, data):
+    super(InMemoryTraceHandle, self).__init__(url, display_name, metadata)
     self.data = data
 
   def Open(self):

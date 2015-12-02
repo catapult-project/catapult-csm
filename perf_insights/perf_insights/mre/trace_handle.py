@@ -4,10 +4,28 @@
 import uuid
 
 class TraceHandle(object):
-  def __init__(self, run_info):
-    self.run_info = run_info
+  # TODO(nduca): Extract metadata from trace instead of passing here.
+  def __init__(self, url, display_name, metadata):
+    self._url = url
+    self._display_name = disply_name
+    self._metadata = metadata
+    self._guid = uuid.uuid4()
+
+  @property
+  def url(self):
+      return self._url
+
+  @property
+  def display_name(self):
+      return self._display_name
+
+  @property
+  def metadata(self):
+      return self._metadata
+
+  @property
+  def guid(self):
+      return self._guid
 
   def Open(self):
     # Returns a with-able object containing a name.
-    raise NotImplementedError()
-

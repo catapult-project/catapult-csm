@@ -4,12 +4,12 @@
 import os
 
 from perf_insights import cloud_storage
-from perf_insights import trace_handle
+from perf_insights.mre import trace_handle
 
 
 class GCSTraceHandle(trace_handle.TraceHandle):
-  def __init__(self, run_info, cache_directory):
-    super(GCSTraceHandle, self).__init__(run_info)
+  def __init__(self, url, display_name, metadata, cache_directory):
+    super(GCSTraceHandle, self).__init__(url, display_name, metadata)
     file_name = run_info.run_id.split('/')[-1]
     self.cache_file = os.path.join(
         cache_directory, file_name + '.gz')
