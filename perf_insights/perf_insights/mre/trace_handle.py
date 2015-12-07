@@ -7,7 +7,7 @@ class TraceHandle(object):
   # TODO(nduca): Extract metadata from trace instead of passing here.
   def __init__(self, url, display_name, metadata):
     self._url = url
-    self._display_name = disply_name
+    self._display_name = display_name
     self._metadata = metadata
     self._guid = uuid.uuid4()
 
