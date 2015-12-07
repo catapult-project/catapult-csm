@@ -87,10 +87,8 @@ def MapSingleTrace(trace_handle, job):
 
   try:
     js_args = [
-      json.dumps(run_info.AsDict()),
-      json.dumps(map_function_handle.AsDict()),
-      os.path.abspath(trace_file.name),
-      json.dumps(run_info.metadata)
+      json.dumps(trace_handle.AsDict()),
+      json.dumps(map_function_handle.AsDict())
     ]
 
     res = vinn.RunFile(
