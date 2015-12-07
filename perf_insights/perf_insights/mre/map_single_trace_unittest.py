@@ -17,8 +17,6 @@ def _Handle(filename):
 class MapSingleTraceTests(unittest.TestCase):
 
   def testPassingMapScript(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
@@ -26,8 +24,7 @@ class MapSingleTraceTests(unittest.TestCase):
        'ts': 3, 'dur': 5, 'args': {}}
     ]
     trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+        'file:///a.json', '/a.json', metadata={'m': 1}, json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
