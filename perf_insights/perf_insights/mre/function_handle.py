@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import os
+import uuid
 
 
 class AbspathInvalidError(Exception):
@@ -39,14 +40,20 @@ class ModuleToLoad(object):
 
 class FunctionHandle(object):
 
-  def __init__(self, modules_to_load=None, function_name=None):
+  def __init__(self, modules_to_load=None, function_name=None,
+               guid=uuid.uuid4()):
     self.modules_to_load = modules_to_load
     self.function_name = function_name
+    self._guid = guid
 
   def __repr__(self):
     return 'FunctionHandle(modules_to_load=[%s], function_name="%s")' % (
       ', '.join([str(module) for module in self.modules_to_load]),
       self.function_name)
+
+  @property
+  def guid(self):
+      return self._guid
 
   @property
   def has_hrefs(self):

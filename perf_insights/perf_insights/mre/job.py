@@ -6,10 +6,11 @@ import uuid
 
 class Job(object):
 
-  def __init__(self, map_function_handle, reduce_function_handle):
+  def __init__(self, map_function_handle, reduce_function_handle,
+               guid=uuid.uuid4()):
     self._map_function_handle = map_function_handle
     self._reduce_function_handle = reduce_function_handle
-    self._guid = uuid.uuid4()
+    self._guid = guid
 
   @property
   def guid(self):

@@ -2,11 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from perf_insights.mre import function_handle as function_handle_module
+from perf_insights.mre import job as job_module
+from perf_insights.mre import trace_handle as trace_handle_module
 
 class Failure(object):
 
   def __init__(self, job, function_handle, trace_handle,
                failure_type_name, description, stack):
+    assert isinstance(job, job_module.Job)
+    assert isinstance(function_handle, function_handle_module.FunctionHandle)
+    assert isinstance(trace_handle, trace_handle_module.TraceHandle)
     self.job = job
     self.function_handle = function_handle
     self.trace_handle = trace_handle
@@ -31,8 +37,6 @@ class Failure(object):
     assert function_handle.guid == failure_dict['function_handle_guid']
     assert trace_handle.guid == failure_dict['trace_handle_guid']
 
-    return Failure(failure_dict['job_guid'],
-                   failure_dict['function_handle_guid'],
-                   failure_dict['trace_handle_guid'],
+    return Failure(job, function_handle, trace_handle,
                    failure_dict['failure_type_name'],
                    failure_dict['description'], failure_dict['stack'])

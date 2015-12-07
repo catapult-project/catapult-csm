@@ -5,11 +5,14 @@ import uuid
 
 class TraceHandle(object):
   # TODO(nduca): Extract metadata from trace instead of passing here.
-  def __init__(self, url, display_name, metadata):
+  def __init__(self, url, display_name=None, metadata=None, guid=uuid.uuid4()):
     self._url = url
     self._display_name = display_name
-    self._metadata = metadata
-    self._guid = uuid.uuid4()
+    if metadata is None:
+      self._metadata = {}
+    else:
+      self._metadata = metadata
+    self._guid = guid
 
   @property
   def url(self):

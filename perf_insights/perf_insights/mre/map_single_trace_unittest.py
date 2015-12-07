@@ -6,11 +6,8 @@ import tempfile
 import unittest
 
 from perf_insights import in_memory_trace_handle
-from perf_insights import map_single_trace
-from perf_insights import function_handle
-from perf_insights import results as results_module
-from perf_insights import value as value_module
-from perf_insights.value import run_info as run_info_module
+from perf_insights.mre import map_single_trace
+from perf_insights.mre import function_handle
 
 
 def _Handle(filename):
