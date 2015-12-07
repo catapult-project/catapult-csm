@@ -4,32 +4,26 @@ Copyright (c) 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
-<link rel="import" href="/perf_insights/function_handle.html">
-<link rel="import" href="/perf_insights/map_single_trace.html">
-<link rel="import" href="/perf_insights/value/run_info.html">
-<link rel="import" href="/perf_insights/results/results.html">
+<link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mre/map_single_trace.html">
 
 <script>
 'use strict';
 
-tr.exportTo('pi', function() {
-
-  var FailureValue = pi.v.FailureValue;
+tr.exportTo('pi.mre', function() {
 
   function mapSingleTraceMain(args) {
-    if (args.length !== 2)
-      throw new Error('Must provide two arguments');
+    if (args.length !== 3)
+      throw new Error('Must provide three arguments');
 
     var options = {
       traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.FunctionHandle.fromDict(JSON.parse(args[1]))
+      mapFunctionHandle: pi.FunctionHandle.fromDict(JSON.parse(args[1])),
+      filenameToMap: args[2]
     };
 
-    var filenameToMap = options.traceHandle.filename;
-    var metadata = traceHandle.metadata;
-
-    var results = new pi.r.Results();
-    results.willRun(options.runInfo);
+    var results = [];
+    var failures = [];
 
     pi.runAndConvertErrorsToFailureValues(
         results, options.runInfo,
