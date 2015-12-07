@@ -57,7 +57,7 @@ class NoResultsAddedErrorValue(failure.Failure):
 class InternalMapError(Exception):
   pass
 
-_FAILURE_NAME_TO_FAILURE_CONSTRUCTOR = {
+_FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR = {
   'FunctionLoadingError': FunctionLoadingErrorValue,
   'FunctionNotDefinedError': FunctionNotDefinedErrorValue,
   'TraceImportError': TraceImportErrorValue,
@@ -117,18 +117,18 @@ def MapSingleTrace(trace_handle, job):
     if m:
       found_type, found_dict = json.loads(m.group(1, 2))
       if found_type == 'FAILURE':
-        cls = failure_module.Failure
+        cls = _FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR.get(
+            found_dict['failure_type_name'])
+        if not cls:
+          cls = failure_module.Failure
+        failures.append(cls.FromDict(failure_dict, job, job.map_function_handle,
+                                     trace_handle))
       elif found_type == 'RESULT':
-        cls = value_module.Value
-      found_value = cls.FromDict(run_info, found_dict)
-
-      results.AddValue(found_value)
-      found_at_least_one_result = True
-
+        results.append(found_dict)
     else:
       if len(line) > 0:
         sys.stderr.write(line)
         sys.stderr.write('\n')
 
-  if found_at_least_one_result == False:
+  if len(results) == 0 or len(failures) == 0:
     raise InternalMapError('Internal error: No results were produced!')

@@ -6,15 +6,19 @@ import uuid
 
 class Job(object):
 
-  def __init__(self, map_function, reduce_function):
-    self._map_function = map_function
-    self._reduce_function = reduce_function
-    self._id = uuid.uuid4()
+  def __init__(self, map_function_handle, reduce_function_handle):
+    self._map_function_handle = map_function_handle
+    self._reduce_function_handle = reduce_function_handle
+    self._guid = uuid.uuid4()
 
   @property
-  def map_function(self):
-      return self._map_function
+  def guid(self):
+      return self._guid
 
   @property
-  def reduce_function(self):
-      return self._reduce_function
+  def map_function_handle(self):
+      return self._map_function_handle
+
+  @property
+  def reduce_function_handle(self):
+      return self._reduce_function_handle
