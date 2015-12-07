@@ -22,7 +22,7 @@ tr.exportTo('pi', function() {
 
     var options = {
       traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.FunctionHandle.fromDict(JSON.parse(args[1])),
+      mapFunctionHandle: pi.FunctionHandle.fromDict(JSON.parse(args[1]))
     };
 
     var filenameToMap = options.traceHandle.filename;

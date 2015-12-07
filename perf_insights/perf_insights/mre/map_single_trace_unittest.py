@@ -24,7 +24,7 @@ class MapSingleTraceTests(unittest.TestCase):
        'ts': 3, 'dur': 5, 'args': {}}
     ]
     trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
-        'file:///a.json', '/a.json', metadata={'m': 1}, json.dumps(events))
+        'file:///a.json', '/a.json', {'m': 1}, json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""

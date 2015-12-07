@@ -108,18 +108,16 @@ def MapSingleTrace(trace_handle, job):
         'vinn runtime error while mapping trace.', 'Unknown stack'))
     return
 
-
-  found_at_least_one_result=False
   for line in res.stdout.split('\n'):
-    result_m = re.match('^MAP_(.+): (.+)', line, re.DOTALL)
+    m = re.match('^MAP_(.+): (.+)', line, re.DOTALL)
     if m:
       found_type, found_dict = json.loads(m.group(1, 2))
       if found_type == 'FAILURE':
         cls = _FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR.get(
             found_dict['failure_type_name'])
         if not cls:
-          cls = failure_module.Failure
-        failures.append(cls.FromDict(failure_dict, job, job.map_function_handle,
+          cls = failure.Failure
+        failures.append(cls.FromDict(found_dict, job, job.map_function_handle,
                                      trace_handle))
       elif found_type == 'RESULT':
         results.append(found_dict)
