@@ -24,11 +24,15 @@ class Failure(object):
         'stack': self.stack
     }
 
-  # TODO(eakuefner): extend this to take the necessary guid -> handle maps
+  # TODO(eakuefner): extend this to take some dicts instead?
   @staticmethod
-  def FromDict(failure_dict):
+  def FromDict(failure_dict, job, function_handle, trace_handle):
+    assert job.guid == failure_dict['job_guid']
+    assert function_handle.guid == failure_dict['function_handle_guid']
+    assert trace_handle.guid == failure_dict['trace_handle_guid']
+
     return Failure(failure_dict['job_guid'],
                    failure_dict['function_handle_guid'],
-                   failure_dict['trace_guid'],
+                   failure_dict['trace_handle_guid'],
                    failure_dict['failure_type_name'],
                    failure_dict['description'], failure_dict['stack'])
