@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+Copyright 2015 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+<link rel="import" href="/tracing/base/guid.html">
+
+<script>
+'use strict';
+
+tr.exportTo('pi.mre', function() {
+  function TraceHandle(url, opt_displayName, opt_metadata, opt_guid) {
+    this.url_ = url;
+    this.displayName_ = opt_displayName;
+    if (opt_metadata === undefined)
+      this.metadata_ = {};
+    else
+      this.metadata_ = opt_metadata;
+
+    if (opt_guid === undefined)
+      this.guid_ = tr.b.GUID.allocate();
+    else
+      this.guid_ = opt_guid;
+  }
+
+  TraceHandle.prototype = {
+    get url() { return this.url_; },
+    get displayName() { return this.displayName_; },
+    get metadata() { return this.metadata_; },
+    get guid() { return this.guid_; },
+
+    asDict: function() {
+      return {
+        url: this.url_,
+        display_name: this.displayName_,
+        metadata: this.metadata_,
+        guid: this.guid_
+      };
+    }
+  };
+
+  TraceHandle.fromDict = function(handleDict) {
+    return new TraceHandle(handleDict.url, handleDict.display_name,
+                           handleDict.metadata, handleDict.guid);
+  };
+
+  return {
+    TraceHandle: TraceHandle
+  };
+});
+</script>
