@@ -8,6 +8,7 @@ import unittest
 from perf_insights.mre import function_handle
 from perf_insights.mre import in_memory_trace_handle
 from perf_insights.mre import map_single_trace
+from perf_insights.mre import trace_handle
 
 
 def _Handle(filename):
@@ -29,12 +30,11 @@ class MapSingleTraceTests(unittest.TestCase):
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
       pi.FunctionRegistry.register(
-          function MyMapFunction(results, run_info, model) {
-            results.addValue(new pi.v.DictValue(
-              run_info,
-              'result', {
-                numProcesses: model.getAllProcesses().length
-              }));
+          function MyMapFunction(results, traceHandle, model) {
+            results.addResult(
+                'result', {
+                  numProcesses: model.getAllProcesses().length
+                });
           });
     """) as map_script:
       map_single_trace.MapSingleTrace(results, trace_handle,
