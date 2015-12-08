@@ -16,20 +16,21 @@ found in the LICENSE file.
 
 tr.exportTo('pi.mre', function() {
 
-  function runAndConvertErrorsToFailures(results, failures, cb, opt_this) {
+  function runAndConvertErrorsToFailures(results, job, functionHandle,
+                                         traceHandle, cb, opt_this) {
     try {
       cb.call(opt_this);
     } catch (err) {
       var err = tr.b.normalizeException(err);
-      results.addValue(new FailureValue(
-          runInfo, err.typeName,
-          {description: err.message,
-           stack: err.stack}));
+      results.addFailure(new pi.mre.Failure(
+          job, functionHandle, traceHandle , err.typeName,
+          {description: err.message, stack: err.stack}));
     }
   }
 
-  function mapSingleTrace(results, runInfo, traceData, mapFunction,
-                          opt_metadata) {
+  // TODO(eakuefner): Figure out whether we should coalesce traceHandle and
+  // traceData in some way.
+  function mapSingleTrace(mapResults, traceHandle, traceData, mapFunction) {
     // Load the model.
     var model = new tr.Model();
     try {
