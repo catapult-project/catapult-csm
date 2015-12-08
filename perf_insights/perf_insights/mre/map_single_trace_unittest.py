@@ -5,9 +5,9 @@ import json
 import tempfile
 import unittest
 
-from perf_insights import in_memory_trace_handle
-from perf_insights.mre import map_single_trace
 from perf_insights.mre import function_handle
+from perf_insights.mre import in_memory_trace_handle
+from perf_insights.mre import map_single_trace
 
 
 def _Handle(filename):
