@@ -27,10 +27,17 @@ tr.exportTo('pi.mre', function() {
     get failures() { return this.failures_; },
     get results() { return this.results_; },
 
-    addResult: function(key, value) {
+    addFailure: function(failure) {
+      this.failures_.push(failure);
+    },
 
+    addResult: function(key, value) {
+      if (this.results_[key] instanceof Array)
+        this.results_.push(value);
+      else
+        this.results_[key] = [value];
     }
-  }
+  };
 
   return {
     MapResults: MapResults;
