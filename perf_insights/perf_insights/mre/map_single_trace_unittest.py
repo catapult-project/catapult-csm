@@ -10,7 +10,6 @@ from perf_insights.mre import in_memory_trace_handle
 from perf_insights.mre import job as job_module
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
-from perf_insights.mre import trace_handle
 
 
 def _Handle(filename):

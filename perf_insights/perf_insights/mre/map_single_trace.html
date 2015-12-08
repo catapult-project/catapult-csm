@@ -25,7 +25,7 @@ tr.exportTo('pi.mre', function() {
     } catch (err) {
       var err = tr.b.normalizeException(err);
       results.addFailure(new pi.mre.Failure(
-          job, functionHandle, traceHandle , err.typeName,
+          job, functionHandle, traceHandle, err.typeName,
           {description: err.message, stack: err.stack}));
     }
   }
