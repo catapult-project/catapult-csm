@@ -128,5 +128,5 @@ def MapSingleTrace(results, trace_handle, job):
         sys.stderr.write(line)
         sys.stderr.write('\n')
 
-  if len(results) == 0 or len(failures) == 0:
+  if len(results.results) == 0 or len(results.failures) == 0:
     raise InternalMapError('Internal error: No results were produced!')
