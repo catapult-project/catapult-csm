@@ -11,6 +11,7 @@ class TraceHandle(object):
     if metadata is None:
       self._metadata = {}
     else:
+      assert isinstance(metadata, dict)
       self._metadata = metadata
     self._guid = guid
 
@@ -29,6 +30,13 @@ class TraceHandle(object):
   @property
   def guid(self):
       return self._guid
+
+  def AsDict(self):
+    return {
+        'url': self._url,
+        'display_name': self._display_name,
+        'metadata': self._metadata
+    }
 
   def Open(self):
     # Returns a with-able object containing a name.

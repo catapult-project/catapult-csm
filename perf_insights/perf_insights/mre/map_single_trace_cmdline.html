@@ -6,6 +6,8 @@ found in the LICENSE file.
 -->
 <link rel="import" href="/perf_insights/mre/function_handle.html">
 <link rel="import" href="/perf_insights/mre/map_single_trace.html">
+<link rel="import" href="/perf_insights/mre/map_results.html">
+<link rel="import" href="/perf_insights/mre/trace_handle.html">
 
 <script>
 'use strict';
@@ -18,14 +20,13 @@ tr.exportTo('pi.mre', function() {
 
     var options = {
       traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.FunctionHandle.fromDict(JSON.parse(args[1])),
+      mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1])),
       filenameToMap: args[2]
     };
 
-    var results = [];
-    var failures = [];
+    var results = new pi.mre.MapResults();
 
-    pi.runAndConvertErrorsToFailureValues(
+    pi.mre.runAndConvertErrorsToFailures(
         results, options.runInfo,
         function() {
           var mapFunction = options.mapFunctionHandle.load();
@@ -39,16 +40,12 @@ tr.exportTo('pi.mre', function() {
             throw err;
           }
 
-          pi.mapSingleTrace(results, options.runInfo, traceData,
+          pi.mre.mapSingleTrace(results, options.runInfo, traceData,
                             mapFunction, options.metadata);
         });
 
-    results.didRun(options.runInfo);
-    results.didFinishAllRuns();
-
-    results.allValues.forEach(function(value) {
-      var valueAsDict = value.asDict();
-      console.log('MAP_RESULT_VALUE: ' + JSON.stringify(valueAsDict));
+    results.results.forEach(function(result) {
+      console.log('MAP_RESULT_VALUE: ' + JSON.stringify(result));
     });
     return 0;
   }
@@ -59,7 +56,7 @@ tr.exportTo('pi.mre', function() {
 });
 
 if (tr.isHeadless)
-  quit(pi.mapSingleTraceMain(sys.argv.slice(1)));
+  quit(pi.mre.mapSingleTraceMain(sys.argv.slice(1)));
 
 </script>
 

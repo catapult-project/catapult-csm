@@ -7,7 +7,9 @@ import unittest
 
 from perf_insights.mre import function_handle
 from perf_insights.mre import in_memory_trace_handle
+from perf_insights.mre import job as job_module
 from perf_insights.mre import map_single_trace
+from perf_insights.mre import map_results
 from perf_insights.mre import trace_handle
 
 
@@ -15,6 +17,7 @@ def _Handle(filename):
   module = function_handle.ModuleToLoad(filename=filename)
   return function_handle.FunctionHandle(modules_to_load=[module],
                                         function_name='MyMapFunction')
+
 class MapSingleTraceTests(unittest.TestCase):
 
   def testPassingMapScript(self):
@@ -27,7 +30,7 @@ class MapSingleTraceTests(unittest.TestCase):
     trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
         'file:///a.json', '/a.json', {'m': 1}, json.dumps(events))
 
-    results = results_module.Results()
+    results = map_results.MapResults()
     with map_single_trace.TemporaryMapScript("""
       pi.FunctionRegistry.register(
           function MyMapFunction(results, traceHandle, model) {
@@ -37,8 +40,8 @@ class MapSingleTraceTests(unittest.TestCase):
                 });
           });
     """) as map_script:
-      map_single_trace.MapSingleTrace(results, trace_handle,
-                                      _Handle(map_script.filename))
+      job = job_module.Job(_Handle(map_script.filename), None)
+      map_single_trace.MapSingleTrace(results, trace_handle, job)
 
     self.assertFalse(results.failure_values)
     v = results.FindValueNamed('result')

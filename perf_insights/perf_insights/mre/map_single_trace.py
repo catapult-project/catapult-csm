@@ -15,6 +15,12 @@ import perf_insights_project
 import vinn
 
 
+_MAP_SINGLE_TRACE_CMDLINE_PATH = os.path.join(
+    perf_insights_project.PerfInsightsProject.perf_insights_src_path,
+    'mre', 'map_single_trace_cmdline.html')
+
+print _MAP_SINGLE_TRACE_CMDLINE_PATH
+
 class TemporaryMapScript(object):
   def __init__(self, js):
     self.file = tempfile.NamedTemporaryFile()
@@ -65,22 +71,17 @@ _FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR = {
   'NoResultsAddedError': NoResultsAddedErrorValue
 }
 
-def MapSingleTrace(trace_handle, job):
+def MapSingleTrace(results, trace_handle, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
 
-  pi_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                         '..'))
-  all_source_paths.append(pi_path)
+  all_source_paths.append(project.perf_insights_root_path)
 
-  failures = []
-  results = []
-
-  map_function_handle = job.map_function
+  map_function_handle = job.map_function_handle
   trace_file = trace_handle.Open()
   if not trace_file:
-    failures.append(failure.Failure(
+    results.AddFailure(failure.Failure(
         job, map_function_handle, trace_handle, 'Error',
         'error while opening trace', 'Unknown stack'))
     return
@@ -94,8 +95,7 @@ def MapSingleTrace(trace_handle, job):
     ]
 
     res = vinn.RunFile(
-      os.path.join(pi_path, 'perf_insights', 'map_single_trace_cmdline.html'),
-      source_paths=all_source_paths,
+      _MAP_SINGLE_TRACE_CMDLINE_PATH, source_paths=all_source_paths,
       js_args=js_args)
   finally:
     trace_file.close()
@@ -105,7 +105,7 @@ def MapSingleTrace(trace_handle, job):
       sys.stderr.write(res.stdout)
     except Exception:
       pass
-    failures.append(failure.Failure(
+    results.addFailure(failure.Failure(
         job, map_function_handle, trace_handle, 'Error',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
     return
@@ -119,10 +119,10 @@ def MapSingleTrace(trace_handle, job):
             found_dict['failure_type_name'])
         if not cls:
           cls = failure.Failure
-        failures.append(cls.FromDict(found_dict, job, job.map_function_handle,
+        results.addFailure(cls.FromDict(found_dict, job, job.map_function_handle,
                                      trace_handle))
       elif found_type == 'RESULT':
-        results.append(found_dict)
+        results.addResult(found_dict['key'], found_dict['value'])
     else:
       if len(line) > 0:
         sys.stderr.write(line)

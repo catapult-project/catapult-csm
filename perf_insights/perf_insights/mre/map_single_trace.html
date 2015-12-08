@@ -11,6 +11,8 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/model/model.html">
 <link rel="import" href="/tracing/extras/full_config.html">
 
+<link rel="import" href="/perf_insights/mre/failure.html">
+
 <script>
 'use strict';
 
@@ -81,7 +83,7 @@ tr.exportTo('pi.mre', function() {
 
   return {
     mapSingleTrace: mapSingleTrace,
-    runAndConvertErrorsToFailureValues: runAndConvertErrorsToFailureValues
+    runAndConvertErrorsToFailures: runAndConvertErrorsToFailures
   };
 });
 </script>
