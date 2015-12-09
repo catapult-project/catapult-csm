@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import collections
+
 from perf_insights.mre import failure as failure_module
 
 
@@ -11,7 +13,7 @@ class MapResults(object):
     if failures is None:
       failures = []
     if results is None:
-      results = []
+      results = collections.defaultdict(list)
     self._failures = failures
     self._results = results
 
@@ -22,6 +24,10 @@ class MapResults(object):
   @property
   def results(self):
       return self._results
+
+  def AddResults(self, results_dict):
+    for key, results in results_dict.iteritems():
+      self._results[key] += results
 
   def AsDict(self):
     return {

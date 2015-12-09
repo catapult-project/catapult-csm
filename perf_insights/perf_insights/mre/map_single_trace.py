@@ -113,16 +113,17 @@ def MapSingleTrace(results, trace_handle, job):
   for line in res.stdout.split('\n'):
     m = re.match('^MAP_(.+): (.+)', line, re.DOTALL)
     if m:
-      found_type, found_dict = json.loads(m.group(1, 2))
+      found_type = m.group(1)
+      found_dict = json.loads(m.group(2))
       if found_type == 'FAILURE':
         cls = _FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR.get(
             found_dict['failure_type_name'])
         if not cls:
           cls = failure.Failure
-        results.addFailure(cls.FromDict(found_dict, job, job.map_function_handle,
+        results.AddFailure(cls.FromDict(found_dict, job, job.map_function_handle,
                                      trace_handle))
-      elif found_type == 'RESULT':
-        results.addResult(found_dict['key'], found_dict['value'])
+      elif found_type == 'RESULTS':
+        results.AddResults(found_dict)
     else:
       if len(line) > 0:
         sys.stderr.write(line)

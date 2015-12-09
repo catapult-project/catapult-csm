@@ -44,8 +44,9 @@ tr.exportTo('pi.mre', function() {
                             mapFunction, options.metadata);
         });
 
-    results.results.forEach(function(result) {
-      console.log('MAP_RESULT_VALUE: ' + JSON.stringify(result));
+    console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
+    results.failures.forEach(function(failure) {
+      console.log('MAP_FAILURE: ' + JSON.stringify(failure.asDict()));
     });
     return 0;
   }

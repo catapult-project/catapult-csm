@@ -68,7 +68,7 @@ tr.exportTo('pi.mre', function() {
 
     // Map the function.
     try {
-      var results = mapFunction(runInfo, model);
+      mapFunction(results, traceHandle, model);
     } catch (ex) {
       ex.name = 'MapFunctionError';
       throw ex;
