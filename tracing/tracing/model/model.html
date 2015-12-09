@@ -385,6 +385,23 @@ tr.exportTo('tr', function() {
     },
 
     /**
+     * Returns a link to a trace data file that this model was imported from.
+     * Note that this is NOT a URL in the trace, but merely an indicator of
+     * where the data is stored.
+     */
+    get sourceURLThatCreatedThisTrace() {
+      return this.sourceURLThatCreatedThisTrace_;
+    }
+
+    set sourceURLThatCreatedThisTrace(value) {
+      if (this.sourceURLThatCreatedThisTrace_ === value)
+        return;
+      if (this.sourceURLThatCreatedThisTrace_ !== undefined)
+        throw new Error('sourceURLThatCreatedThisTrace already set');
+      this.sourceURLThatCreatedThisTrace_ = value;
+    },
+
+    /**
      * Saves a warning that happened during import.
      *
      * Warnings are typically logged to the console, and optionally, the

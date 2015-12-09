@@ -30,9 +30,7 @@ tr.exportTo('pi.mre', function() {
     }
   }
 
-  // TODO(eakuefner): Figure out whether we should coalesce traceHandle and
-  // traceData in some way.
-  function mapSingleTrace(mapResults, traceHandle, traceData, mapFunction) {
+  function mapSingleTrace(mapResults, traceData, mapFunction) {
     // Load the model.
     var model = new tr.Model();
     try {

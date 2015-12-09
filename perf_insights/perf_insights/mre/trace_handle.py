@@ -1,43 +1,51 @@
-# Copyright (c) 2015 The Chromium Authors. All rights reserved.
+# Copyright 2015 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-import uuid
+
+
+class TracePreparationError(Exception):
+  """Raised if something goes wrong while preparing a trace for mapping."""
+
 
 class TraceHandle(object):
-  # TODO(nduca): Extract metadata from trace instead of passing here.
-  def __init__(self, url, display_name=None, metadata=None, guid=uuid.uuid4()):
-    self._url = url
-    self._display_name = display_name
+  def __init__(self, source_url):
+    self._source_url = source_url
+
+  @property
+  def source_url(self):
+      return self._source_url
+
+  def AsDict(self):
+    return {
+        'url': self._url,
+    }
+
+  def _AsDictInto(self, handle_dict):
+    raise NotImplementedError()
+
+  def PrepareTraceForMapping(self):
+    """Ensure that the URL to the trace will be acessible during mapping.
+
+    This function must do any pre-work to ensure that mappers will be able to
+    read from the URL contained in the trace handle.
+    """
+    raise NotImplementedError()
+
+
+class LocalFileTraceHandle(object):
+  def __init__(self, source_url, metadata=None):
+    assert source_url.startswith('file://')
+
+    super(LocalFileTraceHandle, self).__init__(source_url)
+
     if metadata is None:
       self._metadata = {}
     else:
       assert isinstance(metadata, dict)
       self._metadata = metadata
-    self._guid = guid
 
-  @property
-  def url(self):
-      return self._url
+  def _AsDictInto(self, handle_dict):
+    handle_dict['metadata']
 
-  @property
-  def display_name(self):
-      return self._display_name
-
-  @property
-  def metadata(self):
-      return self._metadata
-
-  @property
-  def guid(self):
-      return self._guid
-
-  def AsDict(self):
-    return {
-        'url': self._url,
-        'display_name': self._display_name,
-        'metadata': self._metadata
-    }
-
-  def Open(self):
-    # Returns a with-able object containing a name.
-    raise NotImplementedError()
+  def PrepareTraceForMapping(self):
+    if not os.path.exists()

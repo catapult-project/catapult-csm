@@ -10,18 +10,8 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('pi.mre', function() {
-  function TraceHandle(url, opt_displayName, opt_metadata, opt_guid) {
-    this.url_ = url;
-    this.displayName_ = opt_displayName;
-    if (opt_metadata === undefined)
-      this.metadata_ = {};
-    else
-      this.metadata_ = opt_metadata;
-
-    if (opt_guid === undefined)
-      this.guid_ = tr.b.GUID.allocate();
-    else
-      this.guid_ = opt_guid;
+  function TraceHandle(source_url) {
+    this.source_url_ = source_url;
   }
 
   TraceHandle.prototype = {
@@ -31,22 +21,35 @@ tr.exportTo('pi.mre', function() {
     get guid() { return this.guid_; },
 
     asDict: function() {
-      return {
-        url: this.url_,
-        display_name: this.displayName_,
-        metadata: this.metadata_,
-        guid: this.guid_
+      var d = {
+        source_url: this.source_url_
       };
+
+      this._asDictInto(d);
+      if (d.type === undefined)
+        throw new Error('_asDictInto must set type field');
+    },
+
+    beginReading: function() {
+      throw new Error('Not implemented');
     }
   };
 
   TraceHandle.fromDict = function(handleDict) {
-    return new TraceHandle(handleDict.url, handleDict.display_name,
-                           handleDict.metadata, handleDict.guid);
+    if (d.type === 'local_file')
+      return pi.mre.LocalFileTraceHandle.fromDict(handleDict);
+
+    throw new Error('Not implemented');
   };
 
+
+  function LocalFileTraceHandle(source_url) {
+    TraceHandle.call(this, source_url);
+  }
+
   return {
-    TraceHandle: TraceHandle
+    TraceHandle: TraceHandle,
+    LocalFileTraceHandle: LocalFileTraceHandle
   };
 });
 </script>
