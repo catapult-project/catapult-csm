@@ -12,6 +12,8 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/extras/chrome/chrome_renderer_helper.html">
 
 <script>
+'use strict';
+
 tr.exportTo('pie', function() {
   function mapStartupInfo(results, runInfo, model) {
     var startupIRs = model.interactionRecords.filter(function(ir) {
