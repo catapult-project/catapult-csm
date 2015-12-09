@@ -14,7 +14,7 @@ from webapp2 import Route
 from perf_insights import local_directory_corpus_driver
 from perf_insights import corpus_query
 from perf_insights import map_runner
-from perf_insights import function_handle
+from perf_insights.mre import function_handle
 from perf_insights import progress_reporter
 from perf_insights.results import json_output_formatter
 
