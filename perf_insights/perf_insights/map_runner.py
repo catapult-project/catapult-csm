@@ -9,6 +9,7 @@ import threading
 import time
 
 from perf_insights.mre import map_single_trace
+from perf_insights.mre import map_results
 from perf_insights.mre import threaded_work_queue
 from perf_insights.results import gtest_progress_reporter
 
@@ -82,7 +83,7 @@ class MapRunner(object):
     self._wq.Stop()
 
   def Run(self):
-    self._results = results_module.Results()
+    self._results = map_results.MapResults()
 
     for trace_handle in self._trace_handles:
       self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
@@ -93,19 +94,10 @@ class MapRunner(object):
     for of in self._output_formatters:
       of.Format(self._results)
 
+    # TODO(eakuefner): Implement repr for Failure so this is more specific.
     if err:
-      self._PrintFailedRunInfo(err.run_info)
+      print 'An issue arose.'
 
     results = self._results
     self._results = None
     return results
-
-  def _PrintFailedRunInfo(self, run_info):
-    sys.stderr.write('\n\nWhile mapping %s:\n' %
-                     run_info.display_name)
-    failures = [v for v in self._results.all_values
-                if (v.run_info == run_info and
-                    isinstance(v, value_module.FailureValue))]
-    for failure in failures:
-      sys.stderr.write(failure.GetGTestPrintString())
-      sys.stderr.write('\n')
