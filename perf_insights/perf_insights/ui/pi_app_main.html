@@ -10,6 +10,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/polymer_utils.html">
 <link rel="import" href="/perf_insights/ui/reports/pi_report.html">
 <link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/ui/generic_results_view.html">
 
 <polymer-element name="pi-ui-pi-app-main">
@@ -310,7 +311,7 @@ tr.exportTo('pi.ui', function() {
 
         var mapFunctionName = pe.getAttribute('map-function-name');
         var mapFunctionHref = pe.getAttribute('map-function-href');
-        var moduleToLoad = new pi.ModuleToLoad(mapFunctionHref);
+        var moduleToLoad = new pi.mre.ModuleToLoad(mapFunctionHref);
         var mapFunctionHandle = new pi.mre.FunctionHandle([moduleToLoad],
                                                       mapFunctionName);
 
@@ -325,7 +326,7 @@ tr.exportTo('pi.ui', function() {
           return undefined;
 
         var data = JSON.parse(responseText);
-        return pi.r.Results.fromDict(data);
+        return pi.mre.MapResults(undefined, data);
       });
 
       p = p.then(clearInfobarsOrUpdateWithErrors);

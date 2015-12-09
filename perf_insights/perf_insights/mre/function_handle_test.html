@@ -12,13 +12,13 @@ found in the LICENSE file.
 
 tr.b.unittest.testSuite(function() {
   test('moduleToLoadExactlyOneHrefOrFilename', function() {
-    assert.throws(function() {pi.ModuleToLoad('foo', 'foo')});
-    assert.throws(pi.ModuleToLoad);
+    assert.throws(function() {pi.mre.ModuleToLoad('foo', 'foo')});
+    assert.throws(pi.mre.ModuleToLoad);
   });
 
   test('moduleToLoadAsDictTest', function() {
-    var mtl0 = new pi.ModuleToLoad('/foo');
-    var mtl1 = new pi.ModuleToLoad(undefined, 'foo.html');
+    var mtl0 = new pi.mre.ModuleToLoad('/foo');
+    var mtl1 = new pi.mre.ModuleToLoad(undefined, 'foo.html');
 
     assert.deepEqual(mtl0.asDict(), {'href': '/foo'});
     assert.deepEqual(mtl1.asDict(), {'filename': 'foo.html'});
@@ -32,8 +32,8 @@ tr.b.unittest.testSuite(function() {
       filename: 'foo.html'
     };
 
-    var mtl0 = pi.ModuleToLoad.fromDict(moduleDict0);
-    var mtl1 = pi.ModuleToLoad.fromDict(moduleDict1);
+    var mtl0 = pi.mre.ModuleToLoad.fromDict(moduleDict0);
+    var mtl1 = pi.mre.ModuleToLoad.fromDict(moduleDict1);
 
     assert.equal(mtl0.href, '/foo');
     assert.isUndefined(mtl0.filename);
@@ -42,8 +42,8 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('moduleToLoadToStringTest', function() {
-    var mtl0 = new pi.ModuleToLoad('/foo');
-    var mtl1 = new pi.ModuleToLoad(undefined, 'foo.html');
+    var mtl0 = new pi.mre.ModuleToLoad('/foo');
+    var mtl1 = new pi.mre.ModuleToLoad(undefined, 'foo.html');
 
     assert.equal(
         mtl0.toString(),
@@ -62,7 +62,7 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('asDictTest', function() {
-    var module = new pi.ModuleToLoad('/foo');
+    var module = new pi.mre.ModuleToLoad('/foo');
     var handle = new pi.mre.FunctionHandle([module], 'Bar');
 
     assert.deepEqual(handle.asDict(), {
@@ -85,9 +85,9 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('hasHrefsTest', function() {
-    var module0 = new pi.ModuleToLoad('/foo');
+    var module0 = new pi.mre.ModuleToLoad('/foo');
     var handle0 = new pi.mre.FunctionHandle([module0], 'Bar');
-    var module1 = new pi.ModuleToLoad(undefined, 'foo.html');
+    var module1 = new pi.mre.ModuleToLoad(undefined, 'foo.html');
     var handle1 = new pi.mre.FunctionHandle([module1], 'Bar');
 
     assert.isTrue(handle0.hasHrefs());
@@ -95,7 +95,7 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('loadFailsWithHrefs', function() {
-    var module = new pi.ModuleToLoad('/foo');
+    var module = new pi.mre.ModuleToLoad('/foo');
     var handle = new pi.mre.FunctionHandle([module], 'railMapFunction');
 
     assert.throws(handle.load);
@@ -108,7 +108,7 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('toStringTest', function() {
-    var module = new pi.ModuleToLoad('/foo');
+    var module = new pi.mre.ModuleToLoad('/foo');
     var handle = new pi.mre.FunctionHandle([module], 'Bar');
 
     assert.equal(
