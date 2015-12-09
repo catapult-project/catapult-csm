@@ -19,7 +19,7 @@ tr.exportTo('pi.m', function() {
     results.addValue(new pi.v.DictValue(runInfo, 'railScore',
                                         railScore.asDict()));
   }
-  pi.FunctionRegistry.register(railMapFunction);
+  pi.mre.FunctionRegistry.register(railMapFunction);
 
   return {
     railMapFunction: railMapFunction

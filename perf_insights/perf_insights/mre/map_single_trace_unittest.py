@@ -31,7 +31,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = map_results.MapResults()
     with map_single_trace.TemporaryMapScript("""
-      pi.FunctionRegistry.register(
+      pi.mre.FunctionRegistry.register(
           function MyMapFunction(results, traceHandle, model) {
             results.addResult(
                 'result', {
@@ -56,7 +56,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.FunctionRegistry.register(
+      pi.mre.FunctionRegistry.register(
           function MyMapFunction(results, run_info, model) {
           });
     """) as map_script:
@@ -82,7 +82,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.FunctionRegistry.register(
+      pi.mre.FunctionRegistry.register(
           function MyMapFunction(results, run_info, model) {
             throw new Error('Expected error');
           });
@@ -158,7 +158,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.FunctionRegistry.register(
+      pi.mre.FunctionRegistry.register(
           function MyMapFunction(results, run_info, model) {
       });
     """) as map_script:
@@ -184,7 +184,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.FunctionRegistry.register(
+      pi.mre.FunctionRegistry.register(
           function MyMapFunction(results, run_info, model) {
             results.addValue(new pi.v.SkipValue(
                 run_info, 'SkippedFieldName',

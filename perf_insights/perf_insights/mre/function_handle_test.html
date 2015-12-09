@@ -54,16 +54,16 @@ tr.b.unittest.testSuite(function() {
   });
 
   test('modulesToLoadMustBeArrayTest', function() {
-    assert.throws(pi.FunctionHandle);
+    assert.throws(pi.mre.FunctionHandle);
   });
 
   test('functionNameMustBeStringTest', function() {
-    assert.throws(function() {pi.FunctionHandle([], 3);});
+    assert.throws(function() {pi.mre.FunctionHandle([], 3);});
   });
 
   test('asDictTest', function() {
     var module = new pi.ModuleToLoad('/foo');
-    var handle = new pi.FunctionHandle([module], 'Bar');
+    var handle = new pi.mre.FunctionHandle([module], 'Bar');
 
     assert.deepEqual(handle.asDict(), {
       modules_to_load: [{href: '/foo'}],
@@ -77,7 +77,7 @@ tr.b.unittest.testSuite(function() {
       function_name: 'Bar'
     };
 
-    var handle = pi.FunctionHandle.fromDict(handleDict);
+    var handle = pi.mre.FunctionHandle.fromDict(handleDict);
 
     assert.equal(handle.modulesToLoad.length, 1);
     assert.equal(handle.modulesToLoad[0].href, '/foo');
@@ -86,9 +86,9 @@ tr.b.unittest.testSuite(function() {
 
   test('hasHrefsTest', function() {
     var module0 = new pi.ModuleToLoad('/foo');
-    var handle0 = new pi.FunctionHandle([module0], 'Bar');
+    var handle0 = new pi.mre.FunctionHandle([module0], 'Bar');
     var module1 = new pi.ModuleToLoad(undefined, 'foo.html');
-    var handle1 = new pi.FunctionHandle([module1], 'Bar');
+    var handle1 = new pi.mre.FunctionHandle([module1], 'Bar');
 
     assert.isTrue(handle0.hasHrefs());
     assert.isFalse(handle1.hasHrefs());
@@ -96,20 +96,20 @@ tr.b.unittest.testSuite(function() {
 
   test('loadFailsWithHrefs', function() {
     var module = new pi.ModuleToLoad('/foo');
-    var handle = new pi.FunctionHandle([module], 'railMapFunction');
+    var handle = new pi.mre.FunctionHandle([module], 'railMapFunction');
 
     assert.throws(handle.load);
   });
 
   test('loadFailsUnregistered', function() {
-    var handle = new pi.FunctionHandle([], 'Bar');
+    var handle = new pi.mre.FunctionHandle([], 'Bar');
 
     assert.throws(handle.load);
   });
 
   test('toStringTest', function() {
     var module = new pi.ModuleToLoad('/foo');
-    var handle = new pi.FunctionHandle([module], 'Bar');
+    var handle = new pi.mre.FunctionHandle([module], 'Bar');
 
     assert.equal(
         handle.toString(),

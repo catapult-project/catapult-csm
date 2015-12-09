@@ -311,7 +311,7 @@ tr.exportTo('pi.ui', function() {
         var mapFunctionName = pe.getAttribute('map-function-name');
         var mapFunctionHref = pe.getAttribute('map-function-href');
         var moduleToLoad = new pi.ModuleToLoad(mapFunctionHref);
-        var mapFunctionHandle = new pi.FunctionHandle([moduleToLoad],
+        var mapFunctionHandle = new pi.mre.FunctionHandle([moduleToLoad],
                                                       mapFunctionName);
 
         if (mappingState.mapClientSide) {
