@@ -52,6 +52,8 @@ class MapRunner(object):
         trace_handle,
         self._job)
 
+    print 'Did map'
+
     had_failure = len(subresults.failures) > 0
 
     if had_failure:

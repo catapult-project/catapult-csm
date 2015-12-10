@@ -264,7 +264,7 @@ tr.exportTo('pi.ui', function() {
 
       function clearInfobarsOrUpdateWithErrors(mapResults) {
         infobars.clearMessages();
-        if (!mapResults) {
+        if (!mapResults.results) {
           infobars.addMessage('Cannot map');
           return mapResults;
         }
@@ -326,7 +326,7 @@ tr.exportTo('pi.ui', function() {
           return undefined;
 
         var data = JSON.parse(responseText);
-        return pi.mre.MapResults(undefined, data);
+        return new pi.mre.MapResults(undefined, data.results);
       });
 
       p = p.then(clearInfobarsOrUpdateWithErrors);
