@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!--
-Copyright (c) 2015 The Chromium Authors. All rights reserved.
+Copyright 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
-<link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mre/job.html">
 <link rel="import" href="/perf_insights/mre/map_single_trace.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/mre/trace_handle.html">
@@ -20,17 +20,19 @@ tr.exportTo('pi.mre', function() {
 
     var options = {
       traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1]))
+      job: pi.mre.Job.fromDict(JSON.parse(args[1]))
     };
 
     var results = new pi.mre.MapResults();
 
     pi.mre.runAndConvertErrorsToFailures(
-        results, options.runInfo,
+        results, options.job, options.job.mapFunctionHandle,
+        options.traceHandle,
         function() {
-          var mapFunction = options.mapFunctionHandle.load();
+          var mapFunction = options.job.mapFunctionHandle.load();
+          var traceData = options.traceHandle.read();
 
-          pi.mre.mapSingleTrace(results, mapFunction, traceHandle);
+          pi.mre.mapSingleTrace(results, traceData, mapFunction);
         });
 
     console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
