@@ -63,7 +63,7 @@ class MapRunner(object):
                                 trace_handle, subresults)
 
   def _MergeResultsToIntoMaster(self, trace_handle, subresults):
-    self._results.AddResults(subresults)
+    self._results.AddResults(subresults.results)
 
     had_failure = len(subresults.failures) > 0
     if self._stop_on_error and had_failure:

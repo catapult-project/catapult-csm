@@ -38,8 +38,10 @@ class TraceHandle(object):
 
 
 class FileURLTraceHandle(TraceHandle):
-  def __init__(self, source_url, metadata=None):
+  def __init__(self, source_url, working_url, metadata=None):
     super(FileURLTraceHandle, self).__init__(source_url)
+
+    self._working_url = working_url
 
     if metadata is None:
       self._metadata = {}
@@ -48,6 +50,7 @@ class FileURLTraceHandle(TraceHandle):
       self._metadata = metadata
 
   def _AsDictInto(self, handle_dict):
+    handle_dict['working_url'] = self._working_url
     handle_dict['metadata'] = self._metadata
     handle_dict['type'] = 'local_file'
 

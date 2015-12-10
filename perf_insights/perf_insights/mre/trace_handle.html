@@ -45,9 +45,10 @@ tr.exportTo('pi.mre', function() {
   };
 
 
-  function FileURLTraceHandle(sourceURL, metadata) {
+  function FileURLTraceHandle(sourceURL, workingURL, metadata) {
     // TODO(eakuefner): assert startswith file://
     TraceHandle.call(this, sourceURL);
+    this.workingURL = workingURL;
     this.metadata = metadata;
   }
 
@@ -55,15 +56,16 @@ tr.exportTo('pi.mre', function() {
     __proto__: TraceHandle.prototype,
 
     _asDictInto: function(handleDict) {
+      handleDict.workingURL = this.workingURL;
       handleDict.metadata = this.metadata;
       handleDict.type = 'local_file';
     },
 
     read: function() {
       try {
-        var traceData = tr.b.getSync(this.sourceURL);
+        var traceData = tr.b.getSync(this.workingURL);
       } catch (ex) {
-        var err = new Error('Could not open ' + this.sourceURL);
+        var err = new Error('Could not open ' + this.workingURL);
         err.name = 'TraceImportError';
         throw err;
       }
@@ -100,7 +102,8 @@ tr.exportTo('pi.mre', function() {
   };
 
   FileURLTraceHandle.fromDict = function(handleDict) {
-    return new FileURLTraceHandle(handleDict.source_url, handleDict.metadata);
+    return new FileURLTraceHandle(handleDict.source_url, handleDict.working_url,
+                                  handleDict.metadata);
   }
 
   return {
