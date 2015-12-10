@@ -17,7 +17,7 @@ class TraceHandle(object):
 
   def AsDict(self):
     return {
-        'url': self._url,
+        'source_url': self._source_url,
     }
 
   def _AsDictInto(self, handle_dict):
@@ -28,11 +28,14 @@ class TraceHandle(object):
 
     This function must do any pre-work to ensure that mappers will be able to
     read from the URL contained in the trace handle.
+
+    Raises:
+      TracePreparationError: If something went wrong while preparing the trace.
     """
     raise NotImplementedError()
 
 
-class LocalFileTraceHandle(object):
+class FileURLTraceHandle(object):
   def __init__(self, source_url, metadata=None):
     assert source_url.startswith('file://')
 
@@ -45,7 +48,8 @@ class LocalFileTraceHandle(object):
       self._metadata = metadata
 
   def _AsDictInto(self, handle_dict):
-    handle_dict['metadata']
+    handle_dict['metadata'] = metadata
+    handle_dict['type'] = 'local_file'
 
   def PrepareTraceForMapping(self):
-    if not os.path.exists()
+    pass

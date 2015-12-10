@@ -15,13 +15,12 @@ found in the LICENSE file.
 tr.exportTo('pi.mre', function() {
 
   function mapSingleTraceMain(args) {
-    if (args.length !== 3)
-      throw new Error('Must provide three arguments');
+    if (args.length !== 2)
+      throw new Error('Must provide two arguments');
 
     var options = {
       traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1])),
-      filenameToMap: args[2]
+      mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1]))
     };
 
     var results = new pi.mre.MapResults();
@@ -31,17 +30,7 @@ tr.exportTo('pi.mre', function() {
         function() {
           var mapFunction = options.mapFunctionHandle.load();
 
-          // Read the mapfile.
-          try {
-            var traceData = tr.b.getSync('file://' + options.filenameToMap);
-          } catch (ex) {
-            var err = new Error('Could not open ' + options.filenameToMap);
-            err.name = 'TraceImportError';
-            throw err;
-          }
-
-          pi.mre.mapSingleTrace(results, options.runInfo, traceData,
-                            mapFunction, options.metadata);
+          pi.mre.mapSingleTrace(results, mapFunction, traceHandle);
         });
 
     console.log('MAP_RESULTS: ' + JSON.stringify(results.results));

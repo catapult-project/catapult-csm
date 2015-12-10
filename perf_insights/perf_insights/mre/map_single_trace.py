@@ -118,8 +118,8 @@ def MapSingleTrace(results, trace_handle, job):
             found_dict['failure_type_name'])
         if not cls:
           cls = failure.Failure
-        results.AddFailure(cls.FromDict(found_dict, job, job.map_function_handle,
-                                     trace_handle))
+        results.AddFailure(cls.FromDict(
+            found_dict, job, job.map_function_handle, trace_handle))
       elif found_type == 'RESULTS':
         results.AddResults(found_dict)
     else:
