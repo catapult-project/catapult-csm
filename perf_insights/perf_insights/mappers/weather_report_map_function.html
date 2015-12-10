@@ -65,7 +65,8 @@ tr.exportTo('pi.m', function() {
       irTree: irTree,
       irCoverage: tr.model.getIRCoverageFromModel(model),
       sliceCosts: pi.m.getSliceCostReport(model, threadGrouping,
-                                          railTypeNameByGUID)
+                                          railTypeNameByGUID),
+      sourceURL: model.getSourceURLThatCreatedThisTrace
     };
     return wr;
   }

@@ -237,8 +237,8 @@ found in the LICENSE file.
       var table = this.$.table;
 
       var results = this.mapResults_;
-      if (!results)
-        results = new tr.r.Results();
+      if (!results.results)
+        results = new pi.mre.MapResults();
 
       var columns = this.createColumns_();
       table.tableColumns = columns;
@@ -246,11 +246,12 @@ found in the LICENSE file.
       table.sortDescending = true;
 
       var allSliceCosts = [];
-      results.allValuesFromFailureFreeRuns.forEach(function(result) {
-        if (result.name != 'wr')
+      tr.b.iterItems(results.results, function(name, result) {
+        result = result[0];
+        if (name != 'wr')
           return;
 
-        result.value.sliceCosts.forEach(function(item) {
+        result.sliceCosts.forEach(function(item) {
           var sliceCostInfo = pi.m.SliceCostInfo.fromDict(item);
           allSliceCosts.push({
             runInfo: result.runInfo,

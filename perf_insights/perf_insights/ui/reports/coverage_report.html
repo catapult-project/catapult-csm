@@ -69,14 +69,14 @@ found in the LICENSE file.
       table.sortDescending = true;
 
       var allCoverageInfo = [];
-      results.allValuesFromFailureFreeRuns.forEach(function(result) {
-        if (result.name != 'wr')
+      tr.b.iterItems(results.results, function(name, result) {
+        if (name != 'wr')
           return;
 
         // TODO(vmpstr): Why is there no irCoverage here?
-        if (!result.value.irCoverage) {
+        if (!result.irCoverage) {
           allCoverageInfo.push({
-            title: result.runInfo.displayName + ' (no coverage)',
+            title: result.sourceURL + ' (no coverage)',
             coverage: {
               associatedEventsCount: 'N/A',
               unassociatedEventsCount: 'N/A',
@@ -89,8 +89,8 @@ found in the LICENSE file.
           return;
         }
         allCoverageInfo.push({
-          title: result.runInfo.displayName,
-          coverage: result.value.irCoverage
+          title: result.sourceURL,
+          coverage: result.irCoverage
         });
       });
 

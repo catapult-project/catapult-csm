@@ -264,7 +264,7 @@ tr.exportTo('pi.ui', function() {
 
       function clearInfobarsOrUpdateWithErrors(mapResults) {
         infobars.clearMessages();
-        if (!mapResults.results) {
+        if (!mapResults) {
           infobars.addMessage('Cannot map');
           return mapResults;
         }
