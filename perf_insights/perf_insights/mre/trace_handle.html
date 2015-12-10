@@ -45,11 +45,11 @@ tr.exportTo('pi.mre', function() {
   };
 
 
-  function FileURLTraceHandle(sourceURL, workingURL, metadata) {
+  function FileURLTraceHandle(sourceURL, workingURL, opt_metadata) {
     // TODO(eakuefner): assert startswith file://
     TraceHandle.call(this, sourceURL);
     this.workingURL = workingURL;
-    this.metadata = metadata;
+    this.metadata = opt_metadata;
   }
 
   FileURLTraceHandle.prototype = {
@@ -87,7 +87,7 @@ tr.exportTo('pi.mre', function() {
       model.sourceURLThatCreatedThisTrace = this.sourceURL_;
 
       // Mixin the metadata in case it's interesting to the mapper.
-      var metadata = opt_metadata || {};
+      var metadata = this.metadata || {};
       for (var k in metadata) {
         if (model.metadata[k] !== undefined) {
           var err = new Error(k + ' is on model and corpus tables!');
