@@ -20,6 +20,13 @@ class Failure(object):
     self.description = description
     self.stack = stack
 
+  def __str__(self):
+    return (
+      'Failure for job %s with function handle %s and trace handle %s:\n'
+      'of type %s wtih description %s. Stack:\n\n%s' % (
+        self.job.guid, self.function_handle.guid, self.trace_handle.source_url,
+        self.failure_type_name, self.description, self.stack))
+
   def AsDict(self):
     return  {
         'job_guid': self.job.guid,
@@ -33,10 +40,6 @@ class Failure(object):
   # TODO(eakuefner): extend this to take some dicts instead?
   @staticmethod
   def FromDict(failure_dict, job, function_handle, trace_handle):
-    assert job.guid == failure_dict['job_guid']
-    assert function_handle.guid == failure_dict['function_handle_guid']
-    assert trace_handle.guid == failure_dict['trace_handle_guid']
-
     return Failure(job, function_handle, trace_handle,
                    failure_dict['failure_type_name'],
                    failure_dict['description'], failure_dict['stack'])

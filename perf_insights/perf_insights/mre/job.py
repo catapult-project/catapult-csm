@@ -23,3 +23,11 @@ class Job(object):
   @property
   def reduce_function_handle(self):
       return self._reduce_function_handle
+
+  def AsDict(self):
+    # TODO(eakuefner): Serialize reduce function handle once reduction is
+    # implemented.
+    return {
+        'map_function_handle': self._map_function_handle.AsDict(),
+        'guid': str(self._guid)
+    }

@@ -76,27 +76,22 @@ def MapSingleTrace(results, trace_handle, job):
 
   all_source_paths.append(project.perf_insights_root_path)
 
-  map_function_handle = job.map_function_handle
-  trace_file = trace_handle.Open()
-  if not trace_file:
+  try:
+    trace_handle.PrepareTraceForMapping()
+  except Exception:
     results.AddFailure(failure.Failure(
         job, map_function_handle, trace_handle, 'Error',
         'error while opening trace', 'Unknown stack'))
     return
 
-  try:
-    js_args = [
-      json.dumps(trace_handle.AsDict()),
-      json.dumps(map_function_handle.AsDict()),
-      # TODO(eakuefner): Consider inserting the filename into the handle.
-      trace_file.name
-    ]
+  js_args = [
+    json.dumps(trace_handle.AsDict()),
+    json.dumps(job.AsDict()),
+  ]
 
-    res = vinn.RunFile(
-      _MAP_SINGLE_TRACE_CMDLINE_PATH, source_paths=all_source_paths,
-      js_args=js_args)
-  finally:
-    trace_file.close()
+  res = vinn.RunFile(
+    _MAP_SINGLE_TRACE_CMDLINE_PATH, source_paths=all_source_paths,
+    js_args=js_args)
 
   if res.returncode != 0:
     try:
@@ -109,7 +104,7 @@ def MapSingleTrace(results, trace_handle, job):
     return
 
   for line in res.stdout.split('\n'):
-    m = re.match('^MAP_(.+): (.+)', line, re.DOTALL)
+    m = re.match('^MAP_(RESULTS|FAILURE): (.+)', line, re.DOTALL)
     if m:
       found_type = m.group(1)
       found_dict = json.loads(m.group(2))
@@ -127,5 +122,5 @@ def MapSingleTrace(results, trace_handle, job):
         sys.stderr.write(line)
         sys.stderr.write('\n')
 
-  if len(results.results) == 0 or len(results.failures) == 0:
+  if len(results.results) == 0 and len(results.failures) == 0:
     raise InternalMapError('Internal error: No results were produced!')

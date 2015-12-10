@@ -8,7 +8,7 @@ from perf_insights import progress_reporter
 
 
 class GTestRunReporter(progress_reporter.RunReporter):
-  def __init__(self, run_info, output_stream, timestamp):
+  def __init__(self, output_stream, timestamp):
     super(GTestRunReporter, self).__init__(run_info)
     self._output_stream = output_stream
     self._timestamp = timestamp

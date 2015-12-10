@@ -8,11 +8,11 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('pi.mre', function() {
-  function Failure(jobGuid, functionHandleGuid, traceGuid, failureTypeName,
+  function Failure(job, functionHandle, traceHandle, failureTypeName,
                    description, stack) {
-    this.jobGuid = jobGuid;
-    this.functionHandleGuid = functionHandleGuid;
-    this.traceGuid = traceGuid;
+    this.job = job;
+    this.functionHandle = functionHandle;
+    this.traceHandle = traceHandle;
     this.failureTypeName = failureTypeName;
     this.description = description;
     this.stack = stack;
@@ -21,9 +21,9 @@ tr.exportTo('pi.mre', function() {
   Failure.prototype = {
     asDict: function() {
       return {
-        job_guid: this.jobGuid,
-        function_handle_guid: this.functionHandleGuid,
-        trace_guid: this.traceGuid,
+        job: this.job.guid,
+        function_handle: this.functionHandle.guid,
+        trace_source_url: this.traceHandle.sourceURL,
         failure_type_name: this.failureTypeName,
         description: this.description,
         stack: this.stack

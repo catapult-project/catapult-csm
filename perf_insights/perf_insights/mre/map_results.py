@@ -25,6 +25,9 @@ class MapResults(object):
   def results(self):
       return self._results
 
+  def AddFailure(self, failure):
+    self._failures.append(failure)
+
   def AddResults(self, results_dict):
     for key, results in results_dict.iteritems():
       self._results[key] += results

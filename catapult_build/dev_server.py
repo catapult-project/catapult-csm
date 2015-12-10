@@ -273,7 +273,7 @@ def _AddPleaseExitMixinToServer(server):
       real_serve_forever()
     except KeyboardInterrupt:
         # allow CTRL+C to shutdown
-        return 255
+        sys.exit(255)
 
     if len(exitCodeAttempt) == 1:
       return exitCodeAttempt[0]

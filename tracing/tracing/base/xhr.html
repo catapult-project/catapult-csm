@@ -74,8 +74,10 @@ tr.exportTo('tr.b', function() {
     var filename;
     if (url.startsWith('file:///'))
       filename = url.substring(7);
-    else
+    else {
       filename = global.hrefToAbsolutePath(url);
+      console.log(filename);
+    }
     var isBinary = guessBinary(url);
     if (isBinary)
       return readbuffer(filename);

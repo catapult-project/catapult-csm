@@ -35,7 +35,8 @@ tr.exportTo('pi.mre', function() {
           pi.mre.mapSingleTrace(results, traceData, mapFunction);
         });
 
-    console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
+    if (Object.keys(results.results).length !== 0)
+      console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
     results.failures.forEach(function(failure) {
       console.log('MAP_FAILURE: ' + JSON.stringify(failure.asDict()));
     });

@@ -15,6 +15,7 @@ from perf_insights import local_directory_corpus_driver
 from perf_insights import corpus_query
 from perf_insights import map_runner
 from perf_insights.mre import function_handle
+from perf_insights.mre import job as job_module
 from perf_insights import progress_reporter
 from perf_insights.results import json_output_formatter
 
@@ -43,6 +44,8 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
     handle_with_filenames = map_function_handle.ConvertHrefsToAbsFilenames(
         self.app)
 
+    job = job_module.Job(handle_with_filenames, None)
+
     corpus_driver = local_directory_corpus_driver.LocalDirectoryCorpusDriver(
         trace_directory = kwargs.pop('_pi_data_dir'),
         url_resolver = self.app.GetURLForAbsFilename)
@@ -53,15 +56,15 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
 
     trace_handles = corpus_driver.GetTraceHandlesMatchingQuery(query)
 
-    self._RunMapper(trace_handles, handle_with_filenames)
+    self._RunMapper(trace_handles, job)
 
 
-  def _RunMapper(self, trace_handles, map_function_handle):
+  def _RunMapper(self, trace_handles, job):
     self.response.content_type = 'application/json'
     output_formatter = json_output_formatter.JSONOutputFormatter(
         self.response.out)
 
-    runner = map_runner.MapRunner(trace_handles, map_function_handle,
+    runner = map_runner.MapRunner(trace_handles, job,
                                   jobs=map_runner.AUTO_JOB_COUNT,
                                   output_formatters=[output_formatter])
     runner.Run()

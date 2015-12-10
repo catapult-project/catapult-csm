@@ -4,7 +4,7 @@
 import os
 
 from perf_insights import corpus_driver
-from perf_insights.mre import local_file_trace_handle
+from perf_insights.mre import trace_handle
 
 
 def _GetFilesIn(basedir):
@@ -75,13 +75,11 @@ class LocalDirectoryCorpusDriver(corpus_driver.CorpusDriver):
       if not query.Eval(metadata, len(trace_handles)):
         continue
 
-      # Make URL relative to server root.
       url = self.url_resolver(filename)
       if url is None:
         url = _DefaultUrlResover(filename)
 
-      th = local_file_trace_handle.LocalFileTraceHandle(url, rel_filename,
-                                                        metadata, filename)
+      th = trace_handle.FileURLTraceHandle(url, metadata)
       trace_handles.append(th)
 
     return trace_handles

@@ -6,6 +6,8 @@ found in the LICENSE file.
 -->
 <link rel="import" href="/tracing/base/guid.html">
 
+<link rel="import" href="/perf_insights/mre/function_handle.html">
+
 <script>
 'use strict';
 
@@ -15,9 +17,9 @@ tr.exportTo('pi.mre', function() {
     this.mapFunctionHandle_ = mapFunctionHandle;
     this.reduceFunctionHandle_ = reduceFunctionHandle;
     if (opt_guid === undefined)
-      this.guid = tr.b.GUID.allocate();
+      this.guid_ = tr.b.GUID.allocate();
     else
-      this.guid = opt_guid;
+      this.guid_ = opt_guid;
   }
 
   Job.prototype = {
@@ -37,9 +39,12 @@ tr.exportTo('pi.mre', function() {
   Job.fromDict = function(jobDict) {
     var mapFunctionHandle = pi.mre.FunctionHandle.fromDict(
         jobDict.map_function_handle);
-    var reduceFunctionHandle = pi.mre.FunctionHandle.fromDict(
-        jobDict.reduce_function_handle);
+    // TODO(eakuefner): deserialize reducer
 
-    return new Job(mapFunctionHandle, reduceFunctionHandle, jobDict.guid);
-  }
-})
+    return new Job(mapFunctionHandle, undefined, jobDict.guid);
+  };
+
+  return {
+    Job: Job
+  };
+});

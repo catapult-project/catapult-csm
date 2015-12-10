@@ -38,10 +38,10 @@ tr.exportTo('pi.mre', function() {
   };
 
   TraceHandle.fromDict = function(handleDict) {
-    if (d.type === 'local_file')
-      return pi.mre.LocalFileTraceHandle.fromDict(handleDict);
+    if (handleDict.type === 'local_file')
+      return FileURLTraceHandle.fromDict(handleDict);
 
-    throw new Error('Not implemented');
+    throw new Error('Not implemented: fromDict for ' + handleDict.type);
   };
 
 
@@ -105,7 +105,7 @@ tr.exportTo('pi.mre', function() {
 
   return {
     TraceHandle: TraceHandle,
-    LocalFileTraceHandle: LocalFileTraceHandle
+    FileURLTraceHandle: FileURLTraceHandle
   };
 });
 </script>

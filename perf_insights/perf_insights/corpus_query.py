@@ -47,7 +47,7 @@ def _StringToValue(s):
   try:
     constant = eval(s, {}, {})
     return _Constant(constant)
-  except:  # pylint: disable=bare-except
+  except Exception:  # pylint: disable=bare-except
     pass
 
   # Barewords are assumed to be fields.

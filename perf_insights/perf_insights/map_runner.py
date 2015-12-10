@@ -21,11 +21,11 @@ class MapError(Exception):
     self.run_info = None
 
 class MapRunner(object):
-  def __init__(self, trace_handles, map_function_handle,
+  def __init__(self, trace_handles, job,
                stop_on_error=False, progress_reporter=None,
                jobs=AUTO_JOB_COUNT,
                output_formatters=None):
-    self._map_function_handle = map_function_handle
+    self._job = job
     self._stop_on_error = stop_on_error
     self._failed_run_info_to_dump = None
     if progress_reporter is None:
@@ -44,31 +44,30 @@ class MapRunner(object):
     self._wq = threaded_work_queue.ThreadedWorkQueue(num_threads=jobs)
 
   def _ProcessOneTrace(self, trace_handle):
-    run_info = trace_handle.run_info
-    subresults = results_module.Results()
-    run_reporter = self._progress_reporter.WillRun(run_info)
+    subresults = map_results.MapResults()
+    print 'Will run ' + trace_handle.source_url
+
     map_single_trace.MapSingleTrace(
         subresults,
         trace_handle,
-        self._map_function_handle)
+        self._job)
 
-    had_failure = subresults.DoesRunContainFailure(run_info)
+    had_failure = len(subresults.failures) > 0
 
-    for v in subresults.all_values:
-      run_reporter.DidAddValue(v)
-    run_reporter.DidRun(had_failure)
+    if had_failure:
+      print "Failure while mapping " + trace_handle.source_url
+      for failure in subresults.failures:
+        print failure
 
     self._wq.PostMainThreadTask(self._MergeResultsToIntoMaster,
                                 trace_handle, subresults)
 
   def _MergeResultsToIntoMaster(self, trace_handle, subresults):
-    self._results.Merge(subresults)
+    self._results.AddResults(subresults)
 
-    run_info = trace_handle.run_info
-    had_failure = subresults.DoesRunContainFailure(run_info)
+    had_failure = len(subresults.failures) > 0
     if self._stop_on_error and had_failure:
       err = MapError("Mapping error")
-      err.run_info = run_info
       self._AbortMappingDueStopOnError(err)
       return
 
@@ -90,7 +89,6 @@ class MapRunner(object):
 
     err = self._wq.Run()
 
-    self._progress_reporter.DidFinishAllRuns(self._results)
     for of in self._output_formatters:
       of.Format(self._results)
 

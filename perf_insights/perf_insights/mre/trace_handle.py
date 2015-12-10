@@ -16,9 +16,11 @@ class TraceHandle(object):
       return self._source_url
 
   def AsDict(self):
-    return {
+    handle_dict = {
         'source_url': self._source_url,
     }
+    self._AsDictInto(handle_dict)
+    return handle_dict
 
   def _AsDictInto(self, handle_dict):
     raise NotImplementedError()
@@ -35,11 +37,9 @@ class TraceHandle(object):
     raise NotImplementedError()
 
 
-class FileURLTraceHandle(object):
+class FileURLTraceHandle(TraceHandle):
   def __init__(self, source_url, metadata=None):
-    assert source_url.startswith('file://')
-
-    super(LocalFileTraceHandle, self).__init__(source_url)
+    super(FileURLTraceHandle, self).__init__(source_url)
 
     if metadata is None:
       self._metadata = {}
@@ -48,7 +48,7 @@ class FileURLTraceHandle(object):
       self._metadata = metadata
 
   def _AsDictInto(self, handle_dict):
-    handle_dict['metadata'] = metadata
+    handle_dict['metadata'] = self._metadata
     handle_dict['type'] = 'local_file'
 
   def PrepareTraceForMapping(self):
