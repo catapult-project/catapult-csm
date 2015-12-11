@@ -80,7 +80,7 @@ def MapSingleTrace(results, trace_handle, job):
     trace_handle.PrepareTraceForMapping()
   except Exception:
     results.AddFailure(failure.Failure(
-        job, map_function_handle, trace_handle, 'Error',
+        job, job.map_function_handle, trace_handle, 'Error',
         'error while opening trace', 'Unknown stack'))
     return
 
@@ -99,7 +99,7 @@ def MapSingleTrace(results, trace_handle, job):
     except Exception:
       pass
     results.addFailure(failure.Failure(
-        job, map_function_handle, trace_handle, 'Error',
+        job, job.map_function_handle, trace_handle, 'Error',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
     return
 

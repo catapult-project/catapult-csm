@@ -15,7 +15,7 @@ tr.exportTo('pie', function() {
   function mapProcessCount(results, runInfo, model) {
     results.addResult('load_info', {
           numProcesses: model.getAllProcesses().length
-        }));
+        });
   }
 
   pi.mre.FunctionRegistry.register(mapProcessCount);
