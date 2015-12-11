@@ -115,15 +115,15 @@ found in the LICENSE file.
       table.sortDescending = true;
 
       var rows = [];
-      results.allValuesFromFailureFreeRuns.forEach(function(result) {
-        for (var process in result.value) {
-          for (var thread in result.value[process]) {
+      results.results['wr'].forEach(function(result) {
+        for (var process in result) {
+          for (var thread in result[process]) {
             rows.push({
               process: process,
               thread: thread,
-              type: result.name,
+              type: 'wr',
               histogram:
-                  tr.b.u.Histogram.fromDict(result.value[process][thread])
+                  tr.b.u.Histogram.fromDict(result[process][thread])
             });
           }
         }

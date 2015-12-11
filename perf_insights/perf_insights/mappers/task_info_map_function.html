@@ -7,10 +7,10 @@ found in the LICENSE file.
 
 <link rel="import" href="/perf_insights/mappers/thread_grouping.html">
 <link rel="import" href="/perf_insights/mre/function_handle.html">
-<link rel="import" href="/perf_insights/value/value.html">
 <link rel="import" href="/tracing/base/units/histogram.html">
 <link rel="import" href="/tracing/model/flow_event.html">
 <link rel="import" href="/tracing/model/slice.html">
+<link rel="import" href="/tracing/model/source_info/source_info.html">
 
 <script>
 'use strict';
@@ -20,7 +20,7 @@ tr.exportTo('pi.m', function() {
   var HISTOGRAM_MAX = 250;
   var NUM_BINS = 50;
 
-  function taskInfoMapFunction(results, run_info, model) {
+  function taskInfoMapFunction(results, model) {
     var threadGrouping = new pi.m.ThreadGrouping();
     threadGrouping.autoInitUsingHelpers(model);
     addTimeInQueue(results, run_info, model, threadGrouping);
@@ -39,7 +39,7 @@ tr.exportTo('pi.m', function() {
     }
   }
 
-  function addTimeInQueue(results, run_info, model, threadGrouping) {
+  function addTimeInQueue(results, model, threadGrouping) {
     var timeInQueue = {};
     model.flowEvents.forEach(function(flowEvent) {
       if (!flowEvent.endSlice instanceof tr.model.Slice)
@@ -52,19 +52,20 @@ tr.exportTo('pi.m', function() {
         return;
       var threadName = eatTrailingDigits(thread.name) || 'Unknown';
       var processName = threadGrouping.getGroupNameForThread(thread);
+      var sourceURL = model.sourceURLThatCreatedThisTrace;
+      var sourceInfo = tr.model.source_info.SourceInfo(sourceURL);
       addToHistogram(timeInQueue, processName, threadName, flowEvent.duration,
-          run_info);
+          sourceInfo);
     });
     histogramsToDict(timeInQueue);
-    results.addValue(new pi.v.DictValue(
-        run_info,
-        'time_spent_in_queue',
-        timeInQueue));
+    results.addResult('time_spent_in_queue', timeInQueue);
   }
 
-  function addTopLevelTasksDuration(results, run_info, model, threadGrouping) {
+  function addTopLevelTasksDuration(results, model, threadGrouping) {
     var timeInTask = {};
     var cpuTimeInTask = {};
+    var sourceURL = model.sourceURLThatCreatedThisTrace;
+    var sourceInfo = tr.model.source_info.SourceInfo(sourceURL);
     model.getAllThreads().forEach(function(thread) {
       var process = thread.getProcess();
       if (!process)
@@ -77,21 +78,15 @@ tr.exportTo('pi.m', function() {
         if (!isTopLevelTask(slice))
           return;
         addToHistogram(timeInTask, processName, threadName, slice.duration,
-            run_info);
+            sourceInfo);
         addToHistogram(cpuTimeInTask, processName, threadName,
-            slice.cpuDuration, run_info);
+            slice.cpuDuration, sourceInfo);
       });
     });
     histogramsToDict(timeInTask);
-    results.addValue(new pi.v.DictValue(
-        run_info,
-        'time_spent_in_top_level_task',
-        timeInTask));
+    results.addResult('time_spent_in_top_level_task', timeInTask);
     histogramsToDict(cpuTimeInTask);
-    results.addValue(new pi.v.DictValue(
-        run_info,
-        'cpu_time_spent_in_top_level_task',
-        cpuTimeInTask));
+    results.addResult('cpu_time_spent_in_top_level_task', cpuTimeInTask);
   }
 
   // A slice is top level if it's on the receiving end of a post task and no
