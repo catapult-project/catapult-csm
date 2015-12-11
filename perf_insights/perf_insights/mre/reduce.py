@@ -11,6 +11,11 @@ from perf_insights.mre import failure
 import perf_insights_project
 import vinn
 
+_REDUCE_CMDLINE_PATH = os.path.join(
+  perf_insights_project.PerfInsightsProject.perf_insights_src_path,
+  'mre', 'reduce_cmdline.html')
+
+
 def Reduce(results, map_results_list, job):
   project = perf_insights_project.PerfInsightsProject()
 

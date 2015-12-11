@@ -5,24 +5,10 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
-<link rel="import" href="/perf_insights/mre/failure.html">
-
 <script>
 'use strict';
 
 tr.exportTo('pi.mre', function() {
-
-  function runAndConvertErrorsToFailures(results, job, functionHandle,
-                                         traceHandle, cb, opt_this) {
-    try {
-      cb.call(opt_this);
-    } catch (err) {
-      var err = tr.b.normalizeException(err);
-      results.addFailure(new pi.mre.Failure(
-          job, functionHandle, traceHandle, err.typeName,
-          err.message, err.stack));
-    }
-  }
 
   function mapSingleTrace(mapResults, model, mapFunction) {
     // Do not map the trace if its timer is low resolution.
@@ -43,8 +29,7 @@ tr.exportTo('pi.mre', function() {
   }
 
   return {
-    mapSingleTrace: mapSingleTrace,
-    runAndConvertErrorsToFailures: runAndConvertErrorsToFailures
+    mapSingleTrace: mapSingleTrace
   };
 });
 </script>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+Copyright 2015 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+<link rel="import" href="/perf_insights/mre/job.html">
+<link rel="import" href="/perf_insights/mre/job_results.html">
+<link rel="import" href="/perf_insights/mre/map_results.html">
+<link rel="import" href="/perf_insights/mre/reduce.html">
+<link rel="import"
+      href="/perf_insights/mre/run_and_convert_errors_to_failures.html">
+
+<script>
+'use strict';
+
+tr.exportTo('pi.mre', function() {
+
+  function reduceMain(args) {
+    if (args.length !== 2)
+      throw new Error('Must provide two arguments');
+
+    var options = {
+      mapResults: pi.mre.mapResults.FromDict(JSON.parse(args[0])),
+      job: pi.mre.Job.fromDict(JSON.parse(args[1]))
+    }
+
+    var jobResults = new pi.mre.JobResults();
+
+    pi.mre.runAndConvertErrorsToFailures(
+        jobResults, options.job, options.job.reduceFunctionHandle,
+        options.traceHandle,
+        function() {
+          var reduceFunction = options.job.reduceFunctionHandle.load();
+          pi.mre.reduce(jobResults, mapResults, reduceFunction);
+        });
+
+    if (Object.keys(jobResults.reduceResults).length !== 0)
+      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.asDict()));
+    return 0;
+  }
+
+  return {
+    reduceMain: reduceMain
+  };
+});
+
+
+if (tr.isHeadless)
+  quit(pi.mre.reduceMain(sys.argv.slice(1)))
+
+</script>
