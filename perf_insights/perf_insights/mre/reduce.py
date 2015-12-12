@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 import json
 import os
-import re
 import sys
 
 from perf_insights.mre import job_results
@@ -31,4 +30,4 @@ def Reduce(results, map_results_list, job):
   res = vinn.RunFile(_REDUCE_CMDLINE_PATH, source_paths=all_source_paths,
                      js_args=js_args)
 
-
+  results = job_results.JobResults.FromDict(json.loads(res.stdout))
