@@ -83,8 +83,14 @@ class MapRunner(object):
   def _AllMappingDone(self):
     self._wq.Stop()
 
+    # Do the reduction
+    self._wq.Reset()
+    self._wq.PostMainThreadTask(self._Reduce, self._map_results)
+
+
   def Run(self):
-    self._results = map_results.MapResults()
+    self._map_results = map_results.MapResults()
+    self._job_results = None
 
     for trace_handle in self._trace_handles:
       self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)

@@ -3,9 +3,10 @@
 # found in the LICENSE file.
 
 class Runner(object):
-  def __init__(self, corpus_query, job):
+  def __init__(self, corpus_query, job, corpus_driver):
     self._corpus_query = corpus_query
     self._job = job
+    self._corpus_driver = corpus_driver
 
   def Run(self):
     raise NotImplementedError()
