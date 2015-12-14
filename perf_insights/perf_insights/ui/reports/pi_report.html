@@ -18,13 +18,17 @@ found in the LICENSE file.
   Polymer({
     created: function() {
       var thisPolymer = Polymer.getPolymerElementNamed(this.tagName);
-      if (!thisPolymer.getAttribute('map-function-href')) {
-        throw new Error(
-            'Subclasses of pi-ui-report must have map-function-href attrs');
-      }
-      if (!thisPolymer.getAttribute('map-function-name')) {
-        throw new Error(
-            'Subclasses of pi-ui-report must have map-function-name attrs');
+      var requiredAttrs = ['map-function-href',
+                           'map-function-name',
+                           'reduce-function-href',
+                           'reduce-function-name'];
+
+      for (var attrIdx in requiredAttrs) {
+        var attr = requiredAttrs[attrIdx];
+        if (!thisPolymer.getAttribute(attr)) {
+          throw new Error(
+            'Subclasses of pi-ui-report must have ' + attr + ' attrs');
+        }
       }
     },
 
