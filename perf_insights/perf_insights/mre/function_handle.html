@@ -87,10 +87,6 @@ tr.exportTo('pi.mre', function() {
     },
 
     load: function() {
-      if (this.modulesToLoad.length === 1 || this.functionName === undefined) {
-        return FunctionHandle.loadFromFilename_(this.modulesToLoad[0].filename);
-      }
-
       if (this.hasHrefs()) {
         var err = new Error(
             'FunctionHandle named ' + this.functionName +

@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 
+from perf_insights.mre import job_results
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
 from perf_insights.mre import reduce_map_results
@@ -104,16 +105,19 @@ class MapRunner(object):
     err = self._wq.Run()
 
     # Do the reduction
+    self._job_results = job_results.JobResults()
+
     self._wq.Reset()
     self._wq.PostMainThreadTask(self._Reduce, self._map_results)
+    self._wq.Run()
 
     for of in self._output_formatters:
-      of.Format(self._map_results)
+      of.Format(self._job_results)
 
     # TODO(eakuefner): Implement repr for Failure so this is more specific.
     if err:
       print 'An issue arose.'
 
-    results = self._map_results
-    self._map_results = None
+    results = self._job_results
+    self._job_results = None
     return results

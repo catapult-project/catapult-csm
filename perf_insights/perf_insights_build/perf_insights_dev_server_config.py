@@ -56,7 +56,7 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
 
     trace_handles = corpus_driver.GetTraceHandlesMatchingQuery(query)
 
-    self._RunMapper(trace_handles, job)
+    self._RunMapper(trace_handles, job_with_filenames)
 
   # TODO(eakuefner): Rename this and other things that assume we only have map
   def _RunMapper(self, trace_handles, job):
