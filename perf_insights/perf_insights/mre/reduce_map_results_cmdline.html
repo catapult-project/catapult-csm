@@ -23,7 +23,7 @@ tr.exportTo('pi.mre', function() {
     var options = {
       mapResults: pi.mre.mapResults.FromDict(JSON.parse(args[0])),
       job: pi.mre.Job.fromDict(JSON.parse(args[1]))
-    }
+    };
 
     var jobResults = new pi.mre.JobResults();
 
@@ -47,6 +47,6 @@ tr.exportTo('pi.mre', function() {
 
 
 if (tr.isHeadless)
-  quit(pi.mre.reduceMapResultsMain(sys.argv.slice(1)))
+  quit(pi.mre.reduceMapResultsMain(sys.argv.slice(1)));
 
 </script>

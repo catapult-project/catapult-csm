@@ -10,6 +10,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/polymer_utils.html">
 <link rel="import" href="/perf_insights/ui/reports/pi_report.html">
 <link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mre/job.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/ui/generic_results_view.html">
 
@@ -311,14 +312,22 @@ tr.exportTo('pi.ui', function() {
 
         var mapFunctionName = pe.getAttribute('map-function-name');
         var mapFunctionHref = pe.getAttribute('map-function-href');
-        var moduleToLoad = new pi.mre.ModuleToLoad(mapFunctionHref);
-        var mapFunctionHandle = new pi.mre.FunctionHandle([moduleToLoad],
-                                                      mapFunctionName);
+        var mapModuleToLoad = new pi.mre.ModuleToLoad(mapFunctionHref);
+        var mapFunctionHandle = new pi.mre.FunctionHandle(
+            [mapModuleToLoad], mapFunctionName);
+
+        var reduceFunctionName = pe.getAttribute('reduce-function-name');
+        var reduceFunctionHref = pe.getAttribute('reduce-function-href');
+        var reduceModuleToLoad = new pi.mre.ModuleToLoad(reduceFunctionHref);
+        var reduceFunctionHandle = new pi.mre.FunctionHandle(
+            [reduceModuleToLoad], reduceFunctionName);
+
+        var job = new pi.mre.Job(mapFunctionHandle, reduceFunctionHandle);
 
         if (mappingState.mapClientSide) {
           throw new Error('Currently unsupported');
         }
-        return mappingState.currentMapTracesDriver(mapFunctionHandle,
+        return mappingState.currentMapTracesDriver(job,
                                                    mappingState.corpusQuery);
       });
       p = p.then(function responseToResults(responseText) {
