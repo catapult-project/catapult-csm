@@ -38,12 +38,15 @@ tr.exportTo('pi.mre', function() {
 
   Job.fromDict = function(jobDict) {
     var mapFunctionHandle = pi.mre.FunctionHandle.fromDict(
-        jobDict.map_function_handle, jobDict.reduce_function_handle);
+        jobDict.map_function_handle);
+    var reduceFunctionHandle = pi.mre.FunctionHandle.fromDict(
+        jobDict.reduce_function_handle);
 
-    return new Job(mapFunctionHandle, undefined, jobDict.guid);
+    return new Job(mapFunctionHandle, reduceFunctionHandle, jobDict.guid);
   };
 
   return {
     Job: Job
   };
 });
+</script>
