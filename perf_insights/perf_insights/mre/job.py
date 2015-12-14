@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 import uuid
 
+from perf_insights.mre import function_handle
 
 class Job(object):
 
@@ -25,9 +26,15 @@ class Job(object):
       return self._reduce_function_handle
 
   def AsDict(self):
-    # TODO(eakuefner): Serialize reduce function handle once reduction is
-    # implemented.
     return {
         'map_function_handle': self._map_function_handle.AsDict(),
+        'reduce_function_handle': self._reduce_function_handle.AsDict(),
         'guid': str(self._guid)
     }
+
+  @staticmethod
+  def FromDict(job_dict):
+    return Job(
+        function_handle.FunctionHandle.FromDict(job_dict.map_function_handle),
+        function_handle.FunctionHandle.FromDict(job_dict.reduce_function_handle)
+        )

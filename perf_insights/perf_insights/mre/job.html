@@ -30,7 +30,7 @@ tr.exportTo('pi.mre', function() {
     asDict: function() {
       return {
         map_function_handle: this.mapFunctionHandle_.asDict(),
-        reduce_function_handle: this.reduceFunctionHandle._asDict(),
+        reduce_function_handle: this.reduceFunctionHandle_.asDict(),
         guid: this.guid_.toString()
       };
     }
@@ -38,8 +38,7 @@ tr.exportTo('pi.mre', function() {
 
   Job.fromDict = function(jobDict) {
     var mapFunctionHandle = pi.mre.FunctionHandle.fromDict(
-        jobDict.map_function_handle);
-    // TODO(eakuefner): deserialize reducer
+        jobDict.map_function_handle, jobDict.reduce_function_handle);
 
     return new Job(mapFunctionHandle, undefined, jobDict.guid);
   };
