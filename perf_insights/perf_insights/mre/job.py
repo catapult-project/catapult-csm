@@ -35,6 +35,8 @@ class Job(object):
   @staticmethod
   def FromDict(job_dict):
     return Job(
-        function_handle.FunctionHandle.FromDict(job_dict.map_function_handle),
-        function_handle.FunctionHandle.FromDict(job_dict.reduce_function_handle)
+        function_handle.FunctionHandle.FromDict(
+            job_dict['map_function_handle']),
+        function_handle.FunctionHandle.FromDict(
+            job_dict['reduce_function_handle'])
         )
