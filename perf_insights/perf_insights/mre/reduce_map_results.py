@@ -10,12 +10,12 @@ from perf_insights.mre import failure
 import perf_insights_project
 import vinn
 
-_REDUCE_CMDLINE_PATH = os.path.join(
+_REDUCE_MAP_RESULTS_CMDLINE_PATH = os.path.join(
   perf_insights_project.PerfInsightsProject.perf_insights_src_path,
-  'mre', 'reduce_cmdline.html')
+  'mre', 'reduce_map_results_cmdline.html')
 
 
-def Reduce(results, map_results_list, job):
+def Reduce(job_results, map_results_list, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
@@ -27,7 +27,7 @@ def Reduce(results, map_results_list, job):
     json.dumps(job.AsDict()),
   ]
 
-  res = vinn.RunFile(_REDUCE_CMDLINE_PATH, source_paths=all_source_paths,
-                     js_args=js_args)
+  res = vinn.RunFile(_REDUCE_MAP_RESULTS_CMDLINE_PATH,
+                     source_paths=all_source_paths, js_args=js_args)
 
   results = job_results.JobResults.FromDict(json.loads(res.stdout))

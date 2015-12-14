@@ -12,9 +12,9 @@ found in the LICENSE file.
 
 tr.exportTo('pi.mre', function() {
 
-  function reduce(reduceResults, mapResults, reduceFunction) {
+  function reduceMapResults(jobResults, mapResults, reduceFunction) {
     try {
-      reduceFunction(reduceResults, model);
+      reduceFunction(jobResults, model);
     } catch (ex) {
       ex.name = 'ReduceFunctionError';
       throw ex;
@@ -22,7 +22,7 @@ tr.exportTo('pi.mre', function() {
   }
 
   return {
-    reduce: reduce
+    reduceMapResults: reduceMapResults
   };
 });
 </script>

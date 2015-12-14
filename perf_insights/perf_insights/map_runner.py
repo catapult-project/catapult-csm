@@ -10,6 +10,7 @@ import time
 
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
+from perf_insights.mre import reduce_map_results
 from perf_insights.mre import threaded_work_queue
 from perf_insights.results import gtest_progress_reporter
 
@@ -37,7 +38,8 @@ class MapRunner(object):
 
     self._trace_handles = trace_handles
     self._num_traces_merged_into_results = 0
-    self._results = None
+    self._map_results = None
+    self._job_results = None
 
     if jobs == AUTO_JOB_COUNT:
       jobs = multiprocessing.cpu_count()
@@ -65,7 +67,7 @@ class MapRunner(object):
                                 trace_handle, subresults)
 
   def _MergeResultsToIntoMaster(self, trace_handle, subresults):
-    self._results.AddResults(subresults.results)
+    self._map_results.AddResults(subresults.results)
 
     had_failure = len(subresults.failures) > 0
     if self._stop_on_error and had_failure:
@@ -83,27 +85,35 @@ class MapRunner(object):
   def _AllMappingDone(self):
     self._wq.Stop()
 
-    # Do the reduction
-    self._wq.Reset()
-    self._wq.PostMainThreadTask(self._Reduce, self._map_results)
+  def _Reduce(self, map_results):
+    self._job_results = job_results.JobResults()
 
+    print 'Will reduce'
+
+    reduce_map_results.ReduceMapResults(self._job_results, [self._map_results],
+                                        self._job)
+
+    print 'Did reduce'
 
   def Run(self):
     self._map_results = map_results.MapResults()
-    self._job_results = None
 
     for trace_handle in self._trace_handles:
       self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
 
     err = self._wq.Run()
 
+    # Do the reduction
+    self._wq.Reset()
+    self._wq.PostMainThreadTask(self._Reduce, self._map_results)
+
     for of in self._output_formatters:
-      of.Format(self._results)
+      of.Format(self._map_results)
 
     # TODO(eakuefner): Implement repr for Failure so this is more specific.
     if err:
       print 'An issue arose.'
 
-    results = self._results
-    self._results = None
+    results = self._map_results
+    self._map_results = None
     return results

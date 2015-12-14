@@ -16,7 +16,7 @@ found in the LICENSE file.
 
 tr.exportTo('pi.mre', function() {
 
-  function reduceMain(args) {
+  function reduceMapResultsMain(args) {
     if (args.length !== 2)
       throw new Error('Must provide two arguments');
 
@@ -32,7 +32,7 @@ tr.exportTo('pi.mre', function() {
         options.traceHandle,
         function() {
           var reduceFunction = options.job.reduceFunctionHandle.load();
-          pi.mre.reduce(jobResults, mapResults, reduceFunction);
+          pi.mre.reduceMapResults(jobResults, mapResults, reduceFunction);
         });
 
     if (Object.keys(jobResults.reduceResults).length !== 0)
@@ -41,12 +41,12 @@ tr.exportTo('pi.mre', function() {
   }
 
   return {
-    reduceMain: reduceMain
+    reduceMapResultsMain: reduceMapResultsMain
   };
 });
 
 
 if (tr.isHeadless)
-  quit(pi.mre.reduceMain(sys.argv.slice(1)))
+  quit(pi.mre.reduceMapResultsMain(sys.argv.slice(1)))
 
 </script>
