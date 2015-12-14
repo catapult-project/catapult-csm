@@ -108,6 +108,8 @@ class FunctionHandle(object):
     if handle_dict.get('modules_to_load') is not None:
       modules_to_load = [ModuleToLoad.FromDict(module_dict) for module_dict in
                          handle_dict['modules_to_load']]
+    else:
+      modules_to_load = []
     return FunctionHandle(modules_to_load=modules_to_load,
                           function_name=handle_dict['function_name'])
 

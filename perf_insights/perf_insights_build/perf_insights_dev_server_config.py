@@ -38,13 +38,13 @@ class TestListHandler(webapp2.RequestHandler):
 class RunMapFunctionHandler(webapp2.RequestHandler):
 
   def post(self, *args, **kwargs):  # pylint: disable=unused-argument
-    handle_dict = json.loads(self.request.body)
+    job_dict = json.loads(self.request.body)
 
-    map_function_handle = function_handle.FunctionHandle.FromDict(handle_dict)
-    handle_with_filenames = map_function_handle.ConvertHrefsToAbsFilenames(
-        self.app)
+    job = job_module.Job.FromDict(job_dict)
 
-    job = job_module.Job(handle_with_filenames, None)
+    job_with_filenames = job_module.Job(
+        job.map_function_handle.ConvertHrefsToAbsFilenames(self.app),
+        job.reduce_function_handle.ConvertHrefsToAbsFilenames(self.app))
 
     corpus_driver = local_directory_corpus_driver.LocalDirectoryCorpusDriver(
         trace_directory = kwargs.pop('_pi_data_dir'),
@@ -58,7 +58,7 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
 
     self._RunMapper(trace_handles, job)
 
-
+  # TODO(eakuefner): Rename this and other things that assume we only have map
   def _RunMapper(self, trace_handles, job):
     self.response.content_type = 'application/json'
     output_formatter = json_output_formatter.JSONOutputFormatter(
