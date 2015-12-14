@@ -63,7 +63,7 @@ tr.exportTo('pi.mre', function() {
     if (!(modulesToLoad instanceof Array))
       throw new Error('modulesToLoad in FunctionHandle must be an array');
     if (typeof(functionName) !== 'string')
-      throw new Error('functionName inFunctionHandle must be a string');
+      throw new Error('functionName in FunctionHandle must be a string');
     this.modulesToLoad = modulesToLoad;
     this.functionName = functionName;
   };
