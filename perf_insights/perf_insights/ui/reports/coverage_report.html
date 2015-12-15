@@ -71,8 +71,7 @@ found in the LICENSE file.
       table.sortDescending = true;
 
       var allCoverageInfo = [];
-      tr.b.iterItems(results.results, function(name, result_list) {
-        var result = result_list[0];
+      tr.b.iterItems(results.reduceResults, function(name, result) {
         if (name != 'wr')
           return;
 

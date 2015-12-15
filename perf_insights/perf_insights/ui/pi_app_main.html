@@ -11,6 +11,7 @@ found in the LICENSE file.
 <link rel="import" href="/perf_insights/ui/reports/pi_report.html">
 <link rel="import" href="/perf_insights/mre/function_handle.html">
 <link rel="import" href="/perf_insights/mre/job.html">
+<link rel="import" href="/perf_insights/mre/job_results.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/ui/generic_results_view.html">
 
@@ -309,7 +310,6 @@ tr.exportTo('pi.ui', function() {
             mappingState.corpusQuery === undefined) {
           return undefined;
         }
-
         var mapFunctionName = pe.getAttribute('map-function-name');
         var mapFunctionHref = pe.getAttribute('map-function-href');
         var mapModuleToLoad = new pi.mre.ModuleToLoad(mapFunctionHref);
@@ -335,7 +335,7 @@ tr.exportTo('pi.ui', function() {
           return undefined;
 
         var data = JSON.parse(responseText);
-        return new pi.mre.MapResults(undefined, data.results);
+        return new pi.mre.JobResults(undefined, data);
       });
 
       p = p.then(clearInfobarsOrUpdateWithErrors);
