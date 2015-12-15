@@ -17,6 +17,7 @@ found in the LICENSE file.
 
   Polymer({
     created: function() {
+      // TODO(eakuefner): Testing on master shows that this check fails to bail out.
       var thisPolymer = Polymer.getPolymerElementNamed(this.tagName);
       var requiredAttrs = ['map-function-href',
                            'map-function-name',
