@@ -20,6 +20,7 @@ tr.exportTo('pi.r', function() {
     for (var key in mapResults) {
       jobResults.addResult(key, mapResults[key]);
     }
+    jobResults.addResult('foo', 3);
   }
 
   return {

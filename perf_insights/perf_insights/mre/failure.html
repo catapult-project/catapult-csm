@@ -20,10 +20,14 @@ tr.exportTo('pi.mre', function() {
 
   Failure.prototype = {
     asDict: function() {
+      if (!this.traceHandle)
+        var sourceURL = '';
+      else
+        var sourceURL = this.traceHandle.sourceURL;
       return {
         job: this.job.guid,
         function_handle: this.functionHandle.guid,
-        trace_source_url: this.traceHandle.sourceURL,
+        trace_source_url: sourceURL,
         failure_type_name: this.failureTypeName,
         description: this.description,
         stack: this.stack

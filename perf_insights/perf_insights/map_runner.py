@@ -2,11 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import Queue as queue
+import json
 import os
 import multiprocessing
 import sys
 import threading
 import time
+import tempfile
 
 from perf_insights.mre import job_results
 from perf_insights.mre import map_single_trace
@@ -86,12 +88,12 @@ class MapRunner(object):
   def _AllMappingDone(self):
     self._wq.Stop()
 
-  def _Reduce(self, map_results):
+  def _Reduce(self, map_results_file):
     self._job_results = job_results.JobResults()
 
     print 'Will reduce'
 
-    reduce_map_results.ReduceMapResults(self._job_results, [self._map_results],
+    reduce_map_results.ReduceMapResults(self._job_results, map_results_file,
                                         self._job)
 
     print 'Did reduce'
@@ -104,11 +106,15 @@ class MapRunner(object):
 
     err = self._wq.Run()
 
+    map_results_file = tempfile.NamedTemporaryFile()
+    json.dump(self._map_results.results, map_results_file)
+    map_results_file.flush()
+
     # Do the reduction
     self._job_results = job_results.JobResults()
 
     self._wq.Reset()
-    self._wq.PostMainThreadTask(self._Reduce, self._map_results)
+    self._wq.PostMainThreadTask(self._Reduce, map_results_file.name)
     self._wq.Run()
 
     for of in self._output_formatters:
