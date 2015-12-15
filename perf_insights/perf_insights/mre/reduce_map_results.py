@@ -30,5 +30,5 @@ def ReduceMapResults(job_results, map_results_file, job):
   res = vinn.RunFile(_REDUCE_MAP_RESULTS_CMDLINE_PATH,
                      source_paths=all_source_paths, js_args=js_args)
 
-  print res.stdout
   results = job_results_module.JobResults.FromDict(json.loads(res.stdout))
+  job_results.AddResults(results)

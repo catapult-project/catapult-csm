@@ -35,3 +35,7 @@ class JobResults(object):
     reduce_results = job_results_dict['reduce_results']
 
     return JobResults(failures, reduce_results)
+
+  def AddResults(self, results):
+    self._reduce_results.update(results.reduce_results)
+    self._failures += results.failures

@@ -97,6 +97,7 @@ class MapRunner(object):
                                         self._job)
 
     print 'Did reduce'
+    self._wq.Stop()
 
   def Run(self):
     self._map_results = map_results.MapResults()
@@ -115,7 +116,7 @@ class MapRunner(object):
 
     self._wq.Reset()
     self._wq.PostMainThreadTask(self._Reduce, map_results_file.name)
-    self._wq.Run()
+    err = self._wq.Run()
 
     for of in self._output_formatters:
       of.Format(self._job_results)

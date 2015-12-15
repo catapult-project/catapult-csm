@@ -5,23 +5,26 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
+<link rel="import" href="/perf_insights/mre/function_handle.html">
+
 <script>
 'use strict';
 
 tr.exportTo('pi.r', function() {
 
   // TODO(eakuefner): Split weather report into discrete mappers.
-  function weatherReportReduceFunction(jobResults, mapResultsList) {
-    if (mapResultsList.length > 1)
-      throw new Error('Weather report should only produce one mapResult.');
+  function weatherReportReduceFunction(jobResults, mapResults) {
+//    if (mapResultsList.length > 1)
+//      throw new Error('Weather report should only produce one mapResult.');
 
-    var mapResults = mapResultsList[0];
+//   var mapResults = mapResultsList[0];
 
     for (var key in mapResults) {
       jobResults.addResult(key, mapResults[key]);
     }
-    jobResults.addResult('foo', 3);
   }
+
+  pi.mre.FunctionRegistry.register(weatherReportReduceFunction);
 
   return {
     weatherReportReduceFunction: weatherReportReduceFunction
