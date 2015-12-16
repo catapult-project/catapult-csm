@@ -43,6 +43,7 @@ class MapRunner(object):
     self._num_traces_merged_into_results = 0
     self._map_results = None
     self._job_results = None
+    self._map_results_file = None
 
     if jobs == AUTO_JOB_COUNT:
       jobs = multiprocessing.cpu_count()
@@ -88,13 +89,11 @@ class MapRunner(object):
   def _AllMappingDone(self):
     self._wq.Stop()
 
-  def _Reduce(self, map_results_file):
-    self._job_results = job_results.JobResults()
+  def _Reduce(self, key):
+    print 'Will reduce for key %s' % key
 
-    print 'Will reduce'
-
-    reduce_map_results.ReduceMapResults(self._job_results, map_results_file,
-                                        self._job)
+    reduce_map_results.ReduceMapResults(self._job_results, key,
+                                        self._map_results_file, self._job)
 
     print 'Did reduce'
     self._wq.Stop()
@@ -107,15 +106,17 @@ class MapRunner(object):
 
     err = self._wq.Run()
 
-    map_results_file = tempfile.NamedTemporaryFile()
-    json.dump(self._map_results.results, map_results_file)
-    map_results_file.flush()
+    self._map_results_file = tempfile.NamedTemporaryFile()
+    json.dump(self._map_results.results, self._map_results_file)
+    self._map_results_file.flush()
 
     # Do the reduction
     self._job_results = job_results.JobResults()
 
     self._wq.Reset()
-    self._wq.PostMainThreadTask(self._Reduce, map_results_file.name)
+    for key in self._map_results.results:
+      self._wq.PostAnyThreadTask(self._Reduce, key)
+
     err = self._wq.Run()
 
     for of in self._output_formatters:

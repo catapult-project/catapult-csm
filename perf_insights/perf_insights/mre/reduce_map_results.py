@@ -15,7 +15,7 @@ _REDUCE_MAP_RESULTS_CMDLINE_PATH = os.path.join(
   'mre', 'reduce_map_results_cmdline.html')
 
 
-def ReduceMapResults(job_results, map_results_file, job):
+def ReduceMapResults(job_results, key, map_results_file, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
@@ -23,12 +23,14 @@ def ReduceMapResults(job_results, map_results_file, job):
   all_source_paths.append(project.perf_insights_root_path)
 
   js_args = [
-    map_results_file,
+    key,
+    map_results_file.name,
     json.dumps(job.AsDict()),
   ]
 
   res = vinn.RunFile(_REDUCE_MAP_RESULTS_CMDLINE_PATH,
                      source_paths=all_source_paths, js_args=js_args)
 
-  results = job_results_module.JobResults.FromDict(json.loads(res.stdout))
-  job_results.AddResults(results)
+  results = json.loads(res.stdout)
+  # TODO(eakuefner): Handle failures
+  job_results.AddResult(key, results['reduce_results'][key])

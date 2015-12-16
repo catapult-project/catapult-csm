@@ -13,15 +13,8 @@ found in the LICENSE file.
 tr.exportTo('pi.r', function() {
 
   // TODO(eakuefner): Split weather report into discrete mappers.
-  function weatherReportReduceFunction(jobResults, mapResults) {
-//    if (mapResultsList.length > 1)
-//      throw new Error('Weather report should only produce one mapResult.');
-
-//   var mapResults = mapResultsList[0];
-
-    for (var key in mapResults) {
-      jobResults.addResult(key, mapResults[key][0]);
-    }
+  function weatherReportReduceFunction(key, mapResults) {
+    return mapResults[key][0];
   }
 
   pi.mre.FunctionRegistry.register(weatherReportReduceFunction);

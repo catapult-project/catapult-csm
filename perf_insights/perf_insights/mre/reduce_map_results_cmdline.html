@@ -20,12 +20,13 @@ found in the LICENSE file.
 tr.exportTo('pi.mre', function() {
 
   function reduceMapResultsMain(args) {
-    if (args.length !== 2)
-      throw new Error('Must provide two arguments');
+    if (args.length !== 3)
+      throw new Error('Must provide three arguments');
 
     var options = {
-      mapResultsFile: args[0],
-      job: pi.mre.Job.fromDict(JSON.parse(args[1]))
+      key: args[0],
+      mapResultsFile: args[1],
+      job: pi.mre.Job.fromDict(JSON.parse(args[2]))
     };
 
     var mapResultsLoaded = tr.b.getSync('file://' + options.mapResultsFile);
@@ -38,7 +39,8 @@ tr.exportTo('pi.mre', function() {
         undefined,
         function() {
           var reduceFunction = options.job.reduceFunctionHandle.load();
-          pi.mre.reduceMapResults(jobResults, mapResults, reduceFunction);
+          pi.mre.reduceMapResults(jobResults, options.key, mapResults,
+                                  reduceFunction);
         });
 
     console.log(JSON.stringify(jobResults.asDict()));

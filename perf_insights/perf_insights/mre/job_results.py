@@ -36,6 +36,6 @@ class JobResults(object):
 
     return JobResults(failures, reduce_results)
 
-  def AddResults(self, results):
-    self._reduce_results.update(results.reduce_results)
-    self._failures += results.failures
+  def AddResult(self, key, value):
+    assert not self._reduce_results.get(key)
+    self._reduce_results[key] = value
