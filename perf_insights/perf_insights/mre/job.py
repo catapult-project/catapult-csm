@@ -26,11 +26,16 @@ class Job(object):
       return self._reduce_function_handle
 
   def AsDict(self):
-    return {
-        'map_function_handle': self._map_function_handle.AsDict(),
-        'reduce_function_handle': self._reduce_function_handle.AsDict(),
+    values_dict = {
+        'map_function_handle': None,
+        'reduce_function_handle': None,
         'guid': str(self._guid)
     }
+    if self._map_function_handle:
+      values_dict['map_function_handle'] = self._map_function_handle.AsDict()
+    if self._reduce_function_handle:
+      values_dict['reduce_function_handle'] = self._reduce_function_handle.AsDict()
+    return values_dict
 
   @staticmethod
   def FromDict(job_dict):

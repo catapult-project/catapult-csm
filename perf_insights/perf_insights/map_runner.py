@@ -98,34 +98,52 @@ class MapRunner(object):
     print 'Did reduce'
     self._wq.Stop()
 
-  def Run(self):
+  def RunMapper(self):
     self._map_results = map_results.MapResults()
 
-    for trace_handle in self._trace_handles:
-      self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
+    if self._job.map_function_handle:
+      for trace_handle in self._trace_handles:
+        self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
 
-    err = self._wq.Run()
+      err = self._wq.Run()
 
-    self._map_results_file = tempfile.NamedTemporaryFile()
-    json.dump(self._map_results.results, self._map_results_file)
-    self._map_results_file.flush()
+      self._map_results_file = tempfile.NamedTemporaryFile()
+      json.dump(self._map_results.results, self._map_results_file)
+      self._map_results_file.flush()
 
-    # Do the reduction
-    self._job_results = job_results.JobResults()
+      return self._map_results
+    return None
 
-    self._wq.Reset()
-    for key in self._map_results.results:
-      self._wq.PostAnyThreadTask(self._Reduce, key)
+  def RunReducer(self, mapper_results):
+    if self._job.reduce_function_handle:
+      # Do the reduction
+      self._job_results = job_results.JobResults()
 
-    err = self._wq.Run()
+      self._wq.Reset()
+      for key in mapper_results.results:
+        self._wq.PostAnyThreadTask(self._Reduce, key)
+
+      err = self._wq.Run()
+
+      # TODO(eakuefner): Implement repr for Failure so this is more specific.
+      if err:
+        print 'An issue arose.'
+
+      results = self._job_results
+      self._job_results = None
+      return results
+    return None
+
+  def Run(self):
+    mapper_results = self.RunMapper()
+    reducer_results = self.RunReducer(mapper_results)
+
+    if reducer_results:
+      results = reducer_results
+    else:
+      results = mapper_results
 
     for of in self._output_formatters:
-      of.Format(self._job_results)
+      of.Format(results)
 
-    # TODO(eakuefner): Implement repr for Failure so this is more specific.
-    if err:
-      print 'An issue arose.'
-
-    results = self._job_results
-    self._job_results = None
     return results

@@ -19,6 +19,11 @@ class JobResults(object):
       return self._failures
 
   @property
+  def results(self):
+    # lazy
+    return self._reduce_results
+
+  @property
   def reduce_results(self):
       return self._reduce_results
 
