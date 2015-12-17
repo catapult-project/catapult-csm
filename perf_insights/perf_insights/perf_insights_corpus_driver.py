@@ -49,7 +49,7 @@ class PerfInsightsCorpusDriver(corpus_driver.CorpusDriver):
 
     for file_url in file_urls:
       th = gcs_trace_handle.GCSTraceHandle(
-          file_url, self.directory)
+          file_url, file_url, None, self.directory)
       trace_handles.append(th)
 
     return trace_handles
