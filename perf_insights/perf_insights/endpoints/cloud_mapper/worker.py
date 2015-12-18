@@ -86,14 +86,19 @@ class TaskPage(webapp2.RequestHandler):
       if not _is_devserver():
         subprocess.call(
             ['git', 'pull'], cwd=config.catapult_path)
+        # subprocess.call(
+        #     ['git', 'checkout', revision],
+        #     cwd=config.catapult_path)
+        # TODO(simonhatch): Update this when Ethan merges back.
         subprocess.call(
-            ['git', 'checkout', revision],
+            ['git', 'checkout', 'origin/mappersv2'],
             cwd=config.catapult_path)
         job_path = os.path.join(
-            config.catapult_path, 'perf_insights', 'bin', 'map_traces')
+            config.catapult_path, 'perf_insights', 'bin',
+            'gce_instance_map_job')
         cwd = config.catapult_path
       else:
-        job_path = os.path.join('perf_insights', 'bin', 'map_traces')
+        job_path = os.path.join('perf_insights', 'bin', 'gce_instance_map_job')
         cwd = os.path.abspath(
             os.path.join(os.path.dirname(__file__), '../../../..'))
 
@@ -109,9 +114,11 @@ class TaskPage(webapp2.RequestHandler):
       output_handle, output_name = tempfile.mkstemp()
 
       try:
-        map_handle = '%s:%s' % (map_file_name, map_function)
-        args = [job_path, '--jobs=-1', '--corpus=local-directory', map_handle,
+        args = [job_path, '--corpus=local-directory',
             '--trace_directory', temp_directory, '--output-file', output_name]
+        if mapper:
+          map_handle = '%s:%s' % (map_file_name, map_function)
+          args.extend(['--map_function_handle', map_handle])
         logging.info("Executing map job: %s" % args)
 
         map_job = subprocess.Popen(args,
