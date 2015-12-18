@@ -89,15 +89,6 @@ class MapRunner(object):
   def _AllMappingDone(self):
     self._wq.Stop()
 
-  def _Reduce(self, key):
-    print 'Will reduce for key %s' % key
-
-    reduce_map_results.ReduceMapResults(self._job_results, key,
-                                        self._map_results_file, self._job)
-
-    print 'Did reduce'
-    self._wq.Stop()
-
   def RunMapper(self):
     self._map_results = map_results.MapResults()
 
@@ -107,12 +98,17 @@ class MapRunner(object):
 
       err = self._wq.Run()
 
-      self._map_results_file = tempfile.NamedTemporaryFile()
-      json.dump(self._map_results.results, self._map_results_file)
-      self._map_results_file.flush()
-
       return self._map_results
     return None
+
+  def _Reduce(self, key, map_results_file_name):
+    print 'Will reduce for key %s' % key
+
+    reduce_map_results.ReduceMapResults(self._job_results, key,
+                                        map_results_file_name, self._job)
+
+    print 'Did reduce'
+    self._wq.Stop()
 
   def RunReducer(self, mapper_results):
     if self._job.reduce_function_handle:
@@ -120,8 +116,16 @@ class MapRunner(object):
       self._job_results = job_results.JobResults()
 
       self._wq.Reset()
-      for key in mapper_results.results:
-        self._wq.PostAnyThreadTask(self._Reduce, key)
+
+      for mapper_result in mapper_results:
+        # Maybe these should be trace_handles?
+        map_results_file = tempfile.NamedTemporaryFile()
+        json.dump(mapper_result.results, map_results_file)
+        map_results_file.flush()
+
+        for key in mapper_result.results:
+          self._wq.PostAnyThreadTask(
+              self._Reduce, key, map_results_file.name)
 
       err = self._wq.Run()
 
@@ -136,7 +140,7 @@ class MapRunner(object):
 
   def Run(self):
     mapper_results = self.RunMapper()
-    reducer_results = self.RunReducer(mapper_results)
+    reducer_results = self.RunReducer([mapper_results])
 
     if reducer_results:
       results = reducer_results

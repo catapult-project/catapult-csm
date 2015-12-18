@@ -19,7 +19,7 @@ class JobResults(object):
       return self._failures
 
   @property
-  def results(self):
+  def all_results(self):
     # lazy
     return self._reduce_results
 

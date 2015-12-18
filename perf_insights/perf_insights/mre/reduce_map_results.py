@@ -15,7 +15,7 @@ _REDUCE_MAP_RESULTS_CMDLINE_PATH = os.path.join(
   'mre', 'reduce_map_results_cmdline.html')
 
 
-def ReduceMapResults(job_results, key, map_results_file, job):
+def ReduceMapResults(job_results, key, map_results_file_name, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
@@ -24,7 +24,7 @@ def ReduceMapResults(job_results, key, map_results_file, job):
 
   js_args = [
     key,
-    map_results_file.name,
+    map_results_file_name,
     json.dumps(job.AsDict()),
   ]
 

@@ -19,11 +19,15 @@ class MapResults(object):
 
   @property
   def failures(self):
-      return self._failures
+    return self._failures
 
   @property
   def results(self):
-      return self._results
+    return self._results
+
+  @property
+  def all_results(self):
+    return self.AsDict()
 
   def AddFailure(self, failure):
     self._failures.append(failure)
