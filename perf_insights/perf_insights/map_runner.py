@@ -114,18 +114,21 @@ class MapRunner(object):
     if self._job.reduce_function_handle:
       # Do the reduction
       self._job_results = job_results.JobResults()
-
       self._wq.Reset()
+
+      self.map_result_files = []
 
       for mapper_result in mapper_results:
         # Maybe these should be trace_handles?
-        map_results_file = tempfile.NamedTemporaryFile()
-        json.dump(mapper_result.results, map_results_file)
-        map_results_file.flush()
+        results_file = tempfile.NamedTemporaryFile()
+        json.dump(mapper_result.results, results_file)
+        results_file.flush()
+
+        self.map_result_files.append(results_file)
 
         for key in mapper_result.results:
           self._wq.PostAnyThreadTask(
-              self._Reduce, key, map_results_file.name)
+              self._Reduce, key, results_file.name)
 
       err = self._wq.Run()
 

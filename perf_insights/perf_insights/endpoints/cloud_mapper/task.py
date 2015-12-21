@@ -16,7 +16,7 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
-DEFAULT_TRACES_PER_INSTANCE = 64
+DEFAULT_TRACES_PER_INSTANCE = 4
 
 
 class TaskPage(webapp2.RequestHandler):

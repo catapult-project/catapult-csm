@@ -19,7 +19,7 @@ from perf_insights import cloud_config
 from perf_insights.endpoints.cloud_mapper import cloud_helper
 
 
-_DEFAULT_PARALLEL_DOWNLOADS = 16
+_DEFAULT_PARALLEL_DOWNLOADS = 64
 
 
 class EnvVarModifier(object):

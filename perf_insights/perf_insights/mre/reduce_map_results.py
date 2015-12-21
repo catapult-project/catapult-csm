@@ -19,7 +19,6 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
-
   all_source_paths.append(project.perf_insights_root_path)
 
   js_args = [
@@ -30,7 +29,6 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
 
   res = vinn.RunFile(_REDUCE_MAP_RESULTS_CMDLINE_PATH,
                      source_paths=all_source_paths, js_args=js_args)
-
   results = json.loads(res.stdout)
   # TODO(eakuefner): Handle failures
   job_results.AddResult(key, results['reduce_results'][key])
