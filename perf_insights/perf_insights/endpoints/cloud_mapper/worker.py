@@ -55,8 +55,15 @@ def _DownloadTraces(traces):
       trace_url = work_queue.get()
       local_name = trace_url.split('/')[-1]
       try:
-        with open(os.path.join(temp_directory, local_name), 'w') as dst:
-          with EnvVarModifier(SERVER_SOFTWARE='') as _:
+        logging.info('downloading: %s' % local_name)
+        # TODO: This is dumb, but we have local vs actual cloud storage.
+        # Fix this.
+        if '.gz' in local_name:
+          with open(os.path.join(temp_directory, local_name), 'w') as dst:
+            with EnvVarModifier(SERVER_SOFTWARE='') as _:
+              cloud_helper.ReadGCSToFile(trace_url, dst)
+        else:
+          with open(os.path.join(temp_directory, local_name), 'w') as dst:
             cloud_helper.ReadGCSToFile(trace_url, dst)
       except Exception as e:
         logging.info("Failed to copy: %s" % e)
@@ -78,6 +85,8 @@ class TaskPage(webapp2.RequestHandler):
       traces = json.loads(self.request.get('traces'))
       mapper = self.request.get('mapper')
       map_function = self.request.get('mapper_function')
+      reducer = self.request.get('reducer')
+      reducer_function = self.request.get('reducer_function')
       revision = self.request.get('revision')
       result_path = self.request.get('result')
 
@@ -105,11 +114,6 @@ class TaskPage(webapp2.RequestHandler):
       # Download all the traces
       temp_directory = _DownloadTraces(traces)
 
-      # Download the mapper
-      map_file_handle, map_file_name = tempfile.mkstemp()
-      with open(map_file_name, 'w') as f:
-        f.write(cloud_helper.ReadGCS(mapper))
-
       # Output goes here.
       output_handle, output_name = tempfile.mkstemp()
 
@@ -117,8 +121,19 @@ class TaskPage(webapp2.RequestHandler):
         args = [job_path, '--corpus=local-directory',
             '--trace_directory', temp_directory, '--output-file', output_name]
         if mapper:
+          # Download the mapper
+          map_file_handle, map_file_name = tempfile.mkstemp()
+          with open(map_file_name, 'w') as f:
+            f.write(cloud_helper.ReadGCS(mapper))
           map_handle = '%s:%s' % (map_file_name, map_function)
           args.extend(['--map_function_handle', map_handle])
+        if reducer:
+          # Download the reducer
+          reducer_file_handle, reducer_file_name = tempfile.mkstemp()
+          with open(reducer_file_name, 'w') as f:
+            f.write(cloud_helper.ReadGCS(reducer))
+          reducer_handle = '%s:%s' % (reducer_file_name, reducer_function)
+          args.extend(['--reduce_function_handle', reducer_handle])
         logging.info("Executing map job: %s" % args)
 
         map_job = subprocess.Popen(args,
@@ -135,8 +150,6 @@ class TaskPage(webapp2.RequestHandler):
       finally:
         os.close(output_handle)
         os.unlink(output_name)
-        os.close(map_file_handle)
-        os.unlink(map_file_name)
         shutil.rmtree(temp_directory)
     except Exception:
       logging.info(traceback.format_exc())

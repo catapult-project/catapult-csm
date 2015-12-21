@@ -126,17 +126,51 @@ tr.exportTo('pi.m', function() {
 </script>
 """
 
+_DEFAULT_REDUCER = """
+<!DOCTYPE html>
+<!--
+Copyright (c) 2015 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+
+<link rel="import" href="/perf_insights/mre/function_handle.html">
+
+<script>
+'use strict';
+
+tr.exportTo('pi.r', function() {
+
+  // TODO(eakuefner): Split weather report into discrete mappers.
+  function weatherReportReduceFunction(key, mapResults) {
+    return mapResults[key][0];
+  }
+
+  pi.mre.FunctionRegistry.register(weatherReportReduceFunction);
+
+  return {
+    weatherReportReduceFunction: weatherReportReduceFunction
+  };
+});
+"""
+
 _DEFAULT_FUNCTION = 'weatherReportMapFunction'
+_DEFAULT_REDUCER_FUNCTION = 'weatherReportReduceFunction'
 
 _FORM_HTML = """
 <!DOCTYPE html>
 <html>
 <body>
 <form action="/cloud_mapper/create" method="POST">
-Mapper: <br><textarea rows="50" cols="80" name="mapper">{mapper}</textarea>
+Mapper: <br><textarea rows="15" cols="80" name="mapper">{mapper}</textarea>
 <br>
 FunctionName: <br><input type="text" name="mapper_function"
     value="{mapper_function}"/>
+<br>
+Reducer: <br><textarea rows="15" cols="80" name="reducer">{reducer}</textarea>
+<br>
+ReducerName: <br><input type="text" name="reducer_function"
+    value="{reducer_function}"/>
 <br>
 Query: <br><input type="text" name="query" value="{query}"/>
 <br>
@@ -153,6 +187,8 @@ class TestPage(webapp2.RequestHandler):
   def get(self):
     form_html = _FORM_HTML.format(mapper=_DEFAULT_MAPPER,
                                   mapper_function=_DEFAULT_FUNCTION,
+                                  reducer=_DEFAULT_REDUCER,
+                                  reducer_function=_DEFAULT_REDUCER_FUNCTION,
                                   query='MAX_TRACE_HANDLES=10',
                                   corpus=cloud_config.Get().default_corpus)
     self.response.out.write(form_html)

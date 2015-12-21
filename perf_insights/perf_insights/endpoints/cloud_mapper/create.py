@@ -18,6 +18,7 @@ class CreatePage(webapp2.RequestHandler):
     mapper = self.request.get('mapper')
     reducer = self.request.get('reducer')
     mapper_function = self.request.get('mapper_function')
+    reducer_function = self.request.get('reducer_function')
     query = self.request.get('query')
     corpus = self.request.get('corpus')
     revision = self.request.get('revision')
@@ -32,6 +33,7 @@ class CreatePage(webapp2.RequestHandler):
     job.mapper = mapper
     job.reducer = reducer
     job.mapper_function = mapper_function
+    job.reducer_function = reducer_function
     job.query = query
     job.corpus = corpus
     job.revision = revision

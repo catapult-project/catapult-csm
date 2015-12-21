@@ -57,45 +57,58 @@ class TaskPage(webapp2.RequestHandler):
     # TODO(simonhatch): In the future it might be possibly to only specify a
     # reducer and no mapper. Revisit this.
     bucket_path = cloud_config.Get().control_bucket_path + "/jobs/"
-    mapper_url = '%s%s.mapper' % (bucket_path, job.key.id())
-    mapper_text = job.mapper.encode('ascii', 'ignore')
-    cloud_helper.WriteGCS(mapper_url, mapper_text)
 
-    version = self._GetVersion()
+    mapper_url = ''
+    reducer_url = ''
 
-    tasks = {}
+    if job.reducer:
+      reducer_url = '%s%s.reducer' % (bucket_path, job.key.id())
+      reducer_text = job.reducer.encode('ascii', 'ignore')
+      cloud_helper.WriteGCS(reducer_url, reducer_text)
 
-    # Split the traces up into N buckets.
-    for current_traces in _slice_it(traces, num_instances):
-      task_id = str(uuid.uuid4())
+    if job.mapper:
+      mapper_url = '%s%s.mapper' % (bucket_path, job.key.id())
+      mapper_text = job.mapper.encode('ascii', 'ignore')
+      cloud_helper.WriteGCS(mapper_url, mapper_text)
 
-      payload = {
-          'revision': job.revision,
-          'traces': json.dumps(current_traces),
-          'result': '%s%s.result' % (bucket_path, task_id),
-          'mapper': mapper_url,
-          'mapper_function': job.mapper_function
-      }
+      version = self._GetVersion()
+
+      tasks = {}
+
+      # Split the traces up into N buckets.
+      for current_traces in _slice_it(traces, num_instances):
+        task_id = str(uuid.uuid4())
+
+        payload = {
+            'revision': job.revision,
+            'traces': json.dumps(current_traces),
+            'result': '%s%s.result' % (bucket_path, task_id),
+            'mapper': mapper_url,
+            'mapper_function': job.mapper_function
+        }
+        taskqueue.add(
+            queue_name='mapper-queue',
+            url='/cloud_worker/task',
+            target=version,
+            name=task_id,
+            params=payload)
+        tasks[task_id] = {'status': 'IN_PROGRESS'}
+
+      # On production servers, we could just sit and wait for the results, but
+      # dev_server is single threaded and won't run any other tasks until the
+      # current one is finished. We'll just do the easy thing for now and
+      # queue a task to check for the result.
       taskqueue.add(
-          queue_name='mapper-queue',
-          url='/cloud_worker/task',
+          queue_name='default',
+          url='/cloud_mapper/task',
           target=version,
-          name=task_id,
-          params=payload)
-      tasks[task_id] = {'status': 'IN_PROGRESS'}
-
-    # On production servers, we could just sit and wait for the results, but
-    # dev_server is single threaded and won't run any other tasks until the
-    # current one is finished. We'll just do the easy thing for now and
-    # queue a task to check for the result.
-    taskqueue.add(
-        queue_name='default',
-        url='/cloud_mapper/task',
-        target=version,
-        countdown=1,
-        params={'jobid': job.key.id(),
-                'type': 'check',
-                'tasks': json.dumps(tasks)})
+          countdown=1,
+          params={'jobid': job.key.id(),
+                  'type': 'check_map_results',
+                  'reducer': reducer_url,
+                  'reducer_function': job.reducer_function,
+                  'revision': job.revision,
+                  'tasks': json.dumps(tasks)})
 
   def _GetVersion(self):
     version = os.environ['CURRENT_VERSION_ID'].split('.')[0]
@@ -103,8 +116,11 @@ class TaskPage(webapp2.RequestHandler):
       version = taskqueue.DEFAULT_APP_VERSION
     return version
 
-  def _CheckOnResults(self, job):
+  def _CheckOnMapResults(self, job):
     tasks = json.loads(self.request.get('tasks'))
+    reducer_url = self.request.get('reducer')
+    reducer_function = self.request.get('reducer_function')
+    revision = self.request.get('revision')
 
     # TODO: There's no reducer yet, so we can't actually collapse multiple
     # results into one results file.
@@ -124,7 +140,72 @@ class TaskPage(webapp2.RequestHandler):
           target=self._GetVersion(),
           countdown=1,
           params={'jobid': job.key.id(),
-                  'type': 'check',
+                  'type': 'check_map_results',
+                  'reducer': reducer_url,
+                  'reducer_function': reducer_function,
+                  'revision': revision,
+                  'tasks': json.dumps(tasks)})
+      return
+
+    map_results = []
+    for task_id, _ in tasks.iteritems():
+      task_results_path = '%s/jobs/%s.result' % (
+          cloud_config.Get().control_bucket_path, task_id)
+      map_results.append(task_results_path)
+
+    # We'll only do 1 reduce job for now, maybe shard it better later
+    task_id = str(uuid.uuid4())
+    payload = {
+        'revision': revision,
+        'traces': json.dumps(map_results),
+        'result': '%s/jobs/%s.result' % (
+            cloud_config.Get().control_bucket_path, task_id),
+        'reducer': reducer_url,
+        'reducer_function': reducer_function
+    }
+    taskqueue.add(
+        queue_name='mapper-queue',
+        url='/cloud_worker/task',
+        target=self._GetVersion(),
+        name=task_id,
+        params=payload)
+
+    tasks = {}
+    tasks[task_id] = {'status': 'IN_PROGRESS'}
+
+    # On production servers, we could just sit and wait for the results, but
+    # dev_server is single threaded and won't run any other tasks until the
+    # current one is finished. We'll just do the easy thing for now and
+    # queue a task to check for the result.
+    taskqueue.add(
+        queue_name='default',
+        url='/cloud_mapper/task',
+        target=self._GetVersion(),
+        countdown=1,
+        params={'jobid': job.key.id(),
+                'type': 'check_reduce_results',
+                'tasks': json.dumps(tasks)})
+
+  def _CheckOnReduceResults(self, job):
+    tasks = json.loads(self.request.get('tasks'))
+
+    # TODO: There's really only one reducer job at the moment
+    results = None
+    for task_id, _ in tasks.iteritems():
+      task_results_path = '%s/jobs/%s.result' % (
+          cloud_config.Get().control_bucket_path, task_id)
+      stat_result = cloud_helper.StatGCS(task_results_path)
+      if stat_result is not None:
+        tasks[task_id]['status'] = 'DONE'
+        results = task_results_path
+
+    if not results:
+      taskqueue.add(
+          url='/cloud_mapper/task',
+          target=self._GetVersion(),
+          countdown=1,
+          params={'jobid': job.key.id(),
+                  'type': 'check_reduce_results',
                   'tasks': json.dumps(tasks)})
       return
 
@@ -136,7 +217,7 @@ class TaskPage(webapp2.RequestHandler):
 
   def _RunMappers(self, job):
     # TODO(simonhatch): Figure out the optimal # of instances to spawn.
-    num_instances = 1
+    num_instances = 4
 
     # Get all the traces to process
     traces = self._QueryForTraces(job.corpus, job.query)
@@ -163,8 +244,10 @@ class TaskPage(webapp2.RequestHandler):
     try:
       if self.request.get('type') == 'create':
         self._CreateMapperJob(job)
-      elif self.request.get('type') == 'check':
-        self._CheckOnResults(job)
+      elif self.request.get('type') == 'check_map_results':
+        self._CheckOnMapResults(job)
+      elif self.request.get('type') == 'check_reduce_results':
+        self._CheckOnReduceResults(job)
     except Exception as e:
       job.status = 'ERROR'
       job.put()
