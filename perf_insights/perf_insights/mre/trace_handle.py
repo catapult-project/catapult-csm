@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-
 class TracePreparationError(Exception):
   """Raised if something goes wrong while preparing a trace for mapping."""
 

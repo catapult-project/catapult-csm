@@ -10,7 +10,7 @@ found in the LICENSE file.
 
 tr.exportTo('pi.mre', function() {
 
-  function mapSingleTrace(mapResults, model, mapFunction) {
+  function mapSingleTrace(mapResults, model, mapFunction, key) {
     // Do not map the trace if its timer is low resolution.
     if (!model.isTimeHighResolution) {
       var err = new Error('Trace doesn\'t have high resolution time, ' +
@@ -21,7 +21,7 @@ tr.exportTo('pi.mre', function() {
 
     // Map the function.
     try {
-      mapFunction(mapResults, model);
+      mapFunction(mapResults, model, key);
     } catch (ex) {
       ex.name = 'MapFunctionError';
       throw ex;

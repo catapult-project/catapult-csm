@@ -134,7 +134,7 @@ class TaskPage(webapp2.RequestHandler):
             f.write(cloud_helper.ReadGCS(reducer))
           reducer_handle = '%s:%s' % (reducer_file_name, reducer_function)
           args.extend(['--reduce_function_handle', reducer_handle])
-        logging.info("Executing map job: %s" % args)
+        logging.info("Executing map job: %s" % ' '.join(args))
 
         map_job = subprocess.Popen(args,
                                    stdout=subprocess.PIPE,

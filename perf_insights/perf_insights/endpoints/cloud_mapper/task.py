@@ -238,7 +238,7 @@ class TaskPage(webapp2.RequestHandler):
     job.put()
 
   def _CalculateNumInstancesNeeded(self, num_traces):
-    return 1 + int(num_traces / DEFAULT_TRACES_PER_INSTANCE)
+    return max(1, 1 + int(num_traces / DEFAULT_TRACES_PER_INSTANCE))
 
   def _RunMappers(self, job):
     # Get all the traces to process

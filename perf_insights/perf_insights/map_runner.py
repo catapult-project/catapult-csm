@@ -10,7 +10,7 @@ import threading
 import time
 import tempfile
 
-from perf_insights.mre import job_results
+from perf_insights.mre import job_results as job_results_module
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
 from perf_insights.mre import reduce_map_results
@@ -42,7 +42,6 @@ class MapRunner(object):
     self._trace_handles = trace_handles
     self._num_traces_merged_into_results = 0
     self._map_results = None
-    self._job_results = None
     self._map_results_file = None
 
     if jobs == AUTO_JOB_COUNT:
@@ -101,10 +100,10 @@ class MapRunner(object):
       return self._map_results
     return None
 
-  def _Reduce(self, key, map_results_file_name):
+  def _Reduce(self, job_results, key, map_results_file_name):
     print 'Will reduce for key %s' % key
 
-    reduce_map_results.ReduceMapResults(self._job_results, key,
+    reduce_map_results.ReduceMapResults(job_results, key,
                                         map_results_file_name, self._job)
 
     print 'Did reduce'
@@ -113,10 +112,10 @@ class MapRunner(object):
   def RunReducer(self, mapper_results):
     if self._job.reduce_function_handle:
       # Do the reduction
-      self._job_results = job_results.JobResults()
       self._wq.Reset()
-
       self.map_result_files = []
+
+      job_results = job_results_module.JobResults()
 
       for mapper_result in mapper_results:
         # Maybe these should be trace_handles?
@@ -128,16 +127,27 @@ class MapRunner(object):
 
         for key in mapper_result.results:
           self._wq.PostAnyThreadTask(
-              self._Reduce, key, results_file.name)
+              self._Reduce,job_results,  key, results_file.name)
 
       err = self._wq.Run()
+
+      # One reduce to reduce them all.
+      results = job_results_module.JobResults()
+      results_file = tempfile.NamedTemporaryFile()
+      json.dump(job_results.all_results, results_file)
+      results_file.flush()
+
+      self.map_result_files.append(results_file)
+
+      # TODO: Fix work queue
+      for key in job_results.all_results:
+        reduce_map_results.ReduceMapResults(results, key,
+                                            results_file.name, self._job)
 
       # TODO(eakuefner): Implement repr for Failure so this is more specific.
       if err:
         print 'An issue arose.'
 
-      results = self._job_results
-      self._job_results = None
       return results
     return None
 

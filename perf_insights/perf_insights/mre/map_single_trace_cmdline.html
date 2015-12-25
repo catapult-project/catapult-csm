@@ -36,7 +36,8 @@ tr.exportTo('pi.mre', function() {
           // TODO: Land this
 //          model = createModelFromTraceData(traceData);
 //          model.soruceURLThatCreatedThisTrace = traceHadle;
-          pi.mre.mapSingleTrace(results, traceData, mapFunction);
+          pi.mre.mapSingleTrace(
+              results, traceData, mapFunction, options.traceHandle.sourceURL_);
         });
 
     if (Object.keys(results.results).length !== 0)
