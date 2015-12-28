@@ -38,21 +38,21 @@ tr.exportTo('pi.mre', function() {
   };
 
   TraceHandle.fromDict = function(handleDict) {
-    if (handleDict.type === 'local_file')
-      return FileURLTraceHandle.fromDict(handleDict);
+    if (handleDict.type === 'url')
+      return URLTraceHandle.fromDict(handleDict);
 
     throw new Error('Not implemented: fromDict for ' + handleDict.type);
   };
 
 
-  function FileURLTraceHandle(sourceURL, workingURL, opt_metadata) {
+  function URLTraceHandle(sourceURL, workingURL, opt_metadata) {
     // TODO(eakuefner): assert startswith file://
     TraceHandle.call(this, sourceURL);
     this.workingURL = workingURL;
     this.metadata = opt_metadata;
   }
 
-  FileURLTraceHandle.prototype = {
+  URLTraceHandle.prototype = {
     __proto__: TraceHandle.prototype,
 
     _asDictInto: function(handleDict) {
@@ -101,14 +101,14 @@ tr.exportTo('pi.mre', function() {
     }
   };
 
-  FileURLTraceHandle.fromDict = function(handleDict) {
-    return new FileURLTraceHandle(handleDict.source_url, handleDict.working_url,
-                                  handleDict.metadata);
+  URLTraceHandle.fromDict = function(handleDict) {
+    return new URLTraceHandle(handleDict.source_url, handleDict.working_url,
+                              handleDict.metadata);
   }
 
   return {
     TraceHandle: TraceHandle,
-    FileURLTraceHandle: FileURLTraceHandle
+    URLTraceHandle: URLTraceHandle
   };
 });
 </script>

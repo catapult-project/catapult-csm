@@ -79,7 +79,7 @@ class LocalDirectoryCorpusDriver(corpus_driver.CorpusDriver):
       if url is None:
         url = _DefaultUrlResover(filename)
 
-      th = trace_handle.FileURLTraceHandle(url, 'file://' + filename, metadata)
+      th = trace_handle.URLTraceHandle(url, 'file://' + filename, metadata)
       trace_handles.append(th)
 
     return trace_handles
