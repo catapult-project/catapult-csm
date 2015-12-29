@@ -57,8 +57,6 @@ class MapRunner(object):
         trace_handle,
         self._job)
 
-    print 'Did map'
-
     had_failure = len(subresults.failures) > 0
 
     if had_failure:
@@ -101,12 +99,8 @@ class MapRunner(object):
     return None
 
   def _Reduce(self, job_results, key, map_results_file_name):
-    print 'Will reduce for key %s' % key
-
     reduce_map_results.ReduceMapResults(job_results, key,
                                         map_results_file_name, self._job)
-
-    print 'Did reduce'
     self._wq.Stop()
 
   def RunReducer(self, mapper_results):
