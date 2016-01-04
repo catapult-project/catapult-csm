@@ -105,7 +105,10 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         'revision': 'HEAD',
         'corpus': 'https://performance-insights.appspot.com',
         })
-    cloud_mapper_url = 'http://localhost:8080'
+
+    cloud_mapper_url = 'https://performance-insights.appspot.com'
+    if self.request.get('local'):
+      cloud_mapper_url = 'http://localhost:8080'
     create_url = '%s/cloud_mapper/create' % cloud_mapper_url
     response = urllib2.urlopen(create_url, data=params)
 
