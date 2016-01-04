@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from perf_insights.mre import function_handle
-from perf_insights.mre import trace_handle
+from perf_insights.mre import trace_handle as trace_handle_module
 from perf_insights.mre import job as job_module
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
@@ -26,13 +26,13 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
-        'file:///a.json', '/a.json', {'m': 1}, json.dumps(events))
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
+        'file:///a.json', json.dumps(events), {'m': 1})
 
     results = map_results.MapResults()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
-          function MyMapFunction(results, traceHandle, model) {
+          function MyMapFunction(results, model, key) {
             results.addResult(
                 'result', {
                   numProcesses: model.getAllProcesses().length
@@ -42,15 +42,18 @@ class MapSingleTraceTests(unittest.TestCase):
       job = job_module.Job(_Handle(map_script.filename), None)
       map_single_trace.MapSingleTrace(results, trace_handle, job)
 
-    self.assertFalse(results.failure_values)
-    v = results.FindValueNamed('result')
-    self.assertEquals(v['numProcesses'], 1)
+    self.assertFalse(results.failures)
+    result = results.results['result']
+    # TODO: Mappers should produce only one MapResult, a dict. Runner should be
+    # responsible for aggregation.
+    self.assertEquals(len(result), 1)
+    self.assertEquals(result[0]['numProcesses'], 1)
 
   def testTraceDidntImport(self):
     run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
                                        metadata={'m': 1})
     trace_string = 'This is intentionally not a trace-formatted string.'
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, trace_string);
 
 
@@ -76,7 +79,7 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, json.dumps(events));
 
 
@@ -103,7 +106,7 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, json.dumps(events));
 
 
@@ -128,7 +131,7 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, json.dumps(events));
 
 
@@ -152,7 +155,7 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, json.dumps(events));
 
 
@@ -178,7 +181,7 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = in_memory_trace_handle.InMemoryTraceHandle(
+    trace_handle = trace_handle_module.InMemoryTraceHandle(
         run_info, json.dumps(events));
 
 

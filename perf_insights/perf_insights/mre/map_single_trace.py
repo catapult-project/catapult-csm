@@ -24,7 +24,6 @@ class TemporaryMapScript(object):
     self.file = tempfile.NamedTemporaryFile()
     self.file.write("""
 <!DOCTYPE html>
-<link rel="import" href="/perf_insights/value/value.html">
 <script>
 %s
 </script>
@@ -73,25 +72,17 @@ def MapSingleTrace(results, trace_handle, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
-
   all_source_paths.append(project.perf_insights_root_path)
 
-  try:
-    trace_handle.PrepareTraceForMapping()
-  except Exception:
-    results.AddFailure(failure.Failure(
-        job, job.map_function_handle, trace_handle, 'Error',
-        'error while opening trace', 'Unknown stack'))
-    return
+  with trace_handle.PrepareTraceForMapping() as prepared_trace_handle:
+    js_args = [
+      json.dumps(prepared_trace_handle.AsDict()),
+      json.dumps(job.AsDict()),
+    ]
 
-  js_args = [
-    json.dumps(trace_handle.AsDict()),
-    json.dumps(job.AsDict()),
-  ]
-
-  res = vinn.RunFile(
-    _MAP_SINGLE_TRACE_CMDLINE_PATH, source_paths=all_source_paths,
-    js_args=js_args)
+    res = vinn.RunFile(
+      _MAP_SINGLE_TRACE_CMDLINE_PATH, source_paths=all_source_paths,
+      js_args=js_args)
 
   if res.returncode != 0:
     try:
@@ -102,7 +93,7 @@ def MapSingleTrace(results, trace_handle, job):
     results.addFailure(failure.Failure(
         job, job.map_function_handle, trace_handle, 'Error',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
-    return
+    return result
 
   for line in res.stdout.split('\n'):
     m = re.match('^MAP_(RESULTS|FAILURE): (.+)', line, re.DOTALL)

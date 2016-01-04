@@ -2,12 +2,22 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import contextlib
 import tempfile
 
 
 class TracePreparationError(Exception):
   """Raised if something goes wrong while preparing a trace for mapping."""
 
+
+class _PreparedTrace(object):
+  def __init__(self, canonical_url, url_to_load, metadata):
+    self._canonical_url = canonical_url
+    self._url_to_load = url_to_load
+    self._metadata = metadata
+
+  def AsDict(self):
+    handle_dict
 
 class TraceHandle(object):
   def __init__(self, source_url, metadata=None):
@@ -18,6 +28,10 @@ class TraceHandle(object):
     else:
       assert isinstance(metadata, dict)
       self._metadata = metadata
+
+  @property
+  def metadata(self):
+      return self._metadata
 
   @property
   def source_url(self):
@@ -34,6 +48,7 @@ class TraceHandle(object):
   def _AsDictInto(self, handle_dict):
     raise NotImplementedError()
 
+  @contextlib.contextmanager
   def PrepareTraceForMapping(self):
     """Ensure that the URL to the trace will be acessible during mapping.
 
@@ -43,6 +58,13 @@ class TraceHandle(object):
     Raises:
       TracePreparationError: If something went wrong while preparing the trace.
     """
+    yield self._WillMap()
+    self._DidMap()
+
+  def _WillMap(self):
+    raise NotImplementedError()
+
+  def _DidMap(self):
     raise NotImplementedError()
 
 
@@ -56,8 +78,11 @@ class URLTraceHandle(TraceHandle):
     handle_dict['working_url'] = self._working_url
     handle_dict['type'] = 'url'
 
-  def PrepareTraceForMapping(self):
-    return self
+  def _WillMap(self):
+    pass
+
+  def _DidMap(self):
+    pass
 
 
 class InMemoryTraceHandle(TraceHandle):
@@ -66,12 +91,16 @@ class InMemoryTraceHandle(TraceHandle):
         source_url, metadata)
 
     self.data = data
+    self._tempfile = None
 
-  def PrepareTraceForMapping(self):
-    f = tempfile.NamedTemporaryFile()
-    f.write(self.data)
-    f.flush()
-    f.seek(0)
+  def _WillMap(self):
+    self._tempfile = tempfile.NamedTemporaryFile()
+    self._tempfile.write(self.data)
+    self._tempfile.flush()
+    self._tempfile.seek(0)
 
-    return URLTraceHandle(self.source_url, f.name, self.metadata)
+    return URLTraceHandle(self.source_url, 'file://' + self._tempfile.name,
+                          self.metadata)
 
+  def _DidMap(self):
+    self._tempfile.close()
