@@ -22,22 +22,6 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 _DEFAULT_PARALLEL_DOWNLOADS = 64
 
 
-class EnvVarModifier(object):
-  def __init__(self, **kwargs):
-    self._vars = {}
-    self._kwargs = kwargs
-
-  def __enter__(self):
-    for k, v in self._kwargs.iteritems():
-      self._vars[k] = os.environ.get(k)
-      os.environ[k] = v
-    return self
-
-  def __exit__(self, *_):
-    for k, v in self._vars.iteritems():
-      os.environ[k] = v
-
-
 def _is_devserver():
   server_software = os.environ.get('SERVER_SOFTWARE','')
   return server_software and server_software.startswith('Development')
@@ -60,8 +44,7 @@ def _DownloadTraces(traces):
         # Fix this.
         if '.gz' in local_name:
           with open(os.path.join(temp_directory, local_name), 'w') as dst:
-            with EnvVarModifier(SERVER_SOFTWARE='') as _:
-              cloud_helper.ReadGCSToFile(trace_url, dst)
+            cloud_helper.ReadGCSToFile(trace_url, dst)
         else:
           with open(os.path.join(temp_directory, local_name), 'w') as dst:
             cloud_helper.ReadGCSToFile(trace_url, dst)

@@ -16,7 +16,7 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
-DEFAULT_TRACES_PER_INSTANCE = 4
+DEFAULT_TRACES_PER_INSTANCE = 64
 
 
 class TaskPage(webapp2.RequestHandler):
@@ -35,7 +35,7 @@ class TaskPage(webapp2.RequestHandler):
                             headers=headers,
                             follow_redirects=False,
                             deadline=10)
-    logging.info(result.content)
+    logging.info('%s: %s' % (query_url, result.content))
 
     return json.loads(result.content)
 
