@@ -77,6 +77,8 @@ class TaskPage(webapp2.RequestHandler):
 
       if not _is_devserver():
         subprocess.call(
+            ['git', 'checkout', 'master'], cwd=config.catapult_path)
+        subprocess.call(
             ['git', 'pull'], cwd=config.catapult_path)
         # subprocess.call(
         #     ['git', 'checkout', revision],

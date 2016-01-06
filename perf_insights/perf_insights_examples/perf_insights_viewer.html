@@ -55,7 +55,7 @@ found in the LICENSE file.
 
     function cloudMapperDriver(mapFunctionHandle, corpusQuery) {
       return tr.b.postAsync(
-          '/perf_insights_examples/run_cloud_mapper?local=false&corpus_query=' +
+          '/perf_insights_examples/run_cloud_mapper?corpus_query=' +
           encodeURIComponent(corpusQuery),
           JSON.stringify(mapFunctionHandle.asDict()));
     }

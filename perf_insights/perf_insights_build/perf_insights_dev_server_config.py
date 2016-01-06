@@ -25,6 +25,8 @@ from perf_insights.mre import job as job_module
 from perf_insights import progress_reporter
 from perf_insights.results import json_output_formatter
 
+MAX_TRACES = 10000
+
 
 def _RelPathToUnixPath(p):
   return p.replace(os.sep, '/')
@@ -95,6 +97,11 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
     reducer_name = job_with_filenames.reduce_function_handle.function_name
 
     query_string = self.request.get('corpus_query', 'True')
+    query = corpus_query.CorpusQuery.FromString(query_string)
+    if query.max_trace_handles > MAX_TRACES:
+      print 'Capping query at %d' % MAX_TRACES
+      query.max_trace_handles = MAX_TRACES
+    query_string = query.AsQueryString()
 
     params = urllib.urlencode({
         'query': query_string,
@@ -107,9 +114,11 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         })
 
     cloud_mapper_url = 'https://performance-insights.appspot.com'
-    if self.request.get('local'):
+    print self.request.get('local')
+    if self.request.get('local') == 'true':
       cloud_mapper_url = 'http://localhost:8080'
     create_url = '%s/cloud_mapper/create' % cloud_mapper_url
+
     response = urllib2.urlopen(create_url, data=params)
 
     # TODO(simonhatch): Use /status endpoint.

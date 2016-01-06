@@ -69,7 +69,9 @@ class TaskPage(webapp2.RequestHandler):
       tasks = {}
 
       # Split the traces up into N buckets.
+      logging.info('Splitting traces across %d instances.' % num_instances)
       for current_traces in _slice_it(traces, num_instances):
+        logging.info('Submitting %d traces job.' % len(current_traces))
         task_id = str(uuid.uuid4())
 
         payload = {
@@ -110,6 +112,9 @@ class TaskPage(webapp2.RequestHandler):
     return version
 
   def _CheckOnMapResults(self, job):
+    if job.status != 'IN_PROGRESS':
+      return
+
     tasks = json.loads(self.request.get('tasks'))
     reducer_url = self.request.get('reducer')
     reducer_function = self.request.get('reducer_function')
@@ -200,6 +205,9 @@ class TaskPage(webapp2.RequestHandler):
     taskqueue.Queue('mapper-queue').delete_tasks_by_name(task_names)
 
   def _CheckOnReduceResults(self, job):
+    if job.status != 'IN_PROGRESS':
+      return
+
     tasks = json.loads(self.request.get('tasks'))
 
     # TODO: There's really only one reducer job at the moment
@@ -238,7 +246,7 @@ class TaskPage(webapp2.RequestHandler):
     job.put()
 
   def _CalculateNumInstancesNeeded(self, num_traces):
-    return max(1, 1 + int(num_traces / DEFAULT_TRACES_PER_INSTANCE))
+    return max(1, int(num_traces / DEFAULT_TRACES_PER_INSTANCE))
 
   def _RunMappers(self, job):
     # Get all the traces to process

@@ -39,7 +39,9 @@ handlers:
 - url: /cloud_mapper/task
   script: perf_insights.endpoints.cloud_mapper.task.app
   secure: always
+  login: admin
 
 - url: /cloud_mapper/test
   script: perf_insights.endpoints.cloud_mapper.test.app
   secure: always
+  login: admin
