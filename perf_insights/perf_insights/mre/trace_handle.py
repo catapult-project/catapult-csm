@@ -79,7 +79,7 @@ class URLTraceHandle(TraceHandle):
     handle_dict['type'] = 'url'
 
   def _WillMap(self):
-    pass
+    return self
 
   def _DidMap(self):
     pass
