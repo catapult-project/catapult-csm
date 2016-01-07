@@ -20,8 +20,8 @@ found in the LICENSE file.
         flex: 1 1 auto;
       }
     </style>
-    <tr-ui-u-generic-table-view id="table">
-    </tr-ui-u-generic-table-view>
+    <pre id="table">
+    </pre>
   </template>
   <script>
   'use strict';
@@ -48,61 +48,9 @@ found in the LICENSE file.
 
       var results = this.mapResults_;
       if (!results)
-        results = new tr.r.Results();
+        results = new pi.mre.MapResults();
 
-      var rows = [];
-      results.allRunInfos.forEach(function(runInfo) {
-        var valuesForRun = results.getValuesForRunInfo(runInfo);
-
-        var urlSpan = tr.ui.b.createSpan({textContent: runInfo.displayName});
-        var row = {
-          url: urlSpan
-        };
-
-        if (results.doesRunContainFailure(runInfo)) {
-          urlSpan.style.backgroundColor = 'red';
-          var failureValuesForRun = results.allValues.filter(function(v) {
-            if (v.runInfo !== runInfo)
-              return false;
-            if (v instanceof pi.v.FailureValue)
-              return true;
-            return false;
-          });
-
-          var failureText;
-          if (failureValuesForRun.length === 1)
-            failureText = failureValuesForRun[0].name;
-          else
-            failureText = failureValuesForRun.length + ' failures';
-
-          var tooltipText = failureValuesForRun.map(function(v) {
-            return v.stack;
-          }).join('\n\n');
-          var failuresSpan = tr.ui.b.createSpan({
-                textContent: failureText,
-                tooltip: tooltipText,
-                backgroundColor: 'red'});
-          row.failures = failuresSpan;
-        }
-        valuesForRun.forEach(function(v) {
-          if (v instanceof pi.v.FailureValue) {
-            return;
-          } else if (v instanceof pi.v.SkipValue) {
-            row[v.name] = tr.ui.b.createSpan({
-                textContent: 'Skipped',
-                tooltip: v.description,
-                backgroundColor: 'rgb(127,127,127)'});
-          } else if (v instanceof pi.v.DictValue) {
-            row[v.name] = tr.ui.b.createSpan({textContent: 'DictValue'});
-          } else {
-            throw new Error('omg');
-          }
-        });
-        rows.push(row);
-      });
-      table.rowHighlightStyle = tr.ui.b.TableFormat.HighlightStyle.DARK;
-      table.importantColumNames = ['url'];
-      table.items = rows;
+      this.$.table.innerHTML = JSON.stringify(results.asDict(), undefined, 2);
     }
   });
   </script>
