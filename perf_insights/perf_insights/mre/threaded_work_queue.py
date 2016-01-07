@@ -104,7 +104,6 @@ class ThreadedWorkQueue:
     threads = []
     for _ in range(self._num_threads):
         t = threading.Thread(target=self._ThreadMain)
-        t.setDaemon(True)
         t.start()
         threads.append(t)
 
