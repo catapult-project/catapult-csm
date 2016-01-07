@@ -101,7 +101,6 @@ class MapRunner(object):
   def _Reduce(self, job_results, key, map_results_file_name):
     reduce_map_results.ReduceMapResults(job_results, key,
                                         map_results_file_name, self._job)
-    self._wq.Stop()
 
   def RunReducer(self, mapper_results):
     if self._job.reduce_function_handle:
@@ -121,7 +120,13 @@ class MapRunner(object):
 
         for key in mapper_result.results:
           self._wq.PostAnyThreadTask(
-              self._Reduce,job_results,  key, results_file.name)
+              self._Reduce, job_results, key, results_file.name)
+
+      # TODO: Need to queue the stop, which feels a bit strange.
+      def _Stop():
+        self._wq.Stop()
+
+      self._wq.PostAnyThreadTask(_Stop)
 
       err = self._wq.Run()
 
