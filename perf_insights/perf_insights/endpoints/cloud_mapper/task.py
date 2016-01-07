@@ -4,6 +4,7 @@
 import datetime
 import json
 import logging
+import math
 import os
 import time
 import urllib
@@ -16,7 +17,7 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
-DEFAULT_TRACES_PER_INSTANCE = 64
+DEFAULT_TRACES_PER_INSTANCE = 4
 
 
 class TaskPage(webapp2.RequestHandler):
@@ -122,17 +123,22 @@ class TaskPage(webapp2.RequestHandler):
 
     # TODO: There's no reducer yet, so we can't actually collapse multiple
     # results into one results file.
-    results = None
-    for task_id, _ in tasks.iteritems():
+    mappers_done = True
+    for task_id, task_values in tasks.iteritems():
+      if task_values['status'] == 'DONE':
+        continue
       task_results_path = '%s/jobs/%s.result' % (
           cloud_config.Get().control_bucket_path, task_id)
       stat_result = cloud_helper.StatGCS(task_results_path)
       if stat_result is not None:
         logging.info(str(stat_result))
         tasks[task_id]['status'] = 'DONE'
-        results = task_results_path
+      else:
+        mappers_done = False
 
-    if not results:
+    logging.info("Tasks: %s" % str(tasks))
+
+    if not mappers_done:
       taskqueue.add(
           url='/cloud_mapper/task',
           target=self._GetVersion(),
@@ -246,7 +252,7 @@ class TaskPage(webapp2.RequestHandler):
     job.put()
 
   def _CalculateNumInstancesNeeded(self, num_traces):
-    return max(1, int(num_traces / DEFAULT_TRACES_PER_INSTANCE))
+    return int(math.ceil(float(num_traces) / DEFAULT_TRACES_PER_INSTANCE))
 
   def _RunMappers(self, job):
     # Get all the traces to process
