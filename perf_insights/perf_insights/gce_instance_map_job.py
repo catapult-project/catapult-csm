@@ -68,19 +68,18 @@ def Main(argv):
       for trace_handle in trace_handles:
         name = trace_handle._working_url.split('file://')[-1]
         with open(name, 'r') as f:
-          map_dict = json.loads(f.read())
-          map_results_list.append(map_results.MapResults.FromDict(map_dict))
+          try:
+            map_dict = json.loads(f.read())
+            map_results_list.append(map_results.MapResults.FromDict(map_dict))
+          except ValueError:
+            # TODO(simonhatch): Record this failure and pass along.
+            pass
 
       results = runner.RunReducer(map_results_list)
 
     output_formatter.Format(results)
 
     return results
-
-    if not results.failures:
-      return 0
-    else:
-      return 255
   finally:
     if ofile != sys.stdout:
       ofile.close()
