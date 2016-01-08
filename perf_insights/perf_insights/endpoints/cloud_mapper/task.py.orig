@@ -4,7 +4,6 @@
 import datetime
 import json
 import logging
-import math
 import os
 import time
 import urllib
@@ -17,7 +16,7 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
-DEFAULT_TRACES_PER_INSTANCE = 32
+DEFAULT_TRACES_PER_INSTANCE = 64
 
 
 class TaskPage(webapp2.RequestHandler):
@@ -36,7 +35,7 @@ class TaskPage(webapp2.RequestHandler):
                             headers=headers,
                             follow_redirects=False,
                             deadline=10)
-    logging.info('%s: %s' % (query_url, result.content))
+    logging.info(result.content)
 
     return json.loads(result.content)
 
@@ -70,9 +69,7 @@ class TaskPage(webapp2.RequestHandler):
       tasks = {}
 
       # Split the traces up into N buckets.
-      logging.info('Splitting traces across %d instances.' % num_instances)
       for current_traces in _slice_it(traces, num_instances):
-        logging.info('Submitting %d traces job.' % len(current_traces))
         task_id = str(uuid.uuid4())
 
         payload = {
@@ -94,9 +91,6 @@ class TaskPage(webapp2.RequestHandler):
       # dev_server is single threaded and won't run any other tasks until the
       # current one is finished. We'll just do the easy thing for now and
       # queue a task to check for the result.
-      timeout = (
-          datetime.datetime.now() + datetime.timedelta(minutes=2)).strftime(
-              '%Y-%m-%d %H:%M:%S')
       taskqueue.add(
           queue_name='default',
           url='/cloud_mapper/task',
@@ -107,8 +101,7 @@ class TaskPage(webapp2.RequestHandler):
                   'reducer': reducer_url,
                   'reducer_function': job.reducer_function,
                   'revision': job.revision,
-                  'tasks': json.dumps(tasks),
-                  'timeout': timeout})
+                  'tasks': json.dumps(tasks)})
 
   def _GetVersion(self):
     version = os.environ['CURRENT_VERSION_ID'].split('.')[0]
@@ -117,34 +110,24 @@ class TaskPage(webapp2.RequestHandler):
     return version
 
   def _CheckOnMapResults(self, job):
-    if job.status != 'IN_PROGRESS':
-      return
-
     tasks = json.loads(self.request.get('tasks'))
     reducer_url = self.request.get('reducer')
     reducer_function = self.request.get('reducer_function')
     revision = self.request.get('revision')
-    timeout = datetime.datetime.strptime(
-        self.request.get('timeout'), '%Y-%m-%d %H:%M:%S')
 
     # TODO: There's no reducer yet, so we can't actually collapse multiple
     # results into one results file.
-    mappers_done = True
-    for task_id, task_values in tasks.iteritems():
-      if task_values['status'] == 'DONE':
-        continue
+    results = None
+    for task_id, _ in tasks.iteritems():
       task_results_path = '%s/jobs/%s.result' % (
           cloud_config.Get().control_bucket_path, task_id)
       stat_result = cloud_helper.StatGCS(task_results_path)
       if stat_result is not None:
         logging.info(str(stat_result))
         tasks[task_id]['status'] = 'DONE'
-      else:
-        mappers_done = False
+        results = task_results_path
 
-    logging.info("Tasks: %s" % str(tasks))
-
-    if not mappers_done and datetime.datetime.now() < timeout:
+    if not results:
       taskqueue.add(
           url='/cloud_mapper/task',
           target=self._GetVersion(),
@@ -154,14 +137,11 @@ class TaskPage(webapp2.RequestHandler):
                   'reducer': reducer_url,
                   'reducer_function': reducer_function,
                   'revision': revision,
-                  'tasks': json.dumps(tasks),
-                  'timeout': self.request.get('timeout')})
+                  'tasks': json.dumps(tasks)})
       return
 
     map_results = []
     for task_id, _ in tasks.iteritems():
-      if tasks[task_id]['status'] != 'DONE':
-        continue
       task_results_path = '%s/jobs/%s.result' % (
           cloud_config.Get().control_bucket_path, task_id)
       map_results.append(task_results_path)
@@ -182,9 +162,6 @@ class TaskPage(webapp2.RequestHandler):
         target=self._GetVersion(),
         name=task_id,
         params=payload)
-
-    tasks = {}
-    tasks[task_id] = {'status': 'IN_PROGRESS'}
 
     job.running_tasks = [task_id for task_id, _ in tasks.iteritems()]
     job.put()
@@ -220,9 +197,6 @@ class TaskPage(webapp2.RequestHandler):
     taskqueue.Queue('mapper-queue').delete_tasks_by_name(task_names)
 
   def _CheckOnReduceResults(self, job):
-    if job.status != 'IN_PROGRESS':
-      return
-
     tasks = json.loads(self.request.get('tasks'))
 
     # TODO: There's really only one reducer job at the moment
@@ -240,8 +214,11 @@ class TaskPage(webapp2.RequestHandler):
           self.request.get('timeout'), '%Y-%m-%d %H:%M:%S')
       if datetime.datetime.now() > timeout:
         self._CancelTasks(tasks)
+<<<<<<< HEAD
         job.status = 'ERROR'
         job.put()
+=======
+>>>>>>> [cloud-mapper] - Add a timeout and cancel any existing tasks.
         logging.error('Task timed out waiting for results.')
         return
       taskqueue.add(
@@ -261,7 +238,7 @@ class TaskPage(webapp2.RequestHandler):
     job.put()
 
   def _CalculateNumInstancesNeeded(self, num_traces):
-    return int(math.ceil(float(num_traces) / DEFAULT_TRACES_PER_INSTANCE))
+    return 1 + int(num_traces / DEFAULT_TRACES_PER_INSTANCE)
 
   def _RunMappers(self, job):
     # Get all the traces to process

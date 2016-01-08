@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 import Queue as queue
 
+import datetime
 import json
 import logging
 import os
@@ -10,6 +11,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 import traceback
 import webapp2
 
@@ -20,6 +22,7 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 
 
 _DEFAULT_PARALLEL_DOWNLOADS = 64
+_DEFAULT_RETRIES = 3
 
 
 def _is_devserver():
@@ -38,18 +41,21 @@ def _DownloadTraces(traces):
     while not work_queue.empty():
       trace_url = work_queue.get()
       local_name = trace_url.split('/')[-1]
-      try:
-        logging.info('downloading: %s' % local_name)
-        # TODO: This is dumb, but we have local vs actual cloud storage.
-        # Fix this.
-        if '.gz' in local_name:
-          with open(os.path.join(temp_directory, local_name), 'w') as dst:
-            cloud_helper.ReadGCSToFile(trace_url, dst)
-        else:
-          with open(os.path.join(temp_directory, local_name), 'w') as dst:
-            cloud_helper.ReadGCSToFile(trace_url, dst)
-      except Exception as e:
-        logging.info("Failed to copy: %s" % e)
+      for _ in xrange(_DEFAULT_RETRIES):
+        try:
+          logging.info('downloading: %s' % local_name)
+          # TODO: This is dumb, but we have local vs actual cloud storage.
+          # Fix this.
+          if '.gz' in local_name:
+            with open(os.path.join(temp_directory, local_name), 'w') as dst:
+              cloud_helper.ReadGCSToFile(trace_url, dst)
+          else:
+            with open(os.path.join(temp_directory, local_name), 'w') as dst:
+              cloud_helper.ReadGCSToFile(trace_url, dst)
+          break
+        except Exception as e:
+          logging.info("Failed to copy: %s" % e)
+        time.sleep(0.5)
       work_queue.task_done()
 
   for _ in xrange(_DEFAULT_PARALLEL_DOWNLOADS):
@@ -125,12 +131,29 @@ class TaskPage(webapp2.RequestHandler):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    cwd=cwd)
-        stdout, stderr = map_job.communicate()
+        start_time = datetime.datetime.now()
+        while datetime.datetime.now() - start_time < datetime.timedelta(
+            seconds=120):
+          time.sleep(1)
+          if map_job.poll():
+            break
+
+        if map_job.poll() is None:
+          logging.info('Job timed out, terminating.')
+          map_job.terminate()
+
+        stdout = ''
+        stderr = ''
+        if map_job.stdout:
+          stdout = map_job.stdout.read()
+        if map_job.stderr:
+          stderr = map_job.stderr.read()
 
         logging.info('stdout:\n' + stdout)
         logging.info('stderr:\n' + stderr)
 
         with open(output_name, 'r') as f:
+          logging.info('Writing result to: %s' % result_path)
           cloud_helper.WriteGCS(result_path, f.read())
       finally:
         os.close(output_handle)
