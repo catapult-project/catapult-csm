@@ -114,7 +114,6 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         })
 
     cloud_mapper_url = 'https://performance-insights.appspot.com'
-    print self.request.get('local')
     if self.request.get('local') == 'true':
       cloud_mapper_url = 'http://localhost:8080'
     create_url = '%s/cloud_mapper/create' % cloud_mapper_url
@@ -128,7 +127,7 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
 
       status_url = '%s/cloud_mapper/status?jobid=%s' % (cloud_mapper_url, jobid)
       start_time = datetime.datetime.now()
-      while datetime.datetime.now() - start_time < datetime.timedelta(seconds=120):
+      while datetime.datetime.now() - start_time < datetime.timedelta(seconds=300):
         time.sleep(1)
         print 'Waiting for results.'
         response = urllib2.urlopen(status_url)
@@ -147,6 +146,7 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
             map_results = f.read()
           os.close(output_handle)
           self.response.write(map_results)
+          print map_results
           return
 
 

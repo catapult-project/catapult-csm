@@ -133,7 +133,7 @@ class TaskPage(webapp2.RequestHandler):
                                    cwd=cwd)
         start_time = datetime.datetime.now()
         while datetime.datetime.now() - start_time < datetime.timedelta(
-            seconds=120):
+            seconds=60):
           time.sleep(1)
           if map_job.poll():
             break

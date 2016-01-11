@@ -17,8 +17,8 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
-DEFAULT_TRACES_PER_INSTANCE = 32
-
+DEFAULT_TRACES_PER_INSTANCE = 4
+DEFAULT_TIMEOUT_IN_SECONDS = 180
 
 class TaskPage(webapp2.RequestHandler):
 
@@ -36,8 +36,6 @@ class TaskPage(webapp2.RequestHandler):
                             headers=headers,
                             follow_redirects=False,
                             deadline=10)
-    logging.info('%s: %s' % (query_url, result.content))
-
     return json.loads(result.content)
 
   def _DispatchTracesAndWaitForResult(self, job, traces, num_instances):
@@ -95,8 +93,9 @@ class TaskPage(webapp2.RequestHandler):
       # current one is finished. We'll just do the easy thing for now and
       # queue a task to check for the result.
       timeout = (
-          datetime.datetime.now() + datetime.timedelta(minutes=2)).strftime(
-              '%Y-%m-%d %H:%M:%S')
+          datetime.datetime.now() + datetime.timedelta(
+              seconds=DEFAULT_TIMEOUT_IN_SECONDS)).strftime(
+                  '%Y-%m-%d %H:%M:%S')
       taskqueue.add(
           queue_name='default',
           url='/cloud_mapper/task',
@@ -158,6 +157,9 @@ class TaskPage(webapp2.RequestHandler):
                   'timeout': self.request.get('timeout')})
       return
 
+    # Clear out any leftover tasks in case we just hit the timeout.
+    self._CancelTasks(tasks)
+
     map_results = []
     for task_id, _ in tasks.iteritems():
       if tasks[task_id]['status'] != 'DONE':
@@ -167,6 +169,7 @@ class TaskPage(webapp2.RequestHandler):
       map_results.append(task_results_path)
 
     # We'll only do 1 reduce job for now, maybe shard it better later
+    logging.info("Kicking off reduce.")
     task_id = str(uuid.uuid4())
     payload = {
         'revision': revision,
@@ -189,16 +192,17 @@ class TaskPage(webapp2.RequestHandler):
     job.running_tasks = [task_id for task_id, _ in tasks.iteritems()]
     job.put()
 
-    tasks = {}
-    tasks[task_id] = {'status': 'IN_PROGRESS'}
+    reduce_tasks = {}
+    reduce_tasks[task_id] = {'status': 'IN_PROGRESS'}
 
     # On production servers, we could just sit and wait for the results, but
     # dev_server is single threaded and won't run any other tasks until the
     # current one is finished. We'll just do the easy thing for now and
     # queue a task to check for the result.
     timeout = (
-        datetime.datetime.now() + datetime.timedelta(minutes=10)).strftime(
-            '%Y-%m-%d %H:%M:%S')
+        datetime.datetime.now() + datetime.timedelta(
+            seconds=DEFAULT_TIMEOUT_IN_SECONDS)).strftime(
+                '%Y-%m-%d %H:%M:%S')
     taskqueue.add(
         queue_name='default',
         url='/cloud_mapper/task',
@@ -206,7 +210,7 @@ class TaskPage(webapp2.RequestHandler):
         countdown=1,
         params={'jobid': job.key.id(),
                 'type': 'check_reduce_results',
-                'tasks': json.dumps(tasks),
+                'tasks': json.dumps(reduce_tasks),
                 'timeout': timeout})
 
   def _GetVersion(self):
@@ -234,6 +238,8 @@ class TaskPage(webapp2.RequestHandler):
       if stat_result is not None:
         tasks[task_id]['status'] = 'DONE'
         results = task_results_path
+
+    logging.info("Reduce results: %s" % str(tasks))
 
     if not results:
       timeout = datetime.datetime.strptime(
