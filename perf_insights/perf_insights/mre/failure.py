@@ -12,7 +12,9 @@ class Failure(object):
                failure_type_name, description, stack):
     assert isinstance(job, job_module.Job)
     assert isinstance(function_handle, function_handle_module.FunctionHandle)
-    assert isinstance(trace_handle, trace_handle_module.TraceHandle)
+    assert trace_handle is None or (
+        isinstance(trace_handle, trace_handle_module.TraceHandle))
+
     self.job = job
     self.function_handle = function_handle
     self.trace_handle = trace_handle

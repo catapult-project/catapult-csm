@@ -45,3 +45,6 @@ class JobResults(object):
     if not key in self._reduce_results:
       self._reduce_results[key] = []
     self._reduce_results[key].append(value)
+
+  def AddFailure(self, failure):
+    self._failures.append(failure)
