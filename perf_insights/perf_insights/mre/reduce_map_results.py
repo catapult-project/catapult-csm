@@ -4,6 +4,7 @@
 import json
 import os
 import sys
+import re
 
 from perf_insights.mre import job_results as job_results_module
 from perf_insights.mre import failure
@@ -29,6 +30,31 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
 
   res = vinn.RunFile(_REDUCE_MAP_RESULTS_CMDLINE_PATH,
                      source_paths=all_source_paths, js_args=js_args)
-  results = json.loads(res.stdout)
-  # TODO(eakuefner): Handle failures
-  job_results.AddResult(key, results['reduce_results'][key])
+
+  if res.returncode != 0:
+    try:
+      sys.stderr.write(res.stdout)
+    except Exception:
+      pass
+    print res.stderr
+    results.addFailure(failure.Failure(
+        job, job.map_function_handle, undefined, 'Error',
+        'vinn runtime error while reducing results.', 'Unknown stack'))
+    return
+
+  for line in res.stdout.split('\n'):
+    m = re.match('^JOB_(RESULTS|FAILURE): (.+)', line, re.DOTALL)
+    if m:
+      found_type = m.group(1)
+      found_dict = json.loads(m.group(2))
+      if found_type == 'FAILURE':
+        job_results.AddFailure(found_dict)
+      elif found_type == 'RESULTS':
+        job_results.AddResult(key, found_dict[key])
+    else:
+      if len(line) > 0:
+        sys.stderr.write(line)
+        sys.stderr.write('\n')
+
+  if len(job_results.reduce_results) == 0 and len(job_results.failures) == 0:
+    raise InternalMapError('Internal error: No results were produced!')

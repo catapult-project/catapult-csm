@@ -43,7 +43,11 @@ tr.exportTo('pi.mre', function() {
                                   reduceFunction);
         });
 
-    console.log(JSON.stringify(jobResults.asDict()));
+    if (Object.keys(jobResults.reduceResults).length !== 0)
+      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.reduceResults));
+    jobResults.failures.forEach(function(failure) {
+      console.log('JOB_FAILURE: ' + JSON.stringify(failure.asDict()));
+    });
     return 0;
   }
 
