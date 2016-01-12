@@ -18,7 +18,6 @@ from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
 DEFAULT_TRACES_PER_INSTANCE = 4
-DEFAULT_TIMEOUT_IN_SECONDS = 180
 
 class TaskPage(webapp2.RequestHandler):
 
@@ -78,7 +77,8 @@ class TaskPage(webapp2.RequestHandler):
             'traces': json.dumps(current_traces),
             'result': '%s%s.result' % (bucket_path, task_id),
             'mapper': mapper_url,
-            'mapper_function': job.mapper_function
+            'mapper_function': job.mapper_function,
+            'timeout': job.function_timeout,
         }
         taskqueue.add(
             queue_name='mapper-queue',
@@ -92,9 +92,10 @@ class TaskPage(webapp2.RequestHandler):
       # dev_server is single threaded and won't run any other tasks until the
       # current one is finished. We'll just do the easy thing for now and
       # queue a task to check for the result.
+      mapper_timeout = int(job.timeout * 0.75)
       timeout = (
           datetime.datetime.now() + datetime.timedelta(
-              seconds=DEFAULT_TIMEOUT_IN_SECONDS)).strftime(
+              seconds=mapper_timeout)).strftime(
                   '%Y-%m-%d %H:%M:%S')
       taskqueue.add(
           queue_name='default',
@@ -104,8 +105,6 @@ class TaskPage(webapp2.RequestHandler):
           params={'jobid': job.key.id(),
                   'type': 'check_map_results',
                   'reducer': reducer_url,
-                  'reducer_function': job.reducer_function,
-                  'revision': job.revision,
                   'tasks': json.dumps(tasks),
                   'timeout': timeout})
 
@@ -121,8 +120,8 @@ class TaskPage(webapp2.RequestHandler):
 
     tasks = json.loads(self.request.get('tasks'))
     reducer_url = self.request.get('reducer')
-    reducer_function = self.request.get('reducer_function')
-    revision = self.request.get('revision')
+    reducer_function = job.reducer_function
+    revision = job.revision
     timeout = datetime.datetime.strptime(
         self.request.get('timeout'), '%Y-%m-%d %H:%M:%S')
 
@@ -151,8 +150,6 @@ class TaskPage(webapp2.RequestHandler):
           params={'jobid': job.key.id(),
                   'type': 'check_map_results',
                   'reducer': reducer_url,
-                  'reducer_function': reducer_function,
-                  'revision': revision,
                   'tasks': json.dumps(tasks),
                   'timeout': self.request.get('timeout')})
       return
@@ -177,7 +174,8 @@ class TaskPage(webapp2.RequestHandler):
         'result': '%s/jobs/%s.result' % (
             cloud_config.Get().control_bucket_path, task_id),
         'reducer': reducer_url,
-        'reducer_function': reducer_function
+        'reducer_function': reducer_function,
+        'timeout': job.function_timeout,
     }
     taskqueue.add(
         queue_name='mapper-queue',
@@ -199,9 +197,10 @@ class TaskPage(webapp2.RequestHandler):
     # dev_server is single threaded and won't run any other tasks until the
     # current one is finished. We'll just do the easy thing for now and
     # queue a task to check for the result.
+    reducer_timeout = int(job.timeout * 0.25)
     timeout = (
         datetime.datetime.now() + datetime.timedelta(
-            seconds=DEFAULT_TIMEOUT_IN_SECONDS)).strftime(
+            seconds=reducer_timeout)).strftime(
                 '%Y-%m-%d %H:%M:%S')
     taskqueue.add(
         queue_name='default',

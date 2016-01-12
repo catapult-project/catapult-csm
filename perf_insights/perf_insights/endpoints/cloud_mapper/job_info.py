@@ -17,6 +17,8 @@ class JobInfo(ndb.Model):
   query = ndb.StringProperty(indexed=True)
   corpus = ndb.StringProperty(indexed=True)
   revision = ndb.StringProperty(indexed=True)
+  timeout = ndb.IntegerProperty()
+  function_timeout = ndb.IntegerProperty()
 
   running_tasks = ndb.StringProperty(repeated=True)
 

@@ -10,6 +10,10 @@ import webapp2
 from google.appengine.api import taskqueue
 from perf_insights.endpoints.cloud_mapper import job_info
 
+DEFAULT_JOB_TIMEOUT_IN_SECONDS = 120
+DEFAULT_FUNCTION_TIMEOUT_IN_SECONDS = 30
+
+
 class CreatePage(webapp2.RequestHandler):
 
   def post(self):
@@ -24,6 +28,20 @@ class CreatePage(webapp2.RequestHandler):
     revision = self.request.get('revision')
     if not revision:
       revision = 'HEAD'
+    timeout = self.request.get('timeout')
+    if not timeout:
+      timeout = 120
+    else:
+      timeout = int(timeout)
+    function_timeout = self.request.get('function_timeout')
+    if not function_timeout:
+      function_timeout = 120
+    else:
+      function_timeout = int(function_timeout)
+    timeout = max(0, min(
+        timeout, DEFAULT_JOB_TIMEOUT_IN_SECONDS))
+    function_timeout = max(0, min(
+        function_timeout, DEFAULT_FUNCTION_TIMEOUT_IN_SECONDS))
 
     job_uuid = str(uuid.uuid4())
     logging.info('Creating new job %s' % job_uuid)
@@ -38,6 +56,8 @@ class CreatePage(webapp2.RequestHandler):
     job.corpus = corpus
     job.revision = revision
     job.running_tasks = []
+    job.timeout = timeout
+    job.function_timeout = function_timeout
     job.put()
 
     response = {

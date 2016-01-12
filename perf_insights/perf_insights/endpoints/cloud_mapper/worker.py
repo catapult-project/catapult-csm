@@ -78,6 +78,9 @@ class TaskPage(webapp2.RequestHandler):
       reducer_function = self.request.get('reducer_function')
       revision = self.request.get('revision')
       result_path = self.request.get('result')
+      timeout = self.request.get('timeout')
+      if timeout:
+        timeout = int(timeout)
 
       config = cloud_config.Get()
 
@@ -130,14 +133,15 @@ class TaskPage(webapp2.RequestHandler):
                                    cwd=cwd)
         start_time = datetime.datetime.now()
         while datetime.datetime.now() - start_time < datetime.timedelta(
-            seconds=60):
+            seconds=timeout):
           time.sleep(1)
           if map_job.poll():
             break
 
         if map_job.poll() is None:
           logging.info('Job timed out, terminating.')
-          map_job.terminate()
+          # TODO: Kill child processes.
+          map_job.kill()
 
         stdout = ''
         stderr = ''

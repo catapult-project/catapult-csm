@@ -111,6 +111,8 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         'reducer_function': reducer_name,
         'revision': 'HEAD',
         'corpus': 'https://performance-insights.appspot.com',
+        'timeout': 120,
+        'function_timeout': 30
         })
 
     cloud_mapper_url = 'https://performance-insights.appspot.com'
