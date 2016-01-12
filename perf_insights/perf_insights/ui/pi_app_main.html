@@ -94,41 +94,28 @@ tr.exportTo('pi.ui', function() {
       // This selector is actually populated in the mapTracesDrivers setter.
       topLeftControls.appendChild(mapTracesDriverSelector);
 
-      var cannedCorpusQueries = [
+      var corpusSelections = [
         {
-          'label': 'All traces',
-          'value': 'True'
+          'label': 'Deep Reports',
+          'value': 'https://performance-insights.appspot.com'
         },
         {
-          'label': 'At most one trace',
-          'value': 'MAX_TRACE_HANDLES=1'
-        },
-        {
-          'label': 'At most two traces',
-          'value': 'MAX_TRACE_HANDLES=2'
-        },
-        {
-          'label': 'At most 5 traces',
-          'value': 'MAX_TRACE_HANDLES=5'
-        },
-        {
-          'label': 'At most 10 traces',
-          'value': 'MAX_TRACE_HANDLES=10'
-        },
-        {
-          'label': 'At most 50 traces',
-          'value': 'MAX_TRACE_HANDLES=50'
-        },
-        {
-          'label': 'At most 100 traces',
-          'value': 'MAX_TRACE_HANDLES=100'
+          'label': 'Bulk Reports',
+          'value': 'https://performance-insights.appspot.com'
         }
       ];
-      var corpusQuerySelector = tr.ui.b.createSelector(
+      var corpusSelector = tr.ui.b.createSelector(
+          this, 'corpus',
+          'pi.app_main.corpus',
+          corpusSelections[0].value,
+          corpusSelections);
+      topLeftControls.appendChild(corpusSelector);
+
+      var corpusQuerySelector = tr.ui.b.createTextInput(
           this, 'corpusQuery',
           'pi.app_main.corpusQuery',
-          cannedCorpusQueries[0].value,
-          cannedCorpusQueries);
+          "MAX_TRACE_HANDLES=10");
+      corpusQuerySelector.style.width = '250px';
       topLeftControls.appendChild(corpusQuerySelector);
 
       var piReportPolymerElementNames = tr.ui.b.getPolymerElementsThatSubclass(

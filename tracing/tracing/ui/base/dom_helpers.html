@@ -286,6 +286,21 @@ tr.exportTo('tr.ui.b', function() {
     return buttonEl;
   }
 
+  function createTextInput(
+      targetEl, targetElProperty, settingsKey, defaultValue) {
+    var initialValue = tr.b.Settings.get(settingsKey, defaultValue);
+    var el = document.createElement('input');
+    el.type = 'text';
+    function onChange(e) {
+      targetEl[targetElProperty] = el.value;
+    }
+    el.addEventListener('input', onChange);
+    el.value = initialValue;
+    targetEl[targetElProperty] = initialValue;
+
+    return el;
+  }
+
   function isElementAttachedToDocument(el) {
     var cur = el;
     while (cur.parentNode)
@@ -308,6 +323,7 @@ tr.exportTo('tr.ui.b', function() {
     createOptionGroup: createOptionGroup,
     createCheckBox: createCheckBox,
     createButton: createButton,
+    createTextInput: createTextInput,
     isElementAttachedToDocument: isElementAttachedToDocument,
     asHTMLOrTextNode: asHTMLOrTextNode
   };
