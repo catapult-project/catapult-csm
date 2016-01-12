@@ -83,16 +83,13 @@ class TaskPage(webapp2.RequestHandler):
 
       if not _is_devserver():
         subprocess.call(
-            ['git', 'checkout', 'master'], cwd=config.catapult_path)
+            ['git', 'checkout', 'origin/mappersv2'], cwd=config.catapult_path)
         subprocess.call(
-            ['git', 'pull'], cwd=config.catapult_path)
+            ['git', 'pull', 'origin', 'mappersv2'], cwd=config.catapult_path)
         # subprocess.call(
         #     ['git', 'checkout', revision],
         #     cwd=config.catapult_path)
         # TODO(simonhatch): Update this when Ethan merges back.
-        subprocess.call(
-            ['git', 'checkout', 'origin/mappersv2'],
-            cwd=config.catapult_path)
         job_path = os.path.join(
             config.catapult_path, 'perf_insights', 'bin',
             'gce_instance_map_job')
