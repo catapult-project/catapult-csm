@@ -271,6 +271,21 @@ tr.exportTo('tr.ui.b', function() {
     return spanEl;
   }
 
+  function createButton(targetEl, targetElProperty, label, opt_changeCb) {
+    var buttonEl = document.createElement('input');
+    buttonEl.type = 'button';
+
+    function onClick() {
+      if (opt_changeCb)
+        opt_changeCb.call();
+    }
+
+    buttonEl.addEventListener('click', onClick);
+    buttonEl.value = label;
+
+    return buttonEl;
+  }
+
   function isElementAttachedToDocument(el) {
     var cur = el;
     while (cur.parentNode)
@@ -292,6 +307,7 @@ tr.exportTo('tr.ui.b', function() {
     createSelector: createSelector,
     createOptionGroup: createOptionGroup,
     createCheckBox: createCheckBox,
+    createButton: createButton,
     isElementAttachedToDocument: isElementAttachedToDocument,
     asHTMLOrTextNode: asHTMLOrTextNode
   };

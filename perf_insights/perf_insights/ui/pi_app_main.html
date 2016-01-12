@@ -147,6 +147,17 @@ tr.exportTo('pi.ui', function() {
           piReportElementOptions);
       topLeftControls.appendChild(reportSelector);
 
+      var self = this;
+      function onProcessButton() {
+        self.scheduleUpdateContents_();
+        self.fire('ui-state-changed');
+      }
+
+      var processButton = tr.ui.b.createButton(
+          this, 'processButton',
+          'Process!', onProcessButton);
+      topLeftControls.appendChild(processButton);
+
       var showRawResultsCheckbox = tr.ui.b.createCheckBox(
           this, 'showRawResults',
           'pi.app_main.showRawResults', false,
@@ -195,8 +206,6 @@ tr.exportTo('pi.ui', function() {
 
     set currentMapTracesDriver(currentMapTracesDriver) {
       this.currentMapTracesDriver_ = currentMapTracesDriver;
-      this.scheduleUpdateContents_();
-      this.fire('ui-state-changed');
     },
 
     get corpusQuery() {
@@ -205,8 +214,6 @@ tr.exportTo('pi.ui', function() {
 
     set corpusQuery(corpusQuery) {
       this.corpusQuery_ = corpusQuery;
-      this.scheduleUpdateContents_();
-      this.fire('ui-state-changed');
     },
 
     get piReportElementName() {
@@ -215,8 +222,6 @@ tr.exportTo('pi.ui', function() {
 
     set piReportElementName(piReportElementName) {
       this.piReportElementName_ = piReportElementName;
-      this.scheduleUpdateContents_();
-      this.fire('ui-state-changed');
     },
 
     get mapClientSide() {
@@ -225,8 +230,6 @@ tr.exportTo('pi.ui', function() {
 
     set mapClientSide(mapClientSide) {
       this.mapClientSide_ = mapClientSide;
-      this.scheduleUpdateContents_();
-      this.fire('ui-state-changed');
     },
 
     get showRawResults() {
@@ -235,8 +238,6 @@ tr.exportTo('pi.ui', function() {
 
     set showRawResults(showRawResults) {
       this.showRawResults_ = showRawResults;
-      this.scheduleUpdateContents_();
-      this.fire('ui-state-changed');
     },
 
     scheduleUpdateContents_: function() {
