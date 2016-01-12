@@ -89,7 +89,6 @@ def MapSingleTrace(results, trace_handle, job):
       sys.stderr.write(res.stdout)
     except Exception:
       pass
-    print res.stderr
     results.addFailure(failure.Failure(
         job, job.map_function_handle, trace_handle, 'Error',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
