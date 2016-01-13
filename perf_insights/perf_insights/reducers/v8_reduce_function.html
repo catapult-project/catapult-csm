@@ -16,7 +16,7 @@ tr.exportTo('pi.r', function() {
     tr.b.iterItems(mapResults[key], function(key, result) {
       console.log('Got results from: ' + JSON.stringify(result.sourceURL));
     });
-    return mapResults[key];
+    return mapResults[key][0];
   }
 
   pi.mre.FunctionRegistry.register(v8ReportReduceFunction);

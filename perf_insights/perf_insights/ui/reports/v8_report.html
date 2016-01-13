@@ -30,8 +30,13 @@ found in the LICENSE file.
         flex: 1 1 auto;
       }
     </style>
-    <pre id="table">
-    </pre>
+<!--     <pre id="table2">
+    </pre> -->
+    <content-pane>
+      <table-container>
+        <pi-ui-grouping-table id="table"></pi-ui-grouping-table>
+      </table-container>
+    </content>
   </template>
   <script>
   'use strict';
@@ -57,7 +62,81 @@ found in the LICENSE file.
       if (!results)
         results = new pi.mre.MapResults();
 
-      this.$.table.innerHTML = JSON.stringify(results.asDict(), undefined, 2);
+      var allSliceCosts = [];
+      tr.b.iterItems(results.reduceResults, function(name, result) {
+        result = result[0];
+        if (name != 'wr')
+          return;
+
+        console.log(result);
+        result.sliceCosts.forEach(function(item) {
+          var sliceCostInfo = pi.m.SliceCostInfo.fromDict(item);
+          allSliceCosts.push({
+            runInfo: result.runInfo,
+            sliceCostInfo: sliceCostInfo
+          });
+        });
+      });
+
+      var groupBy = [];
+      groupBy.push(function(datum) {
+        return datum.sliceCostInfo.userFriendlyCategory || 'other';
+      });
+      groupBy.push(function(datum) {
+        return datum.sliceCostInfo.title;
+      });
+
+      var columns = this.createColumns_();
+      table.tableColumns = columns;
+      table.sortColumnIndex = 2;
+      table.sortDescending = true;
+      table.selectionMode = tr.ui.b.TableFormat.SelectionMode.ROW;
+      table.groupBy = groupBy;
+      table.dataToGroup = allSliceCosts;
+      table.rebuild();
+      //this.$.table2.innerHTML = JSON.stringify(results.asDict(), undefined, 2);
+    },
+
+    createColumns_: function() {
+      var columns = [
+        {
+          title: 'Title',
+          value: function(row) {
+            return row.title;
+          },
+          cmp: function(a, b) {
+            return a.title.localeCompare(b.title);
+          },
+          width: '500px'
+        },
+        this.createCachingColumn_('Self time (total)', function(datum) {
+          return datum.sliceCostInfo.selfTime;
+        }),
+        this.createCachingColumn_('CPU Self time (total)', function(datum) {
+          return datum.sliceCostInfo.cpuSelfTime;
+        })
+      ];
+      return columns;
+    },
+
+    createCachingColumn_(title, getDataFunction) {
+      function computeStats(sliceCostInfo) {
+        var sum = tr.b.Statistics.sum(sliceCostInfo, getDataFunction);
+        return sum === undefined ? undefined :
+            tr.ui.units.createTimeDurationSpan(sum);
+      }
+
+      var column = new pi.ui.CachingColumn(title, computeStats);
+      column.textAlign = 'right';
+      column.cmp = function(row0, row1) {
+        var value0 = column.value(row0);
+        var value1 = column.value(row1);
+        return tr.b.comparePossiblyUndefinedValues(value0, value1,
+            function(v0, v1) {
+              return v0.duration - v1.duration;
+            });
+      };
+      return column;
     }
   });
   </script>
