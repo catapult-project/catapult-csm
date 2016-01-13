@@ -75,7 +75,12 @@ def Main(argv):
             # TODO(simonhatch): Record this failure and pass along.
             pass
 
-      results = runner.RunReducer(map_results_list)
+      # Reduce the list of map results into a list of reduce results
+      intermediate_results = runner.RunReducer(
+          [m.results for m in map_results_list])
+
+      # Reduce that further into a single result
+      results = runner.RunReducer([intermediate_results.all_results])
 
     output_formatter.Format(results)
 

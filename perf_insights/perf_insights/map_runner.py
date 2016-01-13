@@ -102,7 +102,7 @@ class MapRunner(object):
     reduce_map_results.ReduceMapResults(job_results, key,
                                         map_results_file_name, self._job)
 
-  def RunReducer(self, mapper_results):
+  def RunReducer(self, results_list):
     if self._job.reduce_function_handle:
       # Do the reduction
       self._wq.Reset()
@@ -110,15 +110,15 @@ class MapRunner(object):
 
       job_results = job_results_module.JobResults()
 
-      for mapper_result in mapper_results:
+      for current_result in results_list:
         # Maybe these should be trace_handles?
         results_file = tempfile.NamedTemporaryFile()
-        json.dump(mapper_result.results, results_file)
+        json.dump(current_result, results_file)
         results_file.flush()
 
         self.map_result_files.append(results_file)
 
-        for key in mapper_result.results:
+        for key in current_result:
           self._wq.PostAnyThreadTask(
               self._Reduce, job_results, key, results_file.name)
 
@@ -130,29 +130,12 @@ class MapRunner(object):
 
       err = self._wq.Run()
 
-      # One reduce to reduce them all.
-      results = job_results_module.JobResults()
-      results_file = tempfile.NamedTemporaryFile()
-      json.dump(job_results.all_results, results_file)
-      results_file.flush()
-
-      self.map_result_files.append(results_file)
-
-      # TODO: Fix work queue
-      for key in job_results.all_results:
-        reduce_map_results.ReduceMapResults(results, key,
-                                            results_file.name, self._job)
-
-      # TODO(eakuefner): Implement repr for Failure so this is more specific.
-      if err:
-        print 'An issue arose.'
-
-      return results
+      return job_results
     return None
 
   def Run(self):
     mapper_results = self.RunMapper()
-    reducer_results = self.RunReducer([mapper_results])
+    reducer_results = self.RunReducer([mapper_results.results])
 
     if reducer_results:
       results = reducer_results
