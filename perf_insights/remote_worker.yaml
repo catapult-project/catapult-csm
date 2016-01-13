@@ -11,7 +11,7 @@ vm: true
 # If you change instances, change value in queue.yaml until we come up with
 # a better way to sync these.
 manual_scaling:
-  instances: 4
+  instances: 8
 
 resources:
   cpu: 32

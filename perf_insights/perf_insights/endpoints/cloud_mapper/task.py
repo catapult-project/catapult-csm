@@ -17,6 +17,8 @@ from perf_insights.endpoints.cloud_mapper import cloud_helper
 from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
+# If you modify this, you need to change the max_concurrent_requests in
+# queue.yaml.
 DEFAULT_TRACES_PER_INSTANCE = 4
 
 class TaskPage(webapp2.RequestHandler):

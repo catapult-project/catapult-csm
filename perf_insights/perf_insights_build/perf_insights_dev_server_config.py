@@ -148,6 +148,8 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
             map_results = f.read()
           os.close(output_handle)
           self.response.write(map_results)
+          total_time = datetime.datetime.now() - start_time
+          print 'Time taken: %ss' % total_time.total_seconds()
           print map_results
           return
 
