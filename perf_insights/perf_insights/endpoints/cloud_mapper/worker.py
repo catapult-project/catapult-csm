@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import threading
@@ -130,7 +131,8 @@ class TaskPage(webapp2.RequestHandler):
         map_job = subprocess.Popen(args,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
-                                   cwd=cwd)
+                                   cwd=cwd,
+                                   preexec_fn=os.setsid)
         start_time = datetime.datetime.now()
         while datetime.datetime.now() - start_time < datetime.timedelta(
             seconds=timeout):
@@ -141,7 +143,7 @@ class TaskPage(webapp2.RequestHandler):
         if map_job.poll() is None:
           logging.info('Job timed out, terminating.')
           # TODO: Kill child processes.
-          map_job.kill()
+          os.killpg(os.getpgid(map_job.pid), signal.SIGTERM)
 
         stdout = ''
         stderr = ''
