@@ -141,7 +141,7 @@ class TaskPage(webapp2.RequestHandler):
             break
 
         if map_job.poll() is None:
-          logging.info('Job timed out, terminating.')
+          logging.warning('Job timed out, terminating.')
           # TODO: Kill child processes.
           os.killpg(os.getpgid(map_job.pid), signal.SIGTERM)
 
