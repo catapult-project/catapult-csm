@@ -13,10 +13,11 @@ found in the LICENSE file.
 tr.exportTo('pi.r', function() {
 
   function v8ReportReduceFunction(key, mapResults) {
+    var comboResults = [];
     tr.b.iterItems(mapResults[key], function(key, result) {
-      console.log('Got results from: ' + JSON.stringify(result.sourceURL));
+      comboResults.push(result)
     });
-    return mapResults[key][0];
+    return comboResults;
   }
 
   pi.mre.FunctionRegistry.register(v8ReportReduceFunction);
