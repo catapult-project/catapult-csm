@@ -244,7 +244,7 @@ found in the LICENSE file.
           currentResult.sliceCosts.forEach(function(item) {
             var sliceCostInfo = pi.m.SliceCostInfo.fromDict(item);
             allSliceCosts.push({
-              runInfo: currentResult.runInfo,
+              runInfo: currentResult,
               sliceCostInfo: sliceCostInfo
             });
           });          
@@ -434,7 +434,7 @@ found in the LICENSE file.
       var urlSet = {};
       brushedBins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
-          urlSet[sourceInfo.url] = 1;
+          urlSet[sourceInfo.sourceURL] = 1;
         });
       });
       urlSet = Object.keys(urlSet);
