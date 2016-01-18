@@ -75,6 +75,9 @@ tr.exportTo('pi.m', function() {
           if (data['framework'] === '') {
             data['framework'] = 'Unknown';
           }
+          if (data['framework'].length > 20) {
+            data['framework'] = data['framework'].substring(0, 20) + '...';
+          }
           return data;
         }
     );

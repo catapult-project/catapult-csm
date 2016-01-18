@@ -86,6 +86,7 @@ class TaskPage(webapp2.RequestHandler):
       config = cloud_config.Get()
 
       if not _is_devserver():
+        logging.info("Updating catapult checkout to: %s" % revision)
         subprocess.call(
             ['git', 'checkout', 'origin/mappersv2'], cwd=config.catapult_path)
         subprocess.call(
@@ -99,6 +100,7 @@ class TaskPage(webapp2.RequestHandler):
             'gce_instance_map_job')
         cwd = config.catapult_path
       else:
+        logging.info("DevServer: Ignoring update step.")
         job_path = os.path.join('perf_insights', 'bin', 'gce_instance_map_job')
         cwd = os.path.abspath(
             os.path.join(os.path.dirname(__file__), '../../../..'))
