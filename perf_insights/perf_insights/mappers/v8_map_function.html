@@ -60,24 +60,32 @@ tr.exportTo('pi.m', function() {
                 data['js'] = curSlice.args['fileName'];
               } else if (curSlice.title === 'v8.callModuleMethod') {
                 data['name'] = curSlice.title;
-                data['js'] = "/callModuleMethod";
+                data['js'] = "/Unknown";
               } else if (curSlice.title === 'FunctionCall') {
                 data['name'] = curSlice.title;
-                data['js'] = "/FunctionCall";
+                data['js'] = "/Unknown";
               }
             }
-
             return data;
           }
+          function _guess_framework_from_js_file(js_file) {
+            var frameworks = {
+              "jquery": ["jquery"],
+              "search": ["search?q="]
+            };
+
+            for (var k in frameworks) {
+              var keywords = frameworks[k];
+              for (var keyword in keywords) {
+                if (js_file.indexOf(keyword) > -1) {
+                  return k;
+                }
+              }
+            }
+            return "Unknown/Uncategorized";
+          }
           var data = _get_parent_data(event);
-          var js_name = data['js'].split('/');
-          data['framework'] = js_name[js_name.length - 1];
-          if (data['framework'] === '') {
-            data['framework'] = 'Unknown';
-          }
-          if (data['framework'].length > 20) {
-            data['framework'] = data['framework'].substring(0, 20) + '...';
-          }
+          data['framework'] = _guess_framework_from_js_file(data['js']);
           return data;
         }
     );
