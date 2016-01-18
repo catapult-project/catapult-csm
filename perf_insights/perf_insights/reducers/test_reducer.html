@@ -17,7 +17,7 @@ tr.exportTo('pi.r', function() {
     for (var i = 0; i < mapResults[key].length; i++) {
       total += mapResults[key][i].value;
     }
-    return {value: total};
+    return [{value: total}];
   }
 
   pi.mre.FunctionRegistry.register(testReduceFunction);
