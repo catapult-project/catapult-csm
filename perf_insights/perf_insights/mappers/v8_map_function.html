@@ -71,15 +71,17 @@ tr.exportTo('pi.m', function() {
           function _guess_framework_from_js_file(js_file) {
             var frameworks = {
               "jquery": ["jquery"],
-              "search": ["search?q="],
-              "adsense": ["pagead2.googlesyndication.com/pagead/"],
+              "google search": ["google.com/search?", "www.google."],
+              "google adsense": ["pagead2.googlesyndication.com/pagead/"],
               "modernizr": ["modernizr"],
               "google analytics": ["google-analytics.com"],
               "easeljs": ["easeljs"],
               "google+": ["apis.google.com/js/client:plusone.js"],
               "facebook": ["connect.facebook.net"],
               "yandex": ["yandex.ru/metrika/"],
-              "doubleclick": [".doubleclick"]
+              "doubleclick": [".doubleclick"],
+              "baidu": ["baidu.com/?"],
+              "twitter": ["twitter.com/?"]
             };
 
             for (var k in frameworks) {

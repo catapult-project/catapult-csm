@@ -118,14 +118,14 @@ found in the LICENSE file.
 
       this.groupByRAILTypeName_ = tr.ui.b.createCheckBox(
           undefined, undefined,
-          'pi.ui.wr.weather_report.groupByRAILTypeName', true,
+          'pi.ui.wr.weather_report.groupByRAILTypeName', false,
           'Group by RAIL Stage',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByRAILTypeName_);
 
       this.groupByUserFriendlyCategory_ = tr.ui.b.createCheckBox(
           undefined, undefined,
-          'pi.ui.wr.weather_report.groupByUserFriendlyCategory', true,
+          'pi.ui.wr.weather_report.groupByUserFriendlyCategory', false,
           'Group by Event Category',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByUserFriendlyCategory_);
@@ -139,14 +139,14 @@ found in the LICENSE file.
 
       this.groupByDomainCategory_ = tr.ui.b.createCheckBox(
           undefined, undefined,
-          'pi.ui.wr.weather_report.groupByDomainCategory', true,
+          'pi.ui.wr.weather_report.groupByDomainCategory', false,
           'Group by Domain Category',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByDomainCategory_);
 
       this.groupByDomain_ = tr.ui.b.createCheckBox(
           undefined, undefined,
-          'pi.ui.wr.weather_report.groupByDomain', true,
+          'pi.ui.wr.weather_report.groupByDomain', false,
           'Group by Domain',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByDomain_);
