@@ -66,9 +66,6 @@ found in the LICENSE file.
         overflow: auto;
       }
     </style>
-<!--     <pre id="table2">
-    </pre>
- -->
     <top-controls></top-controls>
     <content-pane>
       <table-container>
@@ -104,6 +101,13 @@ found in the LICENSE file.
           'selection-changed', this.onSelectionChanged_.bind(this));
 
       var topControls = this.shadowRoot.querySelector('top-controls');
+
+      this.groupByFramework_ = tr.ui.b.createCheckBox(
+          undefined, undefined,
+          'pi.ui.wr.weather_report.groupByFramework', true,
+          'Group by Framework',
+          this.updateContents_.bind(this));
+      topControls.appendChild(this.groupByFramework_);
 
       this.groupByRAILTypeName_ = tr.ui.b.createCheckBox(
           undefined, undefined,
@@ -252,6 +256,12 @@ found in the LICENSE file.
       });
 
       var groupBy = [];
+
+      if (this.groupByFramework_.checked) {
+        groupBy.push(function(datum) {
+          return datum.sliceCostInfo.data['framework'];
+        });
+      }
 
       if (this.groupByRAILTypeName_.checked) {
         groupBy.push(function(datum) {
