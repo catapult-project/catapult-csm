@@ -109,6 +109,13 @@ found in the LICENSE file.
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByFramework_);
 
+      this.groupByJS_ = tr.ui.b.createCheckBox(
+          undefined, undefined,
+          'pi.ui.wr.weather_report.groupByJS', false,
+          'Group by JS',
+          this.updateContents_.bind(this));
+      topControls.appendChild(this.groupByJS_);
+
       this.groupByRAILTypeName_ = tr.ui.b.createCheckBox(
           undefined, undefined,
           'pi.ui.wr.weather_report.groupByRAILTypeName', true,
@@ -259,6 +266,12 @@ found in the LICENSE file.
       if (this.groupByFramework_.checked) {
         groupBy.push(function(datum) {
           return datum.sliceCostInfo.data['framework'];
+        });
+      }
+
+      if (this.groupByJS_.checked) {
+        groupBy.push(function(datum) {
+          return datum.sliceCostInfo.data['js_clean'];
         });
       }
 

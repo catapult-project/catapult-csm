@@ -49,7 +49,7 @@ tr.exportTo('pi.m', function() {
             var curSlice = event;
             var data = {};
             data['name'] = "Unknown";
-            data['js'] = "/Unknown";
+            data['js'] = "Unknown";
             while (curSlice.parentSlice) {
               curSlice = curSlice.parentSlice;
               if (curSlice.title === 'v8.run') {
@@ -60,10 +60,10 @@ tr.exportTo('pi.m', function() {
                 data['js'] = curSlice.args['fileName'];
               } else if (curSlice.title === 'v8.callModuleMethod') {
                 data['name'] = curSlice.title;
-                data['js'] = "/Unknown";
+                data['js'] = "Unknown";
               } else if (curSlice.title === 'FunctionCall') {
                 data['name'] = curSlice.title;
-                data['js'] = "/Unknown";
+                data['js'] = "Unknown";
               }
             }
             return data;
@@ -71,21 +71,40 @@ tr.exportTo('pi.m', function() {
           function _guess_framework_from_js_file(js_file) {
             var frameworks = {
               "jquery": ["jquery"],
-              "search": ["search?q="]
+              "search": ["search?q="],
+              "adsense": ["pagead2.googlesyndication.com/pagead/"],
+              "modernizr": ["modernizr"],
+              "google analytics": ["google-analytics.com"],
+              "easeljs": ["easeljs"],
+              "google+": ["apis.google.com/js/client:plusone.js"],
+              "facebook": ["connect.facebook.net"],
+              "yandex": ["yandex.ru/metrika/"],
+              "doubleclick": [".doubleclick"]
             };
 
             for (var k in frameworks) {
               var keywords = frameworks[k];
-              for (var keyword in keywords) {
-                if (js_file.indexOf(keyword) > -1) {
+              for (var i = 0; i < keywords.length; i++) {
+                if (js_file.indexOf(keywords[i]) > -1) {
                   return k;
                 }
               }
             }
             return "Unknown/Uncategorized";
           }
+          function _cleanup_framework_name(name) {
+            var js_name = name;
+            if (js_name === '') {
+              js_name = 'Unknown';
+            }
+            if (js_name.length > 150) {
+              js_name = js_name.substring(0, 150) + '...';
+            }
+            return js_name;
+          }
           var data = _get_parent_data(event);
           data['framework'] = _guess_framework_from_js_file(data['js']);
+          data['js_clean'] = _cleanup_framework_name(data['js']);
           return data;
         }
     );
