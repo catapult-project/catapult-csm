@@ -140,7 +140,8 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
 
           try:
             cloud_storage.Copy(results['data'], output_name)
-          except cloud_storage.CloudStorageError:
+          except cloud_storage.CloudStorageError as e:
+            print 'Cloud storage error: %s' % str(e)
             return
 
           map_results = ''
