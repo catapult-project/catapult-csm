@@ -38,6 +38,7 @@ tr.exportTo('pi.m', function() {
 
     var threadGrouping = new pi.m.ThreadGrouping();
     threadGrouping.autoInitUsingHelpers(model);
+    var last_known_framework = "Unknown/Uncategorized";
 
     var sliceCosts = pi.m.getSliceCostReport(model, threadGrouping,
                                              railTypeNameByGUID,
@@ -70,38 +71,57 @@ tr.exportTo('pi.m', function() {
           }
           function _guess_framework_from_js_file(js_file) {
             var frameworks = {
+              // Some commone js libs.
               "jquery": ["jquery"],
+              "angular": ["angular"],
+              "underscore": ["underscore"],
+              "respond.js": ["respond.js"],
+              "easeljs": ["easeljs"],
+              "modernizr": ["modernizr"],
+              "cloudflare": ["cloudflare.min.js"],
+              "greensock": ["gsap/"],
+              "mootools": ["mootools"],
+              "zepto": ["zepto."],
+              "webfont": ["webfont.js"],
+
+              // Just dividing these out into common sites.
               "google search": ["google.com/search?", "www.google."],
               "google adsense": ["pagead2.googlesyndication.com/pagead/"],
-              "modernizr": ["modernizr"],
               "google analytics": ["google-analytics.com"],
-              "easeljs": ["easeljs"],
-              "google+": ["apis.google.com/js/client:plusone.js"],
-              "facebook": ["connect.facebook.net"],
-              "yandex": ["yandex.ru/metrika/"],
-              "doubleclick": [".doubleclick"],
-              "baidu": ["baidu.com/"],
-              "bing": ["bing.com/"],
-              "twitter": ["twitter.com/"]
+              "facebook": ["facebook.", "fbcdn."],
+              "craigslist": ["craigslist."],
+              "yandex": ["yandex."],
+              "doubleclick": [".doubleclick", "gpt.js"],
+              "baidu": ["baidu."],
+              "bing": ["bing."],
+              "twitter": ["twitter."],
+              "wish": ["MobileWebsiteCore"],
+              "misc google": ["google."],
+              "misc extensions": ["chrome-extension://", "chrome://"]
             };
 
             for (var k in frameworks) {
               var keywords = frameworks[k];
               for (var i = 0; i < keywords.length; i++) {
                 if (js_file.indexOf(keywords[i]) > -1) {
+                  last_known_framework = k;
                   return k;
                 }
               }
             }
-            return "Unknown/Uncategorized";
+
+            // TODO: This is terrible, find a better way to attribute the
+            // unknown callers to a framework. Ideally we'd actually have
+            // access to data about the script or method that's running.
+            return last_known_framework;
           }
           function _cleanup_framework_name(name) {
             var js_name = name;
             if (js_name === '') {
               js_name = 'Unknown';
             }
-            if (js_name.length > 150) {
-              js_name = js_name.substring(0, 150) + '...';
+            if (js_name.length > 120) {
+              js_name = js_name.substring(0, 120) + '...';
             }
             return js_name;
           }
