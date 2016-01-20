@@ -456,7 +456,12 @@ found in the LICENSE file.
       var urlSet = {};
       brushedBins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
-          urlSet[sourceInfo.sourceURL] = 1;
+          // Because the cloud mapper currently downloads all the traces, the
+          // urls are incorrect.
+          var actual_url = sourceInfo.sourceURL.split('/');
+          actual_url = actual_url[actual_url.length - 1];
+          actual_url = "gs://performance-insights/" + actual_url;
+          urlSet[actual_url] = 1;
         });
       });
       urlSet = Object.keys(urlSet);

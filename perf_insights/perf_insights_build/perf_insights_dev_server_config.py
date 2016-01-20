@@ -78,6 +78,26 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
     runner.Run()
 
 
+class RunDownloadHandler(webapp2.RequestHandler):
+
+  def post(self, *args, **kwargs):  # pylint: disable=unused-argument
+    url = self.request.get('url', 'True')
+
+    output_name = os.path.join(kwargs.pop('_pi_data_dir'), url.split('/')[-1])
+
+    try:
+      print 'Downloading: %s' % url
+      cloud_storage.Copy(url, output_name)
+    except cloud_storage.CloudStorageError:
+      self.response.write(json.dumps({'success': False}))
+      return
+
+    output_name = os.path.join('/perf_insights/test_data', url.split('/')[-1])
+
+    self.response.content_type = 'application/json'
+    self.response.write(json.dumps({'success': True, 'file': output_name}))
+
+
 class RunCloudMapperHandler(webapp2.RequestHandler):
 
   def post(self, *args, **kwargs):  # pylint: disable=unused-argument
@@ -154,7 +174,6 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
           print map_results[:128]
           return
 
-
 class PerfInsightsDevServerConfig(object):
   def __init__(self):
     self.project = perf_insights_project.PerfInsightsProject()
@@ -180,6 +199,12 @@ class PerfInsightsDevServerConfig(object):
             }),
       Route('/perf_insights_examples/run_cloud_mapper',
             RunCloudMapperHandler,
+            defaults={
+              '_pi_data_dir':
+                  os.path.abspath(os.path.expanduser(args.pi_data_dir))
+            }),
+      Route('/perf_insights_examples/download',
+            RunDownloadHandler,
             defaults={
               '_pi_data_dir':
                   os.path.abspath(os.path.expanduser(args.pi_data_dir))
