@@ -19,7 +19,7 @@ tr.exportTo('tr.ui.units', function() {
       return '';
     var config = opt_config || {};
     var ownerDocument = config.ownerDocument || document;
-    var span = ownerDocument.createElement('tr-ui-u-time-stamp-span');
+    var span = ownerDocument.createElement('tr-ui-u-scalar-span');
     span.timestamp = timestamp;
     return span;
   }
@@ -29,7 +29,7 @@ tr.exportTo('tr.ui.units', function() {
   };
 });
 </script>
-
+<!--
 <polymer-element name="tr-ui-u-time-stamp-span"
                  extends="tr-ui-u-scalar-span">
   <script>
@@ -50,3 +50,4 @@ tr.exportTo('tr.ui.units', function() {
   });
   </script>
 </polymer-element>
+ -->

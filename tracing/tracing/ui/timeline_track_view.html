@@ -35,7 +35,7 @@ found in the LICENSE file.
                   BBBB              BB
     Thread2:     CCCCCC                 CCCCC
 -->
-<polymer-element name='tr-ui-timeline-track-view'>
+<dom-module id='tr-ui-timeline-track-view'>
   <template>
     <style>
     :host {
@@ -71,11 +71,14 @@ found in the LICENSE file.
     <tv-ui-b-hotkey-controller id='hotkey_controller'>
     </tv-ui-b-hotkey-controller>
   </template>
-
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: 'tr-ui-timeline-track-view',
+
     ready: function() {
       this.displayTransform_ = new tr.ui.TimelineDisplayTransform();
       this.model_ = undefined;
@@ -1126,4 +1129,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

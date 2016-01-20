@@ -15,8 +15,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/units/time_duration_span.html">
 <link rel="import" href="/tracing/ui/units/time_stamp_span.html">
 
-<polymer-element name="tr-ui-a-single-event-sub-view"
-    extends="tr-ui-a-sub-view">
+<dom-module id="tr-ui-a-single-event-sub-view">
   <template>
     <style>
     :host {
@@ -31,10 +30,23 @@ found in the LICENSE file.
     <tr-ui-b-table id="table">
     </tr-ui-b-table>
   </template>
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-a-single-event-sub-view",
+
+    behaviors: [Catapult.tr_ui_a_sub_view_behavior],
+
+    properties: {
+      isFlow: {
+        type: Boolean,
+        value: false
+      }
+    },
+
     ready: function() {
       this.currentSelection_ = undefined;
       this.$.table.tableColumns = [
@@ -67,7 +79,40 @@ found in the LICENSE file.
       this.updateContents_();
     },
 
-    getEventRows_: function(event) {
+    getFlowEventRows_: function(event) {
+      // TODO(nduca): Figure out if there is a cleaner way to do this.
+
+      var rows = this.getEventRowsHelper_(event);
+      // var rows = this.__proto__.__proto__.getEventRows_(event);
+
+      // Put the ID up top.
+      rows.splice(0, 0, {
+        name: 'ID',
+        value: event.id
+      });
+
+      function createLinkTo(slice) {
+        var linkEl = document.createElement('tr-ui-a-analysis-link');
+        linkEl.setSelectionAndContent(function() {
+            return new tr.model.EventSet(slice);
+        });
+        linkEl.textContent = slice.userFriendlyName;
+        return linkEl;
+      }
+
+      rows.push({
+        name: 'From',
+        value: createLinkTo(event.startSlice)
+      });
+      rows.push({
+        name: 'To',
+        value: createLinkTo(event.endSlice)
+      });
+      return rows;
+    },
+
+    getEventRowsHelper_: function(event) {
+
       var rows = [];
 
       if (event.error)
@@ -88,34 +133,34 @@ found in the LICENSE file.
       if (event.name)
         rows.push({ name: 'Name', value: event.name });
 
-      var startEl = document.createElement('tr-ui-u-time-stamp-span');
+      var startEl = document.createElement('tr-ui-u-scalar-span');
       startEl.timestamp = event.start;
       rows.push({ name: 'Start', value: startEl });
 
       if (event.duration) {
         var wallDurationEl = document.createElement(
-            'tr-ui-u-time-duration-span');
+            'tr-ui-u-scalar-span');
         wallDurationEl.duration = event.duration;
         rows.push({ name: 'Wall Duration', value: wallDurationEl });
       }
 
       if (event.cpuDuration) {
         var cpuDurationEl = document.createElement(
-            'tr-ui-u-time-duration-span');
+            'tr-ui-u-scalar-span');
         cpuDurationEl.duration = event.cpuDuration;
         rows.push({ name: 'CPU Duration', value: cpuDurationEl });
       }
 
       if (event.subSlices !== undefined && event.subSlices.length !== 0) {
         if (event.selfTime) {
-          var selfTimeEl = document.createElement('tr-ui-u-time-duration-span');
+          var selfTimeEl = document.createElement('tr-ui-u-scalar-span');
           selfTimeEl.duration = event.selfTime;
           rows.push({ name: 'Self Time', value: selfTimeEl });
         }
 
         if (event.cpuSelfTime) {
           var cpuSelfTimeEl = document.createElement(
-              'tr-ui-u-time-duration-span');
+              'tr-ui-u-scalar-span');
           cpuSelfTimeEl.duration = event.cpuSelfTime;
           if (event.cpuSelfTime > event.selfTime) {
             cpuSelfTimeEl.warning =
@@ -131,7 +176,7 @@ found in the LICENSE file.
 
       if (event.durationInUserTime) {
         var durationInUserTimeEl = document.createElement(
-            'tr-ui-u-time-duration-span');
+            'tr-ui-u-scalar-span');
         durationInUserTimeEl.duration = event.durationInUserTime;
         rows.push({ name: 'Duration (U)', value: durationInUserTimeEl });
       }
@@ -207,6 +252,14 @@ found in the LICENSE file.
       return rows;
     },
 
+    getEventRows_: function(event) {
+
+      if (this.isFlow)
+        return this.getFlowEventRows_(event);
+
+      return this.getEventRowsHelper_(event);
+    },
+
     addArgsToRows_: function(rows, args) {
       var n = 0;
       for (var argName in args) {
@@ -249,4 +302,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

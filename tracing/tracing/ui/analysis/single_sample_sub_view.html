@@ -10,8 +10,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/analysis/stack_frame.html">
 <link rel="import" href="/tracing/ui/units/time_stamp_span.html">
 
-<polymer-element name="tr-ui-a-single-sample-sub-view"
-    extends="tr-ui-a-sub-view">
+<dom-module id="tr-ui-a-single-sample-sub-view">
   <template>
     <style>
     :host {
@@ -20,10 +19,16 @@ found in the LICENSE file.
     </style>
     <tr-ui-b-table id="content"></tr-ui-b-table>
   </template>
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-a-single-sample-sub-view",
+
+    behaviors: [Catapult.tr_ui_a_sub_view_behavior],
+
     created: function() {
       this.currentSelection_ = undefined;
     },
@@ -83,4 +88,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

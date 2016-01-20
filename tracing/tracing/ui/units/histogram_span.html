@@ -11,7 +11,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/bar_chart.html">
 <link rel="import" href="/tracing/ui/units/scalar_span.html">
 
-<polymer-element name="tr-ui-u-histogram-span">
+<dom-module id="tr-ui-u-histogram-span">
   <template>
     <style>
       :host {
@@ -41,10 +41,14 @@ found in the LICENSE file.
     </div>
     <div id="container"></div>
   </template>
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-u-histogram-span",
+
     created: function() {
       this.histogram_ = undefined;
       this.chart_ = new tr.ui.b.BarChart();
@@ -187,4 +191,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

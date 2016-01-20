@@ -24,21 +24,27 @@ tr.exportTo('tr.ui.units', function() {
   }
 
   tr.b.u.Units.addEventListener('display-mode-changed', function(e) {
-    var subclassNames = tr.ui.b.getPolymerElementsThatSubclass(
-        'tr-ui-u-scalar-span');
-    var isSubclass = {};
-    subclassNames.forEach(function(n) {
-      isSubclass[n.toUpperCase()] = true;
-    });
+    // Can't do this subclass dependency, and subclasses
+    // have been eliminated, so querySelectorAll works
 
-    var m = tr.b.findDeepElementsMatchingPredicate(
-        document.body,
-        function(el) {
-         return isSubclass[el.tagName];
-        });
-    m.forEach(function(el) {
-      el.updateContent_();
-    });
+    var scalarSpans = document.querySelectorAll('tr-ui-u-scalar-span');
+    for (var i=0; i< scalarSpans.length; i++)
+      scalarSpans[i].updateContent_();
+    // var subclassNames = tr.ui.b.getPolymerElementsThatSubclass(
+    //     'tr-ui-u-scalar-span');
+    // var isSubclass = {};
+    // subclassNames.forEach(function(n) {
+    //   isSubclass[n.toUpperCase()] = true;
+    // });
+
+    // var m = tr.b.findDeepElementsMatchingPredicate(
+    //     document.body,
+    //     function(el) {
+    //      return isSubclass[el.tagName];
+    //     });
+    // m.forEach(function(el) {
+    //   el.updateContent_();
+    // });
   });
 
   return {
@@ -47,7 +53,7 @@ tr.exportTo('tr.ui.units', function() {
 });
 </script>
 
-<polymer-element name="tr-ui-u-scalar-span">
+<dom-module id="tr-ui-u-scalar-span">
   <template>
     <style>
     :host {
@@ -79,10 +85,14 @@ tr.exportTo('tr.ui.units', function() {
     <span id="content"></span>
     <span id="warning" style="display:none">&#9888;</span>
   </template>
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-u-scalar-span",
+
     ready: function() {
       this.value_ = undefined;
       this.unit_ = undefined;
@@ -198,7 +208,32 @@ tr.exportTo('tr.ui.units', function() {
         warningEl.title = '';
         warningEl.style.display = 'none';
       }
+    },
+
+    // tr-ui-u-time-stamp-span property
+    get timestamp() {
+      return this.value;
+    },
+
+    set timestamp(timestamp) {
+      if (timestamp instanceof tr.b.u.TimeStamp) {
+        this.value = timestamp;
+        return;
+      }
+      this.setValueAndUnit(timestamp, tr.b.u.Units.timeStampInMs);
+    },
+
+    // tr-ui-u-time-duration-span property
+    get duration() {
+      return this.value;
+    },
+
+    set duration(duration) {
+      if (duration instanceof tr.b.u.TimeDuration) {
+        this.value = duration;
+        return;
+      }
+      this.setValueAndUnit(duration, tr.b.u.Units.timeDurationInMs);
     }
   });
   </script>
-</polymer-element>

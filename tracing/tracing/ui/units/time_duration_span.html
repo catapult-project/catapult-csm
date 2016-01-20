@@ -23,7 +23,7 @@ tr.exportTo('tr.ui.units', function() {
       return '';
     var config = opt_config || {};
     var ownerDocument = config.ownerDocument || document;
-    var span = ownerDocument.createElement('tr-ui-u-time-duration-span');
+    var span = ownerDocument.createElement('tr-ui-u-scalar-span');
     span.setValueAndUnit(duration, tr.b.u.Units.timeDurationInMs);
     if (config.total)
       span.percentage = duration / config.total;
@@ -40,7 +40,7 @@ tr.exportTo('tr.ui.units', function() {
 });
 </script>
 
-<polymer-element name="tr-ui-u-time-duration-span"
+<!-- <polymer-element name="tr-ui-u-time-duration-span"
                  extends="tr-ui-u-scalar-span">
   <script>
   'use strict';
@@ -60,3 +60,4 @@ tr.exportTo('tr.ui.units', function() {
   });
   </script>
 </polymer-element>
+ -->

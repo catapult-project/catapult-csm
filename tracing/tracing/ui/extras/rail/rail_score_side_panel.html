@@ -15,8 +15,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/side_panel/side_panel.html">
 <link rel="import" href="/tracing/ui/units/time_duration_span.html">
 
-<polymer-element name='tr-ui-e-rail-rail-score-side-panel'
-    extends='tr-ui-side-panel'>
+<dom-module id='tr-ui-e-rail-rail-score-side-panel'>
   <template>
     <style>
     :host {
@@ -53,7 +52,7 @@ found in the LICENSE file.
     </div>
     <button id="test">Create Test</button>
   </template>
-</polymer-element>
+</dom-module>
 
 <script>
 'use strict';
@@ -71,7 +70,7 @@ found in the LICENSE file.
     if (cpuRatio === undefined)
       return;
 
-    var cpuMsSpan = document.createElement('tr-ui-u-time-duration-span');
+    var cpuMsSpan = document.createElement('tr-ui-u-scalar-span');
     // There will be some text after the cpuMsSpan, that should be on the same
     // line if it fits. This "span" has display: block for its sparkline... so I
     // guess I'll set it inline here?
@@ -84,7 +83,13 @@ found in the LICENSE file.
     link.appendChild(document.createTextNode(cpuString));
   }
 
-  Polymer('tr-ui-e-rail-rail-score-side-panel', {
+  Polymer({
+
+    is: 'tr-ui-e-rail-rail-score-side-panel',
+
+    behaviors: [Catapult.tr_ui_side_panel],
+
+
     ready: function() {
       this.rangeOfInterest_ = new tr.b.Range();
       this.model_ = undefined;

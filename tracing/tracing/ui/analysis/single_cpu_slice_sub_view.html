@@ -12,8 +12,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/units/time_duration_span.html">
 <link rel="import" href="/tracing/ui/units/time_stamp_span.html">
 
-<polymer-element name="tr-ui-a-single-cpu-slice-sub-view"
-    extends="tr-ui-a-sub-view">
+<dom-module id="tr-ui-a-single-cpu-slice-sub-view">
   <template>
     <style>
     table {
@@ -55,15 +54,15 @@ found in the LICENSE file.
       <tr>
         <td>Start:</td>
         <td>
-          <tr-ui-u-time-stamp-span id="start">
-          </tr-ui-u-time-stamp-span>
+          <tr-ui-u-scalar-span id="start">
+          </tr-ui-u-scalar-span>
         </td>
       </tr>
       <tr>
         <td>Duration:</td>
         <td>
-          <tr-ui-u-time-duration-span id="duration">
-          </tr-ui-u-time-duration-span>
+          <tr-ui-u-scalar-span id="duration">
+          </tr-ui-u-scalar-span>
         </td>
       </tr>
       <tr>
@@ -78,10 +77,15 @@ found in the LICENSE file.
       </tr>
     </table>
   </template>
-
+</dom-module>
   <script>
   'use strict';
   Polymer({
+
+    is: "tr-ui-a-single-cpu-slice-sub-view",
+
+    behaviors: [Catapult.tr_ui_a_sub_view_behavior],
+
     created: function() {
       this.currentSelection_ = undefined;
     },
@@ -135,4 +139,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

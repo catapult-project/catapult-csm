@@ -8,6 +8,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/base.html">
 
 <polymer-element name="tr-ui-e-rail-ir-verifier-row">
+<dom-module id="tr-ui-e-rail-ir-verifier-row">
   <template>
     <style>
     :host {
@@ -26,6 +27,7 @@ found in the LICENSE file.
     <td id="label"></td>
     <td><canvas id="canvas"></td>
   </template>
+</dom-module>
   <script>
   'use strict';
   (function() {
@@ -66,6 +68,9 @@ found in the LICENSE file.
     }
 
     Polymer({
+
+      is: "tr-ui-e-rail-ir-verifier-row",
+
       created: function() {
         this.events_ = undefined;
         this.bounds_ = undefined;
@@ -120,4 +125,3 @@ found in the LICENSE file.
     });
   })();
   </script>
-</polymer-element>

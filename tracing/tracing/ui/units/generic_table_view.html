@@ -11,7 +11,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/analysis/generic_object_view.html">
 <link rel="import" href="/tracing/ui/units/array_of_numbers_span.html">
 
-<polymer-element name="tr-ui-u-generic-table-view">
+<dom-module id="tr-ui-u-generic-table-view">
   <template>
     <style>
     :host {
@@ -24,7 +24,7 @@ found in the LICENSE file.
     </style>
     <tr-ui-b-table id="table"></tr-ui-b-table>
   </template>
-</polymer-element>
+</dom-module>
 
 <script>
 'use strict';
@@ -145,7 +145,10 @@ tr.exportTo('tr.ui.units', function() {
     }
   };
 
-  Polymer('tr-ui-u-generic-table-view', {
+  Polymer({
+
+    is: "tr-ui-u-generic-table-view",
+
     created: function() {
       this.items_ = undefined;
       this.importantColumNames_ = [];

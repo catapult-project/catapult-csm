@@ -7,7 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/base/base.html">
 
-<polymer-element name="tr-ui-e-rail-rail-score-span">
+<dom-module id="tr-ui-e-rail-rail-score-span">
   <template>
   <style>
     :host {
@@ -18,10 +18,14 @@ found in the LICENSE file.
     <span>RAIL Score: </span><span id="score"></span>
   </span>
   </template>
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-e-rail-rail-score-span",
+
     created: function() {
       this.railScore_ = undefined;
     },
@@ -56,4 +60,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>
