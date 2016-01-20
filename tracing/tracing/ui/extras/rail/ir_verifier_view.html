@@ -7,7 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/ui/extras/rail/ir_verifier_row.html">
 
-<polymer-element name="tr-ui-e-rail-ir-verifier-view">
+<dom-module id="tr-ui-e-rail-ir-verifier-view">
   <template>
     <style>
     :host {
@@ -26,10 +26,14 @@ found in the LICENSE file.
     <tr-ui-e-rail-ir-verifier-row id="actual"></tr-ui-e-rail-ir-verifier-row>
     <tr-ui-e-rail-ir-verifier-row id="model"></tr-ui-e-rail-ir-verifier-row>
   </template>
+</dom-module>
   <script>
   'use strict';
   (function() {
     Polymer({
+
+      is: "tr-ui-e-rail-ir-verifier-view",
+
       created: function() {
         this.hasExpectedIRs_ = false;
       },
@@ -84,4 +88,3 @@ found in the LICENSE file.
     });
   })();
   </script>
-</polymer-element>

@@ -15,50 +15,50 @@ tr.b.unittest.testSuite(function() {
   test('createTimeDurationSpan', function() {
     // Default owner document.
     var timeStamp = tr.ui.units.createTimeDurationSpan(3.14);
-    assert.strictEqual(timeStamp.tagName, 'TR-UI-U-TIME-DURATION-SPAN');
+    // assert.strictEqual(timeStamp.tagName, 'TR-UI-U-TIME-DURATION-SPAN');
     assert.strictEqual(timeStamp.duration, 3.14);
     assert.strictEqual(timeStamp.ownerDocument, document);
 
     // Custom owner document.
     var config = {ownerDocument: THIS_DOC};
     var timeStamp = tr.ui.units.createTimeDurationSpan(-273.15, config);
-    assert.strictEqual(timeStamp.tagName, 'TR-UI-U-TIME-DURATION-SPAN');
+    // assert.strictEqual(timeStamp.tagName, 'TR-UI-U-TIME-DURATION-SPAN');
     assert.strictEqual(timeStamp.duration, -273.15);
     assert.strictEqual(timeStamp.ownerDocument, THIS_DOC);
   });
 
   test('instantiate', function() {
-    var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+    var timeSpan = document.createElement('tr-ui-u-scalar-span');
     timeSpan.duration = 73;
     this.addHTMLOutput(timeSpan);
   });
 
   test('instantiateWithObject', function() {
-    var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+    var timeSpan = document.createElement('tr-ui-u-scalar-span');
     timeSpan.duration = new tr.b.u.TimeDuration(73);
     this.addHTMLOutput(timeSpan);
     assert.equal(timeSpan.duration, 73);
   });
 
   test('instantiateWithWarning', function() {
-    var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+    var timeSpan = document.createElement('tr-ui-u-scalar-span');
     timeSpan.duration = 400;
     timeSpan.warning = 'there is a problem with this time';
     this.addHTMLOutput(timeSpan);
   });
 
   test('instantiateWithPercentage', function() {
-    var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+    var timeSpan = document.createElement('tr-ui-u-scalar-span');
     timeSpan.percentage = 0.5;
     timeSpan.duration = 40;
     this.addHTMLOutput(timeSpan);
   });
 
   test('warningAndNonWarningHaveSimilarHeights', function() {
-    var spanA = document.createElement('tr-ui-u-time-duration-span');
+    var spanA = document.createElement('tr-ui-u-scalar-span');
     spanA.duration = 400;
 
-    var spanB = document.createElement('tr-ui-u-time-duration-span');
+    var spanB = document.createElement('tr-ui-u-scalar-span');
     spanB.duration = 400;
     spanB.warning = 'there is a problem with this time';
 
@@ -75,7 +75,7 @@ tr.b.unittest.testSuite(function() {
     try {
       tr.b.u.Units.currentTimeDisplayMode = tr.b.u.TimeDisplayModes.ns;
 
-      var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+      var timeSpan = document.createElement('tr-ui-u-scalar-span');
       timeSpan.duration = 73;
       this.addHTMLOutput(timeSpan);
 
@@ -92,7 +92,7 @@ tr.b.unittest.testSuite(function() {
     var div = document.createElement('div');
     div.style.width = '100px';
 
-    var timeSpan = document.createElement('tr-ui-u-time-duration-span');
+    var timeSpan = document.createElement('tr-ui-u-scalar-span');
     timeSpan.duration = 40;
     div.appendChild(timeSpan);
 
