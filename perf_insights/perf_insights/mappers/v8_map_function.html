@@ -38,7 +38,7 @@ tr.exportTo('pi.m', function() {
 
     var threadGrouping = new pi.m.ThreadGrouping();
     threadGrouping.autoInitUsingHelpers(model);
-    var last_known_framework = "Unknown/Uncategorized";
+    var last_known_framework = ["Unknown/Uncategorized"];
 
     var sliceCosts = pi.m.getSliceCostReport(model, threadGrouping,
                                              railTypeNameByGUID,
@@ -56,15 +56,19 @@ tr.exportTo('pi.m', function() {
               if (curSlice.title === 'v8.run') {
                 data['name'] = curSlice.title;
                 data['js'] = curSlice.args['fileName'];
+                return data;
               } else if (curSlice.title === 'v8.compile') {
                 data['name'] = curSlice.title;
                 data['js'] = curSlice.args['fileName'];
+                return data;
               } else if (curSlice.title === 'v8.callModuleMethod') {
                 data['name'] = curSlice.title;
-                data['js'] = "Unknown";
               } else if (curSlice.title === 'FunctionCall') {
                 data['name'] = curSlice.title;
-                data['js'] = "Unknown";
+                var scriptName = curSlice.args['data']['scriptName'];
+                if (scriptName.indexOf('http') != -1) {
+                  data['js'] = scriptName;
+                }
               }
             }
             return data;
@@ -83,20 +87,27 @@ tr.exportTo('pi.m', function() {
               "mootools": ["mootools"],
               "zepto": ["zepto."],
               "webfont": ["webfont.js"],
+              "closure": ["closure/"],
+              "ektron": ["ektron"],
 
               // Just dividing these out into common sites.
               "google search": ["google.com/search?", "www.google."],
               "google adsense": ["pagead2.googlesyndication.com/pagead/"],
               "google analytics": ["google-analytics.com"],
+              "adobe": ["adobe."],
               "facebook": ["facebook.", "fbcdn."],
+              "outlook": ["outlook.", ".live."],
               "craigslist": ["craigslist."],
+              "amazon": ["amazon."],
               "yandex": ["yandex."],
-              "doubleclick": [".doubleclick", "gpt.js"],
+              "scene7": ["s7sdk/"],
+              "doubleclick": [
+                  ".doubleclick", "gpt.js", "gtm.js", ".googletagservices."],
               "baidu": ["baidu."],
               "bing": ["bing."],
               "twitter": ["twitter."],
               "wish": ["MobileWebsiteCore"],
-              "misc google": ["google."],
+              "misc google": ["google.", "googleapis."],
               "misc extensions": ["chrome-extension://", "chrome://"]
             };
 
@@ -104,7 +115,7 @@ tr.exportTo('pi.m', function() {
               var keywords = frameworks[k];
               for (var i = 0; i < keywords.length; i++) {
                 if (js_file.indexOf(keywords[i]) > -1) {
-                  last_known_framework = k;
+                  last_known_framework[0] = k;
                   return k;
                 }
               }
@@ -113,7 +124,7 @@ tr.exportTo('pi.m', function() {
             // TODO: This is terrible, find a better way to attribute the
             // unknown callers to a framework. Ideally we'd actually have
             // access to data about the script or method that's running.
-            return last_known_framework;
+            return last_known_framework[0];
           }
           function _cleanup_framework_name(name) {
             var js_name = name;
