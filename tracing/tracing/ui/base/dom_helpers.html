@@ -292,6 +292,7 @@ tr.exportTo('tr.ui.b', function() {
     var el = document.createElement('input');
     el.type = 'text';
     function onChange(e) {
+      tr.b.Settings.set(settingsKey, el.value);
       targetEl[targetElProperty] = el.value;
     }
     el.addEventListener('input', onChange);
