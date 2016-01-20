@@ -8,8 +8,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/analysis/analysis_sub_view.html">
 <link rel="import" href="/tracing/ui/analysis/power_sample_table.html">
 
-<polymer-element name="tr-ui-a-single-power-sample-sub-view"
-    extends="tr-ui-a-sub-view">
+<dom-module id="tr-ui-a-single-power-sample-sub-view">
   <template>
     <style>
     :host { display: block; }
@@ -17,11 +16,16 @@ found in the LICENSE file.
     <tr-ui-a-power-sample-table id="samplesTable">
     </tr-ui-a-power-sample-table>
   </template>
-
+</dom-module>
   <script>
   'use strict';
 
   Polymer({
+
+    is: "tr-ui-a-single-power-sample-sub-view",
+
+    behaviors: [Catapult.tr_ui_a_sub_view_behavior],
+
     ready: function() {
       this.currentSelection_ = undefined;
     },
@@ -40,4 +44,3 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>

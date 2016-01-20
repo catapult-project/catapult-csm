@@ -9,10 +9,11 @@ found in the LICENSE file.
 
 <polymer-element name='tr-ui-side-panel'>
   <script>
+(function() {
   'use strict';
-  Polymer({
-    ready: function() {
-    },
+
+  /** @behavior tr_ui_side_panel */
+  var tr_ui_side_panel = {
 
     get rangeOfInterest() {
       throw new Error('Not implemented');
@@ -41,6 +42,12 @@ found in the LICENSE file.
     supportsModel: function(m) {
       throw new Error('Not implemented');
     }
-  });
+  };
+
+  if (!window.Catapult)
+    window.Catapult = {};
+  window.Catapult.tr_ui_side_panel = tr_ui_side_panel;
+
+})();
   </script>
 </polymer-element>
