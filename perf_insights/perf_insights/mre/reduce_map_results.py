@@ -36,7 +36,6 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
       sys.stderr.write(res.stdout)
     except Exception:
       pass
-    print res.stderr
     job_results.AddFailure(failure.Failure(
         job, job.map_function_handle, None, 'Error',
         'vinn runtime error while reducing results.', 'Unknown stack'))
@@ -48,6 +47,10 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
       found_type = m.group(1)
       found_dict = json.loads(m.group(2))
       if found_type == 'FAILURE':
+        try:
+          sys.stderr.write(res.stdout)
+        except Exception:
+          pass
         job_results.AddFailure(failure.Failure(
             job, job.map_function_handle, None, 'Error',
             'vinn runtime error while reducing results.', 'Unknown stack'))
