@@ -383,12 +383,16 @@ found in the LICENSE file.
         {
           label: 'Self time',
           value: 'selfTime',
-          func: function(datum) { return datum.sliceCostInfo.selfTime; }
+          func: function(datum) {
+            return datum.sliceCostInfo.selfTimeHistogram;
+          }
         },
         {
           label: 'CPU self time',
           value: 'cpuSelfTime',
-          func: function(datum) { return datum.sliceCostInfo.cpuSelfTime; }
+          func: function(datum) {
+            return datum.sliceCostInfo.cpuSelfTimeHistogram;
+          }
         },
         {
           label: 'JS time',
@@ -441,7 +445,7 @@ found in the LICENSE file.
           100);
       this.$.table.selectedTableRow.data.forEach(function(datum) {
         var value = func(datum);
-        histogram.add(value, datum.runInfo);
+        histogram.addHistogram(tr.b.u.Histogram.fromDict(value));
       });
 
       var histogramSpan = this.shadowRoot.querySelector('#costs-histogram');
