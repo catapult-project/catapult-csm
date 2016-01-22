@@ -11,13 +11,65 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('pi.r', function() {
+  function ScriptCostInfo() {
+    this.threadGroup = undefined;
+    this.railTypeName = undefined;
+    this.title = undefined;
+    this.scriptURL = undefined;
+    this.scriptURLClean = undefined;
+    this.framework = undefined;
+    this.userFriendlyCategory = undefined;
+
+    this.selfTime = 0;
+    this.cpuSelfTime = 0;
+
+    this.traceURLs = {};
+    this.sliceCount = 1;
+  }
+
+  ScriptCostInfo.asReduceTarget = function(firstValue) {
+    var sliceCostInfo = new ScriptCostInfo();
+    sliceCostInfo.threadGroup = firstValue.threadGroup;
+    sliceCostInfo.railTypeName = firstValue.railTypeName;
+    sliceCostInfo.title = firstValue.title;
+    sliceCostInfo.scriptURL = firstValue.scriptURL;
+    sliceCostInfo.scriptURLClean = firstValue.scriptURLClean;
+    sliceCostInfo.framework = firstValue.framework;
+    sliceCostInfo.userFriendlyCategory = firstValue.userFriendlyCategory;
+    sliceCostInfo.traceURLs = [firstValue.traceURL];
+    return sliceCostInfo;
+  }
+
+  ScriptCostInfo.prototype = {
+    push: function(threadSlice) {
+      if (threadSlice.selfTime !== undefined)
+        this.selfTime += threadSlice.selfTime;
+      if (threadSlice.cpuSelfTime !== undefined)
+        this.cpuSelfTime += threadSlice.cpuSelfTime;
+
+      if (threadSlice.traceURL !== undefined &&
+          !threadSlice.traceURL in this.traceURLs) {
+        this.traceURLs[threadSlice.traceURL] = true;
+      }
+
+      this.sliceCount += 1;
+    }
+  };
 
   function v8ReportReduceFunction(key, mapResults) {
-    var comboResults = [];
-    tr.b.iterItems(mapResults[key], function(key, result) {
-      comboResults.push(result)
+    var reduceResults = {};
+    tr.b.iterItems(mapResults[key], function(jobKey, jobResult) {
+      tr.b.iterItems(jobResult, function(undefined, mapResult) {
+        var reducingTarget = reduceResults[mapResult.key];
+        if (!reducingTarget) {
+          reducingTarget = ScriptCostInfo.asReduceTarget(mapResult.value);
+          reduceResults[mapResult.key] = reducingTarget;
+        }
+        reducingTarget.push(mapResult.value);
+      });
     });
-    return comboResults;
+
+    return reduceResults;
   }
 
   pi.mre.FunctionRegistry.register(v8ReportReduceFunction);

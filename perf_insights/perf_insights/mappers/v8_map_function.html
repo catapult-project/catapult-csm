@@ -22,60 +22,55 @@ found in the LICENSE file.
 tr.exportTo('pi.m', function() {
   function v8ReportMapFunction(results, model) {
     var allIRs = [];
-    var irDurations = {};
     model.interactionRecords.forEach(function(ir) {
       if (!(ir instanceof tr.e.rail.RAILInteractionRecord))
         return;
       allIRs.push(ir);
       var railName = tr.e.rail.userFriendlyRailTypeName(ir.railTypeName);
-
-      if (irDurations[railName] === undefined)
-        irDurations[railName] = 0;
-
-      irDurations[railName] += ir.rawCpuMs;
     });
+
     var railTypeNameByGUID = getRAILTypeNameForEventsByGUID(model, allIRs);
 
     var threadGrouping = new pi.m.ThreadGrouping();
     threadGrouping.autoInitUsingHelpers(model);
     var last_known_framework = ["Unknown/Uncategorized"];
 
-    var sliceCosts = pi.m.getSliceCostReport(model, threadGrouping,
-                                             railTypeNameByGUID,
-        function(event) {
-          return event.title.startsWith('V8.');
-        },
-        function(event) {
-          function _get_parent_data(event) {
-            var curSlice = event;
-            var data = {};
-            data['name'] = "Unknown";
-            data['js'] = "Unknown";
-            while (curSlice.parentSlice) {
-              curSlice = curSlice.parentSlice;
-              if (curSlice.title === 'v8.run') {
-                data['name'] = curSlice.title;
-                data['js'] = curSlice.args['fileName'];
-                return data;
-              } else if (curSlice.title === 'v8.compile') {
-                data['name'] = curSlice.title;
-                data['js'] = curSlice.args['fileName'];
-                return data;
-              } else if (curSlice.title === 'v8.callModuleMethod') {
-                data['name'] = curSlice.title;
-              } else if (curSlice.title === 'FunctionCall') {
-                data['name'] = curSlice.title;
+    var sliceCosts = [];
+
+    model.iterateAllEvents(function(event) {
+      if (!(event instanceof tr.model.ThreadSlice))
+        return;
+
+      if (!event.title.startsWith('V8.'))
+        return;
+
+        function _get_parent_data(event) {
+          var curSlice = event;
+
+          var data = {};
+          data['js'] = "Unknown";
+          while (curSlice) {
+            if (curSlice.title === 'v8.run') {
+              data['js'] = curSlice.args['fileName'];
+            } else if (curSlice.title === 'v8.compile') {
+              data['js'] = curSlice.args['fileName'];
+            } else if (curSlice.title === 'v8.callModuleMethod') {
+              data['js'] = "Unknown";
+            } else if (curSlice.title === 'FunctionCall') {
+              //console.log('Data: ' + curSlice.args.data.scriptName + ', old: ' + data['js']);
                 var scriptName = curSlice.args['data']['scriptName'];
                 if (scriptName.indexOf('http') != -1) {
                   data['js'] = scriptName;
                 }
-              }
             }
-            return data;
+            curSlice = curSlice.parentSlice;
           }
-          function _guess_framework_from_js_file(js_file) {
-            var frameworks = {
-              // Some commone js libs.
+          return data;
+        }
+
+        function _guess_framework_from_js_file(js_file) {
+          var frameworks = {
+            // Some commone js libs.
               "jquery": ["jquery"],
               "angular": ["angular"],
               "underscore": ["underscore"],
@@ -109,47 +104,70 @@ tr.exportTo('pi.m', function() {
               "wish": ["MobileWebsiteCore"],
               "misc google": ["google.", "googleapis."],
               "misc extensions": ["chrome-extension://", "chrome://"]
-            };
+          };
 
-            for (var k in frameworks) {
-              var keywords = frameworks[k];
-              for (var i = 0; i < keywords.length; i++) {
-                if (js_file.indexOf(keywords[i]) > -1) {
-                  last_known_framework[0] = k;
-                  return k;
-                }
+          for (var k in frameworks) {
+            var keywords = frameworks[k];
+            for (var i = 0; i < keywords.length; i++) {
+              if (js_file.indexOf(keywords[i]) > -1) {
+                //last_known_framework[0] = k;
+                return k;
               }
             }
+          }
 
-            // TODO: This is terrible, find a better way to attribute the
-            // unknown callers to a framework. Ideally we'd actually have
-            // access to data about the script or method that's running.
-            return last_known_framework[0];
-          }
-          function _cleanup_framework_name(name) {
-            var js_name = name;
-            if (js_name === '') {
-              js_name = 'Unknown';
-            }
-            if (js_name.length > 120) {
-              js_name = js_name.substring(0, 120) + '...';
-            }
-            return js_name;
-          }
-          var data = _get_parent_data(event);
-          data['framework'] = _guess_framework_from_js_file(data['js']);
-          data['js_clean'] = _cleanup_framework_name(data['js']);
-          return data;
+          // TODO: This is terrible, find a better way to attribute the
+          // unknown callers to a framework. Ideally we'd actually have
+          // access to data about the script or method that's running.
+          return last_known_framework[0];
         }
-    );
 
-    var wr = {
-      irDurations: irDurations,
-      sliceCosts: sliceCosts,
-      sourceURL: model.sourceURLThatCreatedThisTrace
-    };
+        function _cleanup_framework_name(name) {
+          var js_name = name;
+          if (js_name === '') {
+            js_name = 'Unknown';
+          }
+          if (js_name.length > 120) {
+            js_name = js_name.substring(0, 120) + '...';
+          }
+          return js_name;
+        }
 
-    results.addResult('wr', wr);
+        var ufc = model.getUserFriendlyCategoryFromEvent(event);
+
+        var data = _get_parent_data(event);
+        data.framework = _guess_framework_from_js_file(data.js);
+        var scriptURLClean = _cleanup_framework_name(data.js);
+
+        //console.log('After: ' + scriptURLClean + ', for slice title: ' + event.title);
+
+        var sliceData = {
+          threadGroup: threadGrouping.getGroupNameForEvent(event),
+          railTypeName: railTypeNameByGUID[event.guid],
+          userFriendlyCategory: ufc || 'other',
+          title: tr.e.chrome.SliceTitleFixer.fromEvent(event),
+          selfTime: event.selfTime,
+          cpuSelfTime: event.cpuSelfTime,
+          scriptURL: data.js,
+          scriptURLClean: scriptURLClean,
+          framework: data.framework,
+          traceURL: model.sourceURLThatCreatedThisTrace
+        }
+
+        var key = sliceData.threadGroup + '/' +
+                  sliceData.railTypeName + '/' +
+                  sliceData.scriptURLClean + '/' +
+                  sliceData.title;
+
+        var newElement = {
+          key: key,
+          value: sliceData
+        }
+        sliceCosts.push(newElement);
+    });
+
+    //console.log(JSON.stringify(sliceCosts, undefined, 2));
+    results.addResult('wr', sliceCosts);
   }
 
   function getRAILTypeNameForEventsByGUID(model, railIRs) {

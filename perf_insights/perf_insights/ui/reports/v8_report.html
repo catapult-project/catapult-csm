@@ -251,13 +251,12 @@ found in the LICENSE file.
           return;
 
         result.forEach(function(currentResult) {
-          currentResult.sliceCosts.forEach(function(item) {
-            var sliceCostInfo = pi.m.SliceCostInfo.fromDict(item);
+          tr.b.iterItems(currentResult, function(item_key, item) {
             allSliceCosts.push({
               runInfo: currentResult,
-              sliceCostInfo: sliceCostInfo
+              sliceCostInfo: item
             });
-          });          
+          });
         });
       });
 
@@ -265,13 +264,13 @@ found in the LICENSE file.
 
       if (this.groupByFramework_.checked) {
         groupBy.push(function(datum) {
-          return datum.sliceCostInfo.data['framework'];
+          return datum.sliceCostInfo.framework;
         });
       }
 
       if (this.groupByJS_.checked) {
         groupBy.push(function(datum) {
-          return datum.sliceCostInfo.data['js_clean'];
+          return datum.sliceCostInfo.scriptURLClean;
         });
       }
 

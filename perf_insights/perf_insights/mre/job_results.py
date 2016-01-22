@@ -44,7 +44,7 @@ class JobResults(object):
   def AddResult(self, key, value):
     if not key in self._reduce_results:
       self._reduce_results[key] = []
-    self._reduce_results[key].extend(value)
+    self._reduce_results[key].append(value)
 
   def AddFailure(self, failure):
     self._failures.append(failure)

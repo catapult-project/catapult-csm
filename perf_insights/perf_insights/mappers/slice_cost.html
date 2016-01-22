@@ -163,6 +163,8 @@ tr.exportTo('pi.m', function() {
       var key = sliceCostInfo.threadGroup + '/' +
                 sliceCostInfo.railTypeName + '/' +
                 sliceCostInfo.title;
+      console.log('Key: ' + key);
+      console.log(JSON.stringify(sliceCostInfo, undefined, 2));
       reduce.push(key, sliceCostInfo);
     });
 
