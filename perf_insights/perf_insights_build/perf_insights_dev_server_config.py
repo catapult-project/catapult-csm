@@ -81,7 +81,15 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
 class RunDownloadHandler(webapp2.RequestHandler):
 
   def post(self, *args, **kwargs):  # pylint: disable=unused-argument
+    self.response.content_type = 'application/json'
+
     url = self.request.get('url', 'True')
+
+    # Doesn't need to be downloaded since it's not a cloud file, just return
+    # true and the path to the file.
+    if not 'gs://' in url:
+      self.response.write(json.dumps({'success': True, 'file': url}))
+      return
 
     output_name = os.path.join(kwargs.pop('_pi_data_dir'), url.split('/')[-1])
 
@@ -89,12 +97,12 @@ class RunDownloadHandler(webapp2.RequestHandler):
       print 'Downloading: %s' % url
       cloud_storage.Copy(url, output_name)
     except cloud_storage.CloudStorageError:
+      print ' -> Failed to download: %s' % url
       self.response.write(json.dumps({'success': False}))
       return
 
     output_name = os.path.join('/perf_insights/test_data', url.split('/')[-1])
 
-    self.response.content_type = 'application/json'
     self.response.write(json.dumps({'success': True, 'file': output_name}))
 
 

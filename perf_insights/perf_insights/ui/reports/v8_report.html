@@ -453,14 +453,20 @@ found in the LICENSE file.
       var histogramSpan = this.shadowRoot.querySelector('#costs-histogram');
       var brushedBins = histogramSpan.brushedBins;
       var urlSet = {};
+      var mapper_name = document.body.querySelector(
+          'pi-ui-pi-app-main').currentMapTracesDriver.name.toLowerCase();
       brushedBins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
-          // Because the cloud mapper currently downloads all the traces, the
-          // urls are incorrect.
-          var actual_url = sourceInfo.sourceURL.split('/');
-          actual_url = actual_url[actual_url.length - 1];
-          actual_url = "gs://performance-insights/" + actual_url;
-          urlSet[actual_url] = 1;
+          if (mapper_name.indexOf('cloud') != -1) {
+            // Because the cloud mapper currently downloads all the traces, the
+            // urls are incorrect.
+            var actual_url = sourceInfo.sourceURL.split('/');
+            actual_url = actual_url[actual_url.length - 1];
+            actual_url = "gs://performance-insights/" + actual_url;
+            urlSet[actual_url] = 1;
+          } else {
+            urlSet[sourceInfo.sourceURL] = 1;
+          }
         });
       });
       urlSet = Object.keys(urlSet);
