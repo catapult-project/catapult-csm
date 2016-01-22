@@ -44,7 +44,7 @@ def _DownloadTraces(traces):
       local_name = trace_url.split('/')[-1]
       for _ in xrange(_DEFAULT_RETRIES):
         try:
-          logging.info('downloading: %s' % local_name)
+          logging.info('downloading: %s' % trace_url)
           # TODO: This is dumb, but we have local vs actual cloud storage.
           # Fix this.
           if '.gz' in local_name:
