@@ -109,9 +109,16 @@ found in the LICENSE file.
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByFramework_);
 
+      this.groupByUserFriendlyCategory_ = tr.ui.b.createCheckBox(
+          undefined, undefined,
+          'pi.ui.wr.weather_report.groupByUserFriendlyCategory', true,
+          'Group by Event Category',
+          this.updateContents_.bind(this));
+      topControls.appendChild(this.groupByUserFriendlyCategory_);
+
       this.groupByJS_ = tr.ui.b.createCheckBox(
           undefined, undefined,
-          'pi.ui.wr.weather_report.groupByJS', false,
+          'pi.ui.wr.weather_report.groupByJS', true,
           'Group by JS',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByJS_);
@@ -122,13 +129,6 @@ found in the LICENSE file.
           'Group by RAIL Stage',
           this.updateContents_.bind(this));
       topControls.appendChild(this.groupByRAILTypeName_);
-
-      this.groupByUserFriendlyCategory_ = tr.ui.b.createCheckBox(
-          undefined, undefined,
-          'pi.ui.wr.weather_report.groupByUserFriendlyCategory', false,
-          'Group by Event Category',
-          this.updateContents_.bind(this));
-      topControls.appendChild(this.groupByUserFriendlyCategory_);
 
       this.groupByTitle_ = tr.ui.b.createCheckBox(
           undefined, undefined,
@@ -268,6 +268,12 @@ found in the LICENSE file.
         });
       }
 
+      if (this.groupByUserFriendlyCategory_.checked) {
+        groupBy.push(function(datum) {
+          return datum.sliceCostInfo.userFriendlyCategory || 'other';
+        });
+      }
+
       if (this.groupByJS_.checked) {
         groupBy.push(function(datum) {
           return datum.sliceCostInfo.scriptURLClean;
@@ -277,12 +283,6 @@ found in the LICENSE file.
       if (this.groupByRAILTypeName_.checked) {
         groupBy.push(function(datum) {
           return datum.sliceCostInfo.railTypeName;
-        });
-      }
-
-      if (this.groupByUserFriendlyCategory_.checked) {
-        groupBy.push(function(datum) {
-          return datum.sliceCostInfo.userFriendlyCategory || 'other';
         });
       }
 
