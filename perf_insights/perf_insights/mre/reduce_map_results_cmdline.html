@@ -19,6 +19,13 @@ found in the LICENSE file.
 
 tr.exportTo('pi.mre', function() {
 
+  function jsonReplacer(key, value) {
+    if (value instanceof tr.b.u.Histogram) {
+      return value.asDict();
+    }
+    return value;
+  }
+
   function reduceMapResultsMain(args) {
     if (args.length !== 3)
       throw new Error('Must provide three arguments');
@@ -44,7 +51,8 @@ tr.exportTo('pi.mre', function() {
         });
 
     if (Object.keys(jobResults.reduceResults).length !== 0)
-      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.reduceResults));
+      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.reduceResults,
+                  jsonReplacer));
     jobResults.failures.forEach(function(failure) {
       console.log('JOB_FAILURE: ' + JSON.stringify(failure.asDict()));
     });
