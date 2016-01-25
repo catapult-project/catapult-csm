@@ -64,7 +64,8 @@ tr.exportTo('pi.r', function() {
       }
 
       var sourceInfo = {
-        sourceURL: threadSlice.traceURL
+        traceURL: threadSlice.traceURL,
+        sourceURL: threadSlice.scriptURLClean
       }
 
       this.selfTimeHistogram.add(threadSlice.selfTime, sourceInfo);

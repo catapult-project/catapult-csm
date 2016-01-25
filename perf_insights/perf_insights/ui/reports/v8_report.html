@@ -464,12 +464,12 @@ found in the LICENSE file.
           if (mapper_name.indexOf('cloud') != -1) {
             // Because the cloud mapper currently downloads all the traces, the
             // urls are incorrect.
-            var actual_url = sourceInfo.sourceURL.split('/');
+            var actual_url = sourceInfo.traceURL.split('/');
             actual_url = actual_url[actual_url.length - 1];
             actual_url = "gs://performance-insights/" + actual_url;
             urlSet[actual_url] = 1;
           } else {
-            urlSet[sourceInfo.sourceURL] = 1;
+            urlSet[sourceInfo.traceURL] = 1;
           }
         });
       });
