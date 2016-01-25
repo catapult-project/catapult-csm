@@ -1,6 +1,6 @@
-<link rel="import" href="/components/core-icon/core-icon.html">
+<link rel="import" href="/components/iron-icon/iron-icon.html">
 
-<polymer-element name="alert-icon">
+<dom-module id="alert-icon">
   <template>
     <style>
 
@@ -12,12 +12,16 @@
 
     </style>
 
-    <core-icon id="icon"></core-icon>
+    <iron-icon id="icon"></iron-icon>
 
   </template>
+</dom-module>
+
   <script>
     'use strict';
-    Polymer('alert-icon', {
+    Polymer({
+
+      is: 'alert-icon',
 
       initialize: function(alertAnnotation, alertKey) {
         var bugId = alertAnnotation['bug_id'];

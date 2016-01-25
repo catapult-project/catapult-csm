@@ -1,10 +1,28 @@
-<polymer-element name="base-chart" attributes="chartTitle units flotData">
   <script>
     'use strict';
-    Polymer('base-chart', {
+    Polymer({
+
+      is: 'base-chart',
+
+      properties: {
+        chartTitle: {
+        },
+        units: {
+        },
+        flotData: {
+        },
+        chartOptions: {
+          value: function() { return {} }
+        }
+      },
+
       getChartOptions: function() {
         return {};
       },
+
+      observers: [
+        'updateChart(flotData, chartOptions)'
+      ],
 
       /**
        * Initializes the summary-chart element and its properties.
@@ -13,7 +31,6 @@
        */
       ready: function() {
         console.debug('ready', this.chartTitle, Date.now());
-        this.chartOptions = this.getChartOptions();
         // Set up chart resize handler.
         this.resizeHandler = this.onResize.bind(this);
         this.resizeTimer = null;
@@ -27,9 +44,7 @@
        */
       attached: function() {
         console.debug('attached', this.chartTitle, Date.now());
-        if (this.flotData) {
-          this.updateChart();
-        } else {
+        if (!this.flotData) {
           console.debug('attached', this.chartTitle, '!this.flotData');
         }
       },
@@ -46,19 +61,12 @@
       /**
        * Plots the data on the chart.
        */
-      updateChart: function() {
+      updateChart: function(flotData, chartOptions) {
         if (!this.drawable) {
           console.debug('updateChart', this.chartTitle, '!drawable');
           return;
         }
-        this.chart = $.plot(this.$.plot, this.flotData, this.chartOptions);
-      },
-
-      /**
-       * Updates the state when the flotData property is changed.
-       */
-      flotDataChanged: function() {
-        this.updateChart();
+        this.chart = $.plot(this.$.plot, flotData, chartOptions);
       },
 
       /**
@@ -83,4 +91,3 @@
       }
     });
   </script>
-</polymer-element>

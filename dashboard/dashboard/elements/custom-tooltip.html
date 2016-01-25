@@ -11,10 +11,10 @@ Example usage:
   tooltip.set('A tooltip message', bound.left, bound.top);
 -->
 <link rel="import" href="/components/paper-shadow/paper-shadow.html">
-<link rel="import" href="/components/core-overlay/core-overlay.html">
-<polymer-element
-    name="custom-tooltip"
-    attributes="autoCloseDisabled transition duration maxWidth">
+<link rel="import" href="/components/iron-overlay/iron-overlay.html">
+<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
+
+<dom-module id="custom-tooltip">
   <template>
     <style>
       :host {
@@ -34,9 +34,9 @@ Example usage:
     </style>
 
     <paper-shadow z="3">
-      <core-overlay id="overlay" target="{{}}" opened="{{opened}}"
-          autoCloseDisabled="{{autoCloseDisabled}}"
-          sizingTarget="{{$.container}}" transition="{{transition}}"></core-overlay>
+      <iron-overlay id="overlay" target="{{}}" opened="{{opened}}"
+          auto-close-disabled="{{autoCloseDisabled}}"
+          sizing-target="{{$.container}}" transition="{{transition}}"></core-overlay>
 
       <div id="container" horizontal layout  max-width="{{maxWidth}}">
         <div class="message-content" flex id="content"></div>
@@ -47,32 +47,51 @@ Example usage:
     </paper-shadow>
 
   </template>
-
+</dom-module>
   <script>
     'use strict';
-    Polymer('custom-tooltip', {
+    Polymer({
 
-      /**
-       * Number of milliseconds to stay opened. 0 to stay open indefinitely.
-       */
-      duration: 6000,
+      is: 'custom-tooltip',
 
-      /**
-       * Whether to close overlay if focus is taken somewhere else.
-       */
-      autoCloseDisabled: false,
+      properties: {
+        /**
+         * Whether to close overlay if focus is taken somewhere else.
+         */
+        autoCloseDisabled: {
+          type: Boolean,
+          value: false
+        },
+        transition: {
+        },
+        /**
+         * Number of milliseconds to stay opened. 0 to stay open indefinitely.
+         */
+        duration: {
+          type: Number,
+          value: 6000
+        },
+        maxWidth: {
+        },
+        position: {
+          observer: 'positionChanged'
+        },
+        opened: {
+          observer: 'openedChanged'
+        }
+      },
 
       /**
        * Add event handler.
        * See: https://goo.gl/QIYbsB
        */
-      eventDelegates: {
-        'core-resize': 'positionChanged'
+      listeners: {
+        'iron-resize': 'positionChanged'
       },
 
       ready: function() {
         this.$.overlay.addEventListener(
-            'core-overlay-close-completed',
+            'iron-overlay-close-completed',
             this.onCoreOverlayClosed.bind(this), false);
       },
 
@@ -102,7 +121,7 @@ Example usage:
         }
       },
 
-      positionChanged: function(oldVal, newVal) {
+      positionChanged: function() {
         // Add a little delay to prevent window jumping when user clicks the
         // target too fast.
         this.job('positionJob', this.updatePosition, 50);
@@ -154,4 +173,3 @@ Example usage:
       }
     });
   </script>
-</polymer-element>

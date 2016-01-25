@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<polymer-element name="chart-title" attributes="seriesGroupList">
+<dom-module id="chart-title">
   <template>
     <style>
       .title {
@@ -20,26 +20,33 @@
     </style>
 
     <h3>
-      <template repeat="{{part, partIndex in titleParts}}">
+      <template is="dom-repeat" items="{{titleParts}}" as="part" index-as="partIndex">
         <a class="title disabled" href="javascript:void(0);"
-           on-click="{{onClicked}}" disabled?="{{partIndex == currentIndex}}"
+           on-click="onClicked" disabled$="{{isEqual(partIndex,currentIndex)}}"
            class="title">
           {{part}}
         </a>
-        <span hidden?="{{partIndex == titleParts.length - 1}}">/</span>
+        <span hidden$="{{isLastIndex(partIndex, titleParts.length)}}">/</span>
       </template>
     </h3>
     <div>
-      <template repeat="{{info in suiteDescriptions}}">
+      <template is="dom-repeat" items="{{suiteDescriptions}}" as="info">
         <div><b>{{info.suite}}</b>: {{info.description}}</div>
       </template>
     </div>
 
   </template>
+</dom-module>
   <script>
     'use strict';
-    Polymer('chart-title', {
+    Polymer({
 
+      is: 'chart-title',
+
+      properties: {
+        seriesGroupList: {
+        }
+      }
       /**
        * Sets the title of the chart based on the current state of the chart.
        */
@@ -178,6 +185,14 @@
           }
         }
         return arrays[0].slice(0, shortestLength);
+      },
+
+      isEqual: function(partIndex,currentIndex) {
+        return partIndex == currentIndex;
+      },
+
+      isLastIndex: function(index, length) {
+        return index == length - 1;
       }
     });
   </script>

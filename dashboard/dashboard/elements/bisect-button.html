@@ -3,7 +3,7 @@
 <link rel="import" href="/dashboard/elements/bisect-form.html">
 <link rel="import" href="/dashboard/static/bisect_utils.html">
 
-<polymer-element name="bisect-button" attributes="bisectInfo bugId xsrfToken">
+<dom-module is="bisect-button">
   <template>
     <style>
       /*
@@ -31,9 +31,9 @@
     </style>
     <paper-button raised
         id="button"
-        disabled?={{!canBisect}}
-        enabled?={{canBisect}}
-        on-click="{{onBisect}}">Bisect</paper-button>
+        disabled$="{{!canBisect}}"
+        enabled$="{{canBisect}}"
+        on-click="onBisect">Bisect</paper-button>
     <bisect-form
         id="bisect"
         xsrfToken="{{xsrfToken}}"
@@ -42,29 +42,41 @@
         testPath="{{bisectInfo.testPath}}"
         bugId="{{bugId}}"></bisect-form>
   </template>
+</dom-module>
   <script>
     'use strict';
 
     (function() {
-      Polymer('bisect-button', {
+      Polymer({
+
+        is: 'bisect-button',
+
+        properties: {
+          bisectInfo: {
+          },
+          bugId: {
+          },
+          xsrfToken: {
+          },
+          canBisect: {
+          }
+        },
+
+        observers: [
+          'update(bisectInfo)'
+        ],
+
         /**
          * Initializes this element; this is an element lifecycle callback.
          */
         ready: function() {
-          this.update();
-        },
-
-        /**
-         * Updates the bisect button when the bisectInfo is set.
-         */
-        bisectInfoChanged: function() {
-          this.update();
+          this.canBisect = false;
         },
 
         /**
          * Updates the canBisect state based on the bisectInfo state.
          */
-        update: function() {
+        update: function(bisectInfo) {
           if (!this.bisectInfo) {
             this.canBisect = false;
             return;
@@ -83,4 +95,3 @@
       });
     })();
   </script>
-</polymer-element>

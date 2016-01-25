@@ -4,10 +4,13 @@ Base element for form.
 This element uses overlay-message element on the page with the ID
 "message-bar".
 -->
-<polymer-element name="base-form">
   <script>
+  (function() {
     'use strict';
-    Polymer('base-form', {
+
+    /** @behavior Catapult.baseFormBehavior */
+    // was base-form
+    var baseFormBehavior = {
 
       /**
        * String substitution using "{{" and "}}" for placeholders.
@@ -37,6 +40,9 @@ This element uses overlay-message element on the page with the ID
         var messageBar = document.getElementById('message-bar');
         messageBar.updateContent(message);
       },
-    });
+    };
+
+    if (!window.Catapult) window.Catapult = {};
+    window.Catapult.baseFormBehavior = baseFormBehavior;
+  })();
   </script>
-</polymer-element>

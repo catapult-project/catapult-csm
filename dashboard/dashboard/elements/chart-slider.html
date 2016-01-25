@@ -1,4 +1,5 @@
 <polymer-element name="chart-slider" attributes="testpath startrev endrev">
+<dom-module id="chart-slider">
   <template>
     <style>
       #revisions_container {
@@ -8,9 +9,25 @@
     </style>
     <div id="revisions_container"></div>
   </template>
+</dom-module>
   <script>
     'use strict';
-    Polymer('chart-slider', {
+    Polymer({
+
+      is: 'chart-slider',
+
+      properties: {
+        testpath: {
+          observer: 'testpathChanged'
+        },
+        startrev: {
+          observer: 'startrevChanged'
+        },
+        endrev: {
+          observer: 'endrevChanged'
+        }
+      },
+
       edgeDist: 2,
 
       /**
@@ -373,4 +390,3 @@
       }
     });
   </script>
-</polymer-element>

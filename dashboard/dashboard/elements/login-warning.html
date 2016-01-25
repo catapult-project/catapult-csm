@@ -1,4 +1,5 @@
 <polymer-element name="login-warning" attributes="missing loginLink">
+<dom-module id="login-warning">
   <template>
     <style>
       #message {
@@ -6,16 +7,23 @@
         font-size: 20px;
       }
     </style>
-    <div id="message" hidden?="{{!missing}}">
+    <div id="message" hidden$="{{!missing}}">
       No data available for {{missing}}. Note that some data is only visible
-      when <a href="{{loginLink}}">signed in</a> with a google.com account.
+      when <a href$="{{loginLink}}">signed in</a> with a google.com account.
     </div>
   </template>
+</dom-module>
   <script>
     'use strict';
-    Polymer('login-warning', {
-      missing: null,
-      loginlink: null,
+    Polymer({
+      is: 'login-warning',
+
+      properties: {
+        missing: {
+        },
+        loginLink: {
+        }
+      },
 
       get messageElement() {
         return this.$.message;

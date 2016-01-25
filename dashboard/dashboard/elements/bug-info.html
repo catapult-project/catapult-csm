@@ -1,6 +1,6 @@
 <link rel="import" href="/dashboard/elements/bisect-button.html">
 
-<polymer-element name="bug-info">
+<dom-module id="bug-info">
   <template>
     <style>
       #container {
@@ -24,30 +24,38 @@
     </style>
     <div id="container" style="display:none">
       <div class="info-bar">
-        <p><a href="http://crbug.com/{{bugId}}">crbug.com/{{bugId}}</a></p>
+        <p><a href="{{computeBugIdUrl(bugId)}}">crbug.com/{{bugId}}</a></p>
         <p>
           <span id="revision_range"></span>
           <span id="warning" class="warning"></span>
           <bisect-button id="bisect" class="mini"></bisect-button>
         </p>
-        <template bind if="{{ownerInfo}}">
+        <template is="dom-if" if="{{ownerInfo}}">
           <p>
             Owners:
-            <template repeat="{{owner, index in ownerInfo}}">
+            <template is="dom-repeat" items="{{ownerInfo}}">
               <!--TODO(chrisphan): Link this to bug comment dialog.-->
-              <a href="#" onclick="return false;">{{owner.email}}</a>
-              <span hidden?="{{index == ownerInfo.length - 1}}"> | </span>
+              <a href="#" onclick="return false;">{{item.email}}</a>
+              <span hidden$="{{index == ownerInfo.length - 1}}"> | </span>
             </template>
           </p>
         </template>
       </div>
     </div>
   </template>
+</dom-module>
   <script>
     'use strict';
-    Polymer('bug-info', {
-      alertsTable: null,
-      bugId: null,
+    Polymer({
+
+      is: 'bug-info',
+
+      properties: {
+        bugId: {
+        },
+        alertsTable: {
+        }
+      },
 
       /**
        * Initializes this element.
@@ -143,6 +151,10 @@
           }
         }
         return null;
+      },
+
+      computeBugIdUrl: function(bugId) {
+        return "http://crbug.com/" + bugId;
       }
     });
   </script>

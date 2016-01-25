@@ -48,6 +48,8 @@ dashboard/dashboard/elements
 perf_insights/perf_insights/ui/generic_results_view
 tracing/tracing/ui
 
+#### tracing/tracing/ui
+
 ./analysis/analysis_sub_view.html:<polymer-element name="tr-ui-a-sub-view">
 - Converted to  behavior Catapult.tr_ui_a_sub_view_behavior
 
@@ -345,3 +347,85 @@ base/utils.html
 base/polymer_utils.html
 - Polymer.waitingFor is not found
 - FIXME getPolymerElementsThatSubclass:
+
+### dashboard/dashboard/elements
+
+FIXME: early on, I messed up. Did not know that dom-repeat allows naming of items now
+
+/alert-icon.html:<polymer-element name="alert-icon">
+- np
+
+./alert-remove-box.html:<polymer-element name="alert-remove-box" attributes="xsrfToken key">
+- np
+
+./alerts-table.html:<polymer-element name="alerts-table"
+- confused by usage of <template repeat
+  <template repeat="{{alertList}}">
+        <tr class$="{{rowType}}"
+            improvement?={{improvement}}
+do we mean
+  item.rowType?
+got confused by extraColumns
+- FIXME: need array getter/setters for all arrays in templates, and all members
+inside the array
+
+./autocomplete-box.html:<polymer-element name="autocomplete-box"
+- need help, unsure about dropdown
+
+./base-chart.html:<polymer-element name="base-chart" attributes="chartTitle units flotData">
+- np, flotDataChanged moved to property observer
+
+./base-form.html:<polymer-element name="base-form">
+- converted to Catapult.baseFormBehavior
+
+./bisect-button.html:<polymer-element name="bisect-button" attributes="bisectInfo bugId xsrfToken">
+- np
+
+./bisect-form.html:<polymer-element name="bisect-form" extends="base-form"
+- lots of input::change observations,
+
+./bisect-status.html:<polymer-element name="bisect-status">
+- not sure if class can be declared like this: "bisect-status {{status}}"
+
+./bug-info-span.html:<polymer-element name="bug-info-span">
+- ok, lots of computed functions
+
+./bug-info.html:<polymer-element name="bug-info">
+- dom-repeat, no way to get to index in repeat, not sure what to do, line 39
+
+./chart-container.html:<polymer-element name="chart-container"
+- lots of changes. Some template properties are not declared, might cause trouble
+
+./chart-legend.html:<polymer-element name="chart-legend"
+- ugh, lots of little funcitons, and template-ifs
+
+./chart-slider.html:<polymer-element name="chart-slider" attributes="testpath startrev endrev">
+- np
+
+./chart-title.html:<polymer-element name="chart-title" attributes="seriesGroupList">
+- ok
+
+./chart-tooltip.html:<polymer-element
+what is {{!stddev}}>(± {{stddev}}
+not sure how repeat item binding worked before, could you access subproperties
+
+./custom-tooltip.html:<polymer-element
+sizing-target="{{$.container}} ???
+setting of innerHtml might be problematic
+
+./editable-list.html:<polymer-element name="editable-list" attributes="xsrfToken">
+- ok
+
+./login-warning.html:<polymer-element name="login-warning" attributes="missing loginLink">
+- np
+
+./overlay-message.html:<polymer-element
+./quick-log.html:<polymer-element name="quick-log"
+./report-container.html:<polymer-element name="report-container" attributes="hasChart xsrfToken">
+./revision-range.html:<polymer-element name="revision-range" attributes="start end">
+./select-menu.html:<polymer-element name="select-menu" attributes="menuItems">
+./test-picker.html:<polymer-element name="test-picker" attributes="hasChart xsrfToken">
+./tooltip-test-description.html:<polymer-element name="tooltip-test-description" attributes="test" noscript>
+./trace-button.html:<polymer-element name="trace-button" attributes="traceInfo bugId xsrfToken">
+./trace-form.html:<polymer-element name="trace-form" extends="base-form"
+./triage-dialog.html:<polymer-element name="triage-dialog" extends="base-form"

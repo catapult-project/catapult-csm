@@ -36,16 +36,15 @@ property 'group' sets to the header item name.
         ...
     ]
 -->
-<link rel="import" href="/components/core-icon-button/core-icon-button.html">
-<link rel="import" href="/components/core-item/core-item.html">
-<link rel="import" href="/components/core-menu/core-menu.html">
-<link rel="import" href="/components/paper-input/paper-input-decorator.html">
-<link rel="import" href="/components/paper-shadow/paper-shadow.html">
+<link rel="import" href="/components/iron-icon-button/iron-icon-button.html">
+<link rel="import" href="/components/paper-item/paper-item.html">
+<link rel="import" href="/components/paper-menu/paper-menu.html">
+<!-- <link rel="import" href="/components/paper-input/paper-input-decorator.html"> -->
+<!-- <link rel="import" href="/components/paper-shadow/paper-shadow.html"> -->
 
 <link rel="import" href="/dashboard/static/autocomplete.html">
 
-<polymer-element name="autocomplete-box"
-                 attributes="placeholder dataList disabled multi value">
+<dom-module id="autocomplete-box">
   <template>
     <style>
       #container * {
@@ -96,27 +95,27 @@ property 'group' sets to the header item name.
 
     <div id="container">
 
-        <paper-input-decorator label="{{placeholder}}" floatinglabel="" layout vertical
+ <!--        <paper-input-decorator label="{{placeholder}}" floatinglabel="" layout vertical
                                id="textbox-container">
-          <input is="core-input"
-                 on-click="{{showHideDropdown}}"
-                 on-keyup="{{onTextboxKeyup}}"
-                 on-keydown="{{onTextboxKeydown}}"
-                 placeholder="{{placeholder}}"
-                 disabled?="{{disabled}}"
+ -->          <input is="iron-input"
+                 on-click="showHideDropdown"
+                 on-keyup="onTextboxKeyup"
+                 on-keydown="onTextboxKeydown"
+                 placeholder="placeholder"
+                 disabled$="{{disabled}}"
                  id="textbox"
-                 value="{{value}}">
-        </paper-input-decorator>
+                 bind-value="{{value}}">
+        <!-- </paper-input-decorator> -->
 
         <paper-shadow id="dropdown-container" hidden="true">
           <div class="dropdown-scroller" layered>
-            <core-menu id="dropdown"
-                       on-core-activate="{{onDropdownSelect}}"
+            <iron-menu id="dropdown"
+                       on-iron-activate="{{onDropdownSelect}}"
                        multi?="{{multi}}">
-              <template repeat="{{dataList}}">
-                <core-item label="{{name}}" head?="{{head}}"
-                           hidden?="{{hidden}}">
-                  <div class="{{{tag: tag} | tokenList}}">{{tag}}</div>
+              <template is="dom-repeat" items="{{dataList}}">
+                <core-item label="{{item.name}}" head$="{{item.head}}"
+                           hidden$="{{item.hidden}}">
+                  <div class="{{{tag: tag} | tokenList}}">{{item.tag}}</div>
                 </core-item>
               </template>
             </core-menu>
@@ -126,14 +125,33 @@ property 'group' sets to the header item name.
     <span id="size-check">{{value}}</span>
 
   </template>
+</dom-module>
   <script>
     'use strict';
-    Polymer('autocomplete-box', {
+    Polymer({
+
+      is: "autocomplete-box",
+
+      properties: {
+        placeholder: {
+        },
+        dataList: {
+          type: Array
+        },
+        disabled: {
+          type: Boolean
+        },
+        multi: {
+        },
+        value: {
+          type: String,
+          value: ''
+        }
+      },
 
       TEXTBOX_MIN_WIDTH: 152,
 
       ready: function() {
-        this.value = '';
         this.$.dropdown.selected = [];
         this.selectedItems = [];
         this.hasVisibleItems = true;

@@ -5,9 +5,10 @@ including a legend listing different traces that can be plotted on the same
 chart, a revision range selecting mini-chart at the bottom, and all of the alert
 triaging functionality in the chart.
 -->
-<link rel="import" href="/components/core-collapse/core-collapse.html">
-<link rel="import" href="/components/core-icon/core-icon.html">
+<link rel="import" href="/components/iron-collapse/iron-collapse.html">
+<link rel="import" href="/components/iron-icon/iron-icon.html">
 <link rel="import" href="/components/paper-button/paper-button.html">
+<link rel="import" href="/components/iron-flex-layout/classes/iron-flex-layout.html">
 
 <link rel="import" href="/dashboard/elements/alert-icon.html">
 <link rel="import" href="/dashboard/elements/chart-legend.html">
@@ -19,12 +20,7 @@ triaging functionality in the chart.
 <link rel="import" href="/dashboard/static/testselection.html">
 <link rel="import" href="/dashboard/static/uri.html">
 
-<polymer-element name="chart-container"
-                 attributes="graphParams revisionInfo xsrfToken alertKey
-                             showCompact collapseLegend"
-                 on-drop="{{onDrop}}"
-                 on-dragover="{{allowDrop}}">
-
+<dom-module id="chart-container">
   <template>
     <style>
     #container {
@@ -140,13 +136,13 @@ triaging functionality in the chart.
     }
     </style>
 
-    <div id="container" compact?="{{showCompact}}">
+    <div id="container" compact$="{{showCompact}}">
       <div id="top-bar" horizontal layout>
         <div flex horizontal center-justified layout>
-          <chart-title id="title" seriesGroupList={{seriesGroupList}}></chart-title>
+          <chart-title id="title" series-group-list={{seriesGroupList}}></chart-title>
         </div>
         <div horizontal layout center>
-          <paper-button id="close-chart" on-click="{{closeChartClicked}}">
+          <paper-button id="close-chart" on-click="closeChartClicked">
             Close
           </paper-button>
         </div>
@@ -159,38 +155,39 @@ triaging functionality in the chart.
         <chart-tooltip id="tooltip"
                        xsrfToken="{{xsrfToken}}"></chart-tooltip>
 
-        <div id="plots-container" on-mouseleave="{{onMouseLeave}}">
+        <div id="plots-container" on-mouseleave="onMouseLeave">
           <div id="plot">
             <div id="loading-div">
               <img src="//www.google.com/images/loading.gif">
             </div>
           </div>
-          <chart-slider id="slider" on-revisionrange="{{onRevisionRange}}"></chart-slider>
+          <chart-slider id="slider" on-revisionrange="onRevisionRange"></chart-slider>
         </div>
 
         <div id="warning">
-          <template repeat="{{item in warnings}}">
+          <template is="dom-repeat" items="{{warnings}}">
             <span>{{item}}</span><br>
           </template>
         </div>
 
         <a hidden id="original"
-           on-click="{{onViewOriginal}}"
+           on-click="onViewOriginal"
            href="javascript:void(0);">View original graph</a>
 
         <chart-legend id="legend"
-                      seriesGroupList={{seriesGroupList}}
-                      indicesToGraph={{indicesToGraph}}
-                      collapseLegend={{collapseLegend}}
-                      on-dragstart={{legendSeriesDragStart}}
-                      on-dragend={{legendSeriesDragEnd}}
-                      deltaAbsolute={{deltaAbsolute}}
-                      deltaPercent={{deltaPercent}}
-                      showDelta={{showDelta}}>
+                      series-group-list="{{seriesGroupList}}"
+                      indices-to-graph="{{indicesToGraph}}"
+                      collapse-legend="{{collapseLegend}}"
+                      on-dragstart="legendSeriesDragStart"
+                      on-dragend="legendSeriesDragEnd"
+                      delta-absolute="{{deltaAbsolute}}"
+                      delta-percent="{{deltaPercent}}"
+                      show-delta="{{showDelta}}"></chart-legend>
       </div>
 
     </div>
   </template>
+</dom-module>
   <script>
     'use strict';
     (function() {
@@ -349,6 +346,43 @@ triaging functionality in the chart.
 
       Polymer('chart-container', {
 
+        is: 'chart-container',
+
+        properties: {
+          graphParams: {
+          },
+          revisionInfo: {
+          },
+          xsrfToken: {
+          },
+          alertKey: {
+          },
+          showCompact: {
+          },
+          collapseLegend: {
+            type: Boolean,
+            observer: 'collapseLegendChanged'
+          },
+          indicesToGraph: {
+          // List of indices of series which are selected and will be plotted.
+          // We declare this here to avoid changed event on load.
+            type: Array,
+            value: function() { return []; },
+            observer: 'indicesToGraphChanged'
+          },
+          // Warning text to be shown over the chart, if any.
+          warnings: {
+            type: Array,
+            value: function() { return []; },
+            observer: 'warningsChanged'
+          }
+        },
+
+        listeners: {
+          'drop': 'onDrop',
+          'dragover': 'allowDrop'
+        },
+
         SERIES_SELECTION_OPTIONS: ['important', 'all', 'none'],
 
         // Regex for links in series annotation which are shown in tooltip.
@@ -375,9 +409,6 @@ triaging functionality in the chart.
         STALE_DATA_DELTA_MS: 7 * 86400000,
 
         created: function() {
-          // List of indices of series which are selected and will be plotted.
-          // We declare this here to avoid changed event on load.
-          this.indicesToGraph = [];
         },
 
         /**
@@ -439,9 +470,6 @@ triaging functionality in the chart.
 
           // Map of series indexes to arrays with revision information.
           this.revisionMap = null;
-
-          // Warning text to be shown over the chart, if any.
-          this.warnings = [];
 
           // Whether or not the chart can currently be drawn.
           this.drawable = true;
