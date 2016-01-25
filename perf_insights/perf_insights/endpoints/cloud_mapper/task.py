@@ -94,7 +94,7 @@ class TaskPage(webapp2.RequestHandler):
       # dev_server is single threaded and won't run any other tasks until the
       # current one is finished. We'll just do the easy thing for now and
       # queue a task to check for the result.
-      mapper_timeout = int(job.timeout * 0.75)
+      mapper_timeout = int(job.timeout - job.function_timeout)
       timeout = (
           datetime.datetime.now() + datetime.timedelta(
               seconds=mapper_timeout)).strftime(
@@ -199,7 +199,7 @@ class TaskPage(webapp2.RequestHandler):
     # dev_server is single threaded and won't run any other tasks until the
     # current one is finished. We'll just do the easy thing for now and
     # queue a task to check for the result.
-    reducer_timeout = int(job.timeout * 0.25)
+    reducer_timeout = int(job.function_timeout)
     timeout = (
         datetime.datetime.now() + datetime.timedelta(
             seconds=reducer_timeout)).strftime(
