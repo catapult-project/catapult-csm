@@ -139,8 +139,8 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         'reducer_function': reducer_name,
         'revision': 'HEAD',
         'corpus': 'https://performance-insights.appspot.com',
-        'timeout': 120,
-        'function_timeout': 30
+        'timeout': 240,
+        'function_timeout': 120
         })
 
     cloud_mapper_url = 'https://performance-insights.appspot.com'
@@ -167,6 +167,7 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
           output_handle, output_name = tempfile.mkstemp()
 
           try:
+            print '  -> %s' % results['data']
             cloud_storage.Copy(results['data'], output_name)
           except cloud_storage.CloudStorageError as e:
             print 'Cloud storage error: %s' % str(e)
