@@ -7,6 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/perf_insights/mre/function_handle.html">
 <link rel="import" href="/tracing/base/units/histogram.html">
+<link rel="import" href="/tracing/model/source_info/js_source_info.html">
 
 <script>
 'use strict';
@@ -23,6 +24,9 @@ tr.exportTo('pi.r', function() {
 
     this.selfTime = 0;
     this.cpuSelfTime = 0;
+
+    this.jsTime = 0;
+    this.jsTimeByState = {};
 
     this.traceURLs = {};
     this.sliceCount = 1;
@@ -48,15 +52,35 @@ tr.exportTo('pi.r', function() {
     sliceCostInfo.framework = firstValue.framework;
     sliceCostInfo.userFriendlyCategory = firstValue.userFriendlyCategory;
     sliceCostInfo.traceURLs = [firstValue.traceURL];
+    sliceCostInfo.jsTime = firstValue.jsTime || 0;
+
+    var JSSourceState = tr.model.source_info.JSSourceState;
+    for (var state in JSSourceState) {
+      if (firstValue.jsTimeByState === undefined) {
+        sliceCostInfo.jsTimeByState[JSSourceState[state]] = 0;
+      } else {
+        sliceCostInfo.jsTimeByState[JSSourceState[state]] =
+            firstValue.jsTimeByState[JSSourceState[state]] || 0;
+      }
+    }
     return sliceCostInfo;
   }
 
   ScriptCostInfo.prototype = {
     push: function(threadSlice) {
+      var JSSourceState = tr.model.source_info.JSSourceState;
       if (threadSlice.selfTime !== undefined)
         this.selfTime += threadSlice.selfTime;
       if (threadSlice.cpuSelfTime !== undefined)
         this.cpuSelfTime += threadSlice.cpuSelfTime;
+      if (threadSlice.jsTime !== undefined)
+        this.jsTime += threadSlice.jsTime;
+      if (threadSlice.jsTimeByState !== undefined) {
+        for (var state in JSSourceState) {
+          this.jsTimeByState[JSSourceState[state]] +=
+              threadSlice.jsTimeByState[JSSourceState[state]];
+        }
+      }
 
       if (threadSlice.traceURL !== undefined &&
           !threadSlice.traceURL in this.traceURLs) {

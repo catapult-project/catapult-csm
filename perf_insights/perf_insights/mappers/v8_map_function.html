@@ -137,12 +137,75 @@ tr.exportTo('pi.m', function() {
       }
 
       var ufc = model.getUserFriendlyCategoryFromEvent(event);
-
       var data = _get_parent_data(event);
       data.framework = _guess_framework_from_js_file(data.js);
       var scriptURLClean = _cleanup_framework_name(data.js);
 
       //console.log('After: ' + scriptURLClean + ', for slice title: ' + event.title);
+      var slice = event;
+      if (slice.title == 'V8.Execute') {
+
+        // V8.Execute events may generate several sliceCostInfo, based on the
+        // origin of the JS being executed.
+        var range = new tr.b.Range();
+        slice.addBoundsToRange(range);
+        var filtered = range.filterArray(
+            slice.parentContainer.samples,
+            function(sample) {return sample.start;});
+        filtered.forEach(function(sample) {
+          // var sliceCostInfo = new SliceCostInfo();
+          // sliceCostInfo.threadGroup = threadGrouping.getGroupNameForEvent(slice);
+          // sliceCostInfo.railTypeName = railTypeNameByGUID[slice.guid];
+
+          // var ufc = model.getUserFriendlyCategoryFromEvent(slice);
+          // sliceCostInfo.userFriendlyCategory = ufc || 'other';
+          // sliceCostInfo.title = tr.e.chrome.SliceTitleFixer.fromEvent(slice);
+          // sliceCostInfo.domain = sample.leafStackFrame.domain;
+          // sliceCostInfo.domainCategory =
+          //     tr.e.ads.DomainCategory.fromDomain(sliceCostInfo.domain);
+          // sliceCostInfo.selfTime = sample.weight;
+          // sliceCostInfo.cpuSelfTime = sample.weight;
+          // sliceCostInfo.data = dataCB(slice);
+          // Let's use the state of the leaf frame. TODO(chiniforooshan):
+          // understand what it means if frames of a sample stack are in different
+          // states (BUG #1542).
+          var sliceData = {
+            threadGroup: threadGrouping.getGroupNameForEvent(slice),
+            railTypeName: railTypeNameByGUID[slice.guid],
+            userFriendlyCategory: ufc || 'other',
+            title: tr.e.chrome.SliceTitleFixer.fromEvent(slice),
+            selfTime: sample.weight,
+            cpuSelfTime: sample.weight,
+            scriptURL: data.js,
+            scriptURLClean: scriptURLClean,
+            framework: data.framework,
+            traceURL: model.sourceURLThatCreatedThisTrace
+          }
+
+          var JSSourceState = tr.model.source_info.JSSourceState;
+          sliceData.jsTimeByState = {};
+          for (var state in JSSourceState) {
+            sliceData.jsTimeByState[JSSourceState[state]] = 0;
+          }
+
+          var sourceInfo = sample.leafStackFrame.sourceInfo;
+          if (sourceInfo === undefined ||
+              !(sourceInfo instanceof tr.model.source_info.JSSourceInfo)) {
+            sliceData.jsTime = sample.weight;
+            sliceData.jsTimeByState[JSSourceState.UNKNOWN] = sample.weight;
+          } else {
+            sliceData.jsTimeByState[sourceInfo.state] = sample.weight;
+          }
+
+          var key = sliceData.threadGroup + '/' +
+                    sliceData.railTypeName + '/' +
+                    sliceData.framework + '/' +
+                    //sliceData.scriptURLClean + '/' +
+                    sliceData.title;
+          sliceCosts.push({key: key, value: sliceData});
+        });
+        return;
+      }
 
       var sliceData = {
         threadGroup: threadGrouping.getGroupNameForEvent(event),
