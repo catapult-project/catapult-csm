@@ -84,6 +84,10 @@ found in the LICENSE file.
 
           Links
           <pi-ui-trace-link-list id="links"></pi-ui-trace-link-list>
+
+          <br>
+          Scripts
+          <pi-ui-trace-link-list id="scripts"></pi-ui-trace-link-list>
         </div>
       </div>
     </content>
@@ -461,21 +465,42 @@ found in the LICENSE file.
           'pi-ui-pi-app-main').currentMapTracesDriver.name.toLowerCase();
       brushedBins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
+          var modified_url = sourceInfo.traceURL;
           if (mapper_name.indexOf('cloud') != -1) {
             // Because the cloud mapper currently downloads all the traces, the
             // urls are incorrect.
             var actual_url = sourceInfo.traceURL.split('/');
             actual_url = actual_url[actual_url.length - 1];
             actual_url = "gs://performance-insights/" + actual_url;
-            urlSet[actual_url] = 1;
-          } else {
-            urlSet[sourceInfo.traceURL] = 1;
+            modified_url = actual_url;
           }
+
+          if (!(modified_url in urlSet)) {
+            urlSet[modified_url] = {};
+          }
+          urlSet[modified_url][sourceInfo.sourceURL] = 1;
         });
       });
-      urlSet = Object.keys(urlSet);
-      urlSet.sort();
-      this.$.links.setTraceUrls(urlSet);
+      var keys = Object.keys(urlSet);
+      keys.sort();
+      this.$.links.setTraceUrls(keys);
+
+      var namesAndUrls = [];
+      for (var traceUrl in urlSet) {
+        var uniqueScripts = Object.keys(urlSet[traceUrl]);
+        uniqueScripts.sort();
+        for (var i in uniqueScripts) {
+          var scriptName = uniqueScripts[i];
+          if (scriptName.length > 64) {
+            scriptName = scriptName.substring(0, 64) + '...';
+          }
+          namesAndUrls.push({
+            url: traceUrl,
+            name: scriptName
+          });
+        }
+      }
+      this.$.scripts.setTraceUrlsAndNames(namesAndUrls);
     }
   });
   </script>
