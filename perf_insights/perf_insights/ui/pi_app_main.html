@@ -115,6 +115,18 @@ tr.exportTo('pi.ui', function() {
           this, 'corpusQuery',
           'pi.app_main.corpusQuery',
           "MAX_TRACE_HANDLES=10");
+
+      var self = this;
+      function onQuerySelectorKeypress(e) {
+        var key = e.which || e.keyCode;
+        if (key === 13) { // 13 is enter
+            self.scheduleUpdateContents_();
+            self.fire('ui-state-changed');
+        }
+      }
+
+      corpusQuerySelector.addEventListener('keypress', onQuerySelectorKeypress);
+
       corpusQuerySelector.style.width = '350px';
       topLeftControls.appendChild(corpusQuerySelector);
 
