@@ -89,10 +89,24 @@ tr.exportTo('pi.ui', function() {
       var topLeftControls = this.$.top_left_controls;
       var topRightControls = this.$.top_right_controls;
 
-      var mapTracesDriverSelector = document.createElement('select');
-      mapTracesDriverSelector.classList.add('map-traces-driver-selector');
-      // This selector is actually populated in the mapTracesDrivers setter.
-      topLeftControls.appendChild(mapTracesDriverSelector);
+      var piDriverPolymerElementNames = tr.ui.b.getPolymerElementsThatSubclass(
+          'pi-driver-base');
+      var piDriverElementOptions = piDriverPolymerElementNames.map(
+          function(peTagName) {
+            var pe = tr.ui.b.getPolymerElementNamed(peTagName);
+            return {
+              label: pe.getAttribute('display-name'),
+              value: peTagName
+            };
+          });
+
+      var driverSelector = tr.ui.b.createSelector(
+          this, 'currentMapTracesDriver',
+          'pi.app_main.currentMapTracesDriver',
+          piDriverElementOptions[0].value,
+          piDriverElementOptions);
+
+      topLeftControls.appendChild(driverSelector);
 
       var corpusSelections = [
         {
@@ -167,28 +181,6 @@ tr.exportTo('pi.ui', function() {
     get mapTracesDrivers() {
       return this.mapTracesDrivers_;
     },
-
-    set mapTracesDrivers(mapTracesDrivers) {
-      this.mapTracesDrivers_ = mapTracesDrivers;
-
-      var topLeftControls = this.$.top_left_controls;
-      var oldSelector = topLeftControls.querySelector(
-          '.map-traces-driver-selector');
-      var options = mapTracesDrivers.map(function(mapTracesDriver) {
-        return {
-          label: mapTracesDriver.name,
-          value: mapTracesDriver
-        };
-      });
-      var newSelector = tr.ui.b.createSelector(
-          this, 'currentMapTracesDriver',
-          'pi.app_main.currentMapTracesDriver',
-          options[0].value,
-          options);
-      newSelector.classList.add('map-traces-driver-selector');
-      topLeftControls.replaceChild(newSelector, oldSelector);
-    },
-
 
     get mappingState() {
       return {
@@ -327,8 +319,9 @@ tr.exportTo('pi.ui', function() {
         if (mappingState.mapClientSide) {
           throw new Error('Currently unsupported');
         }
-        return mappingState.currentMapTracesDriver(job,
-                                                   mappingState.corpusQuery);
+
+        var peCurrentDriver = document.querySelector(mappingState.currentMapTracesDriver);
+        return peCurrentDriver.runMapFunction(job, mappingState.corpusQuery);
       });
       p = p.then(function responseToResults(responseText) {
         if (responseText === undefined)

@@ -461,7 +461,7 @@ found in the LICENSE file.
       var brushedBins = histogramSpan.brushedBins;
       var urlSet = {};
       var mapper_name = document.body.querySelector(
-          'pi-ui-pi-app-main').currentMapTracesDriver.name.toLowerCase();
+          'pi-ui-pi-app-main').currentMapTracesDriver.toLowerCase();
       brushedBins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
           var modified_url = sourceInfo.traceURL;
