@@ -33,7 +33,8 @@ tr.exportTo('tr.ui.b', function() {
       ChartBase.prototype.decorate.call(this);
       this.classList.add('chart-base-2d');
       this.xScale_ = d3.scale.linear();
-      this.yScale_ = d3.scale.linear();
+      //this.yScale_ = d3.scale.linear();
+      this.yScale_ = d3.scale.log(10);
 
       this.data_ = [];
       this.seriesKeys_ = [];
@@ -172,10 +173,29 @@ tr.exportTo('tr.ui.b', function() {
     },
 
     updateYAxis_: function(yAxis) {
+      var largest_bin = 0;
+      for (var i = 0; i < this.data_.length; i++) {
+        largest_bin = Math.max(largest_bin, this.data_[i].y);
+      }
+      if (largest_bin == 0)
+        return;
+      var ticks_needed = Math.ceil(
+          Math.log(largest_bin) / Math.log(10)) + 1;
+      var tick_values = [];
+      for (var i = 0; i < ticks_needed; i++) {
+        tick_values.push(Math.pow(10, i));
+      }
+
+      tick_values[tick_values.length - 1] = largest_bin;
+
       yAxis.selectAll('*').remove();
       yAxis[0][0].style.opacity = 0;
       yAxis.call(d3.svg.axis()
         .scale(this.yScale_)
+        .tickValues(tick_values)
+        .tickFormat(function(d) {
+          return d;
+        })
         .orient('left'));
       window.requestAnimationFrame(function() {
         var previousTop = undefined;
