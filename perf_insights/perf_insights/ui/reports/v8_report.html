@@ -452,6 +452,7 @@ found in the LICENSE file.
       });
 
       var histogramSpan = this.shadowRoot.querySelector('#costs-histogram');
+      histogramSpan.setLogScale(true);
       histogramSpan.histogram = histogram;
       this.onBrushedBinsChanged_();
     },

@@ -143,6 +143,10 @@ found in the LICENSE file.
       this.updateContents_();
     },
 
+    setLogScale: function(isLogScale) {
+      this.chart_.setLogScale(isLogScale);
+    },
+
     updateContents_: function() {
       this.$.container.style.display = this.histogram_ ? '' : 'none';
       if (!this.histogram_) {
