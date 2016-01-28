@@ -71,49 +71,50 @@ tr.exportTo('pi.m', function() {
       function _guess_framework_from_js_file(js_file) {
         var frameworks = {
           // Some commone js libs.
-            "jquery": ["jquery"],
-            "angular": ["angular"],
-            "underscore": ["underscore"],
-            "respond.js": ["respond.js"],
-            "easeljs": ["easeljs"],
-            "modernizr": ["modernizr"],
-            "cloudflare": ["cloudflare.min.js"],
-            "greensock": ["gsap/"],
-            "mootools": ["mootools"],
-            "zepto": ["zepto."],
-            "webfont": ["webfont.js"],
-            "closure": ["closure/"],
-            "ektron": ["ektron"],
-            "swfobject": ["swfobject"],
-            "html5shiv": ["html5shiv"],
-            "requirejs": ["require.js"],
-            "tweenjs": ["tweenjs"],
+            "jQuery": ["jquery"],
+            "Angular": ["angular"],
+            "Underscore": ["underscore"],
+            "Respond.js": ["respond.js"],
+            "Easeljs": ["easeljs"],
+            "Modernizr": ["modernizr"],
+            "Cloudflare": ["cloudflare.min.js"],
+            "Greensock": ["gsap/"],
+            "Mootools": ["mootools"],
+            "Zepto": ["zepto."],
+            "Webfont": ["webfont.js"],
+            "Closure": ["closure/"],
+            "Ektron": ["ektron"],
+            "SWFObject": ["swfobject"],
+            "Html5shiv": ["html5shiv"],
+            "Requirejs": ["require.js"],
+            "Tweenjs": ["tweenjs"],
 
             // Just dividing these out into common sites.
-            "google search": ["google.com/search?", "www.google."],
-            "google adsense": ["pagead2.googlesyndication.com/pagead/"],
-            "google analytics": ["google-analytics.com"],
-            "adobe": ["adobe."],
-            "facebook": ["facebook.", "fbcdn."],
-            "outlook": ["outlook.", ".live."],
-            "craigslist": ["craigslist."],
-            "amazon": ["amazon."],
-            "yandex": ["yandex."],
-            "scene7": ["s7sdk/"],
-            "doubleclick": [
+            "Google - Search": ["google.com/search?", "www.google."],
+            "Google - Adsense": ["pagead2.googlesyndication.com/pagead/"],
+            "Google - Analytics": ["google-analytics.com"],
+            "Google - Misc": ["google.", "googleapis."],
+            "Adobe - Misc": ["adobe."],
+            "Facebook": ["facebook.", "fbcdn."],
+            "Outlook": ["outlook.", ".live."],
+            "Craigslist": ["craigslist."],
+            "Amazon": ["amazon."],
+            "Yandex": ["yandex."],
+            "Scene7": ["s7sdk/"],
+            "DoubleClick": [
                 ".doubleclick", "gpt.js", "gtm.js", ".googletagservices."],
-            "baidu": ["baidu."],
-            "bing": ["bing."],
-            "twitter": ["twitter."],
-            "wish": ["MobileWebsiteCore"],
-            "misc google": ["google.", "googleapis."],
-            "misc extensions": ["chrome-extension://", "chrome://"]
+            "Baidu": ["baidu."],
+            "Bing": ["bing."],
+            "Twitter": ["twitter."],
+            "Wish": ["MobileWebsiteCore"],
+            "Extensions - Misc": ["chrome-extension://", "chrome://"]
         };
 
+        var js_file_lowercase = js_file.toLowerCase();
         for (var k in frameworks) {
           var keywords = frameworks[k];
           for (var i = 0; i < keywords.length; i++) {
-            if (js_file.indexOf(keywords[i]) > -1) {
+            if (js_file_lowercase.indexOf(keywords[i]) > -1) {
               //last_known_framework[0] = k;
               return k;
             }
