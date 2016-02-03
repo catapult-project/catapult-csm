@@ -32,12 +32,12 @@ tr.exportTo('pi.r', function() {
     this.sliceCount = 1;
 
     this.selfTimeHistogram = tr.b.u.Histogram.createLinear(
-         tr.b.u.Units.timeDurationInMs,
+         tr.b.u.Unit.timeDurationInMs,
          tr.b.Range.fromExplicitRange(0, 100),
          100);
 
     this.cpuSelfTimeHistogram = tr.b.u.Histogram.createLinear(
-         tr.b.u.Units.timeDurationInMs,
+         tr.b.u.Unit.timeDurationInMs,
          tr.b.Range.fromExplicitRange(0, 100),
          100);
   }
