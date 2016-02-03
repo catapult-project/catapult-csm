@@ -96,6 +96,8 @@ class MapRunner(object):
       err = self._wq.Run()
 
       return self._map_results
+    # TODO(fmeawad): When returning None, we get an XHR error.
+    # We should instead return an empty json or an error message.
     return None
 
   def _Reduce(self, job_results, key, map_results_file_name):
