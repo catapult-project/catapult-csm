@@ -89,7 +89,7 @@ class MapRunner(object):
   def RunMapper(self):
     self._map_results = map_results.MapResults()
 
-    if self._job.map_function_handle:
+    if self._job.map_function_handle and len(self._trace_handles) > 0:
       for trace_handle in self._trace_handles:
         self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
 
