@@ -89,16 +89,16 @@ class MapRunner(object):
   def RunMapper(self):
     self._map_results = map_results.MapResults()
 
-    if self._job.map_function_handle and len(self._trace_handles) > 0:
+    if not self._trace_handles:
+      self._map_results.AddFailure("No trace handles specified.")
+      return self._map_results
+
+    if self._job.map_function_handle:
       for trace_handle in self._trace_handles:
         self._wq.PostAnyThreadTask(self._ProcessOneTrace, trace_handle)
 
       err = self._wq.Run()
-
-      return self._map_results
-    # TODO(fmeawad): When returning None, we get an XHR error.
-    # We should instead return an empty json or an error message.
-    return None
+    return self._map_results
 
   def _Reduce(self, job_results, key, map_results_file_name):
     reduce_map_results.ReduceMapResults(job_results, key,
