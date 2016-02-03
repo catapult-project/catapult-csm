@@ -206,7 +206,7 @@ class CorpusQuery(object):
     return q
 
   def Eval(self, metadata, num_trace_handles_so_far=0):
-    if self.max_trace_handles:
+    if not self.max_trace_handles is None:
       if num_trace_handles_so_far >= self.max_trace_handles:
         return False
 
