@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2013 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+
+<link rel="import" href="/tracing/base/utils.html">
+<link rel="import" href="/tracing/value/value.html">
+
+<script>
+'use strict';
+
+tr.b.unittest.testSuite(function() {
+  test('scalarValueBasic', function() {
+    var canonicalUrl = 'my_test.json';
+    var v = new tr.v.ScalarValue(canonicalUrl, 'MyFailure',
+                               314);
+    var d = v.asDict();
+
+    var v2 = tr.v.Value.fromDict(d);
+    assert.instanceOf(v2, tr.v.ScalarValue);
+    assert.equal(v.name, v2.name);
+    assert.deepEqual(v.value, v2.value);
+  });
+
+  test('dictValueBasic', function() {
+    var canonicalUrl = 'my_test.json';
+    var v = new tr.v.DictValue(canonicalUrl, 'MyFailure',
+                               {my_key: 'my_value'});
+    var d = v.asDict();
+
+    var v2 = tr.v.Value.fromDict(d);
+    assert.instanceOf(v2, tr.v.DictValue);
+    assert.equal(v.name, v2.name);
+    assert.deepEqual(v.value, v2.value);
+  });
+
+  test('failureValueBasic', function() {
+    var canonicalUrl = 'my_test.json';
+    var v = new tr.v.FailureValue(canonicalUrl, 'MyFailure',
+                                  {description: 'Description',
+                                   stack: tr.b.stackTraceAsString()});
+    var d = v.asDict();
+
+    var v2 = tr.v.Value.fromDict(d);
+    assert.instanceOf(v2, tr.v.FailureValue);
+    assert.equal(v.name, v2.name);
+    assert.equal(v.description, v2.description);
+    assert.equal(v.stack, v2.stack);
+  });
+
+  test('skipValueBasic', function() {
+    var canonicalUrl = 'my_test.json';
+    var v = new tr.v.SkipValue(canonicalUrl, 'MySkip',
+                                  {description: 'WhySkipped'});
+    var d = v.asDict();
+
+    var v2 = tr.v.Value.fromDict(d);
+    assert.instanceOf(v2, tr.v.SkipValue);
+    assert.equal(v.name, v2.name);
+    assert.equal(v.description, v2.description);
+  });
+
+});
+
+</script>
