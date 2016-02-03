@@ -39,7 +39,6 @@ tr.exportTo('pi', function() {
     if (args.length !== 2)
       throw new Error('Must provide two arguments');
 
-    console.log('Functionhandle: ' + args[1]);
     var options = {
       traceHandle: pi.mre.FileHandle.fromDict(JSON.parse(args[0])),
       mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1]))
