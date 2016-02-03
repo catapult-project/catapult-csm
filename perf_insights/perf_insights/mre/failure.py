@@ -30,7 +30,7 @@ class Failure(object):
         self.failure_type_name, self.description, self.stack))
 
   def AsDict(self):
-    return  {
+    return {
         'job_guid': self.job.guid,
         'function_handle_guid': self.function_handle.guid,
         'trace_handle_guid': self.trace_handle.guid,

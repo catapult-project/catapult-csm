@@ -6,7 +6,6 @@ import json
 import logging
 import math
 import os
-import time
 import urllib
 import uuid
 import webapp2
@@ -43,9 +42,9 @@ class TaskPage(webapp2.RequestHandler):
     def _slice_it(li, cols=2):
       start = 0
       for i in xrange(cols):
-          stop = start + len(li[i::cols])
-          yield li[start:stop]
-          start = stop
+        stop = start + len(li[i::cols])
+        yield li[start:stop]
+        start = stop
 
     # TODO(simonhatch): In the future it might be possibly to only specify a
     # reducer and no mapper. Revisit this.

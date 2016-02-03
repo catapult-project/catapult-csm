@@ -3,17 +3,18 @@
 # found in the LICENSE file.
 import json
 import os
-import tempfile
 import urllib
 import urllib2
 
 from perf_insights import corpus_driver
-from perf_insights.mre import gcs_trace_handle
+from perf_insights.mre import file_handle
 
 
 _DEFAULT_PERF_INSIGHTS_SERVER = 'http://performance-insights.appspot.com'
 
+
 class PerfInsightsCorpusDriver(corpus_driver.CorpusDriver):
+
   def __init__(self, cache_directory, server=_DEFAULT_PERF_INSIGHTS_SERVER):
     self.directory = cache_directory
     self.server = server
@@ -48,8 +49,7 @@ class PerfInsightsCorpusDriver(corpus_driver.CorpusDriver):
     file_urls = json.loads(response.read())
 
     for file_url in file_urls:
-      th = gcs_trace_handle.GCSTraceHandle(
-          file_url, file_url, None, self.directory)
+      th = file_handle.GCSFileHandle(file_url, self.directory)
       trace_handles.append(th)
 
     return trace_handles

@@ -26,6 +26,10 @@ from dashboard.models import anomaly_config
 from dashboard.models import graph_data
 from dashboard.models import sheriff
 
+# TODO(qyearsley): Shorten this module.
+# See https://github.com/catapult-project/catapult/issues/1917
+# pylint: disable=too-many-lines
+
 # A limit to the number of entities that can be fetched. This is just an
 # safe-guard to prevent possibly fetching too many entities.
 _FETCH_LIMIT = 100
@@ -316,7 +320,7 @@ class AddPointTest(testing_common.TestCase):
     self.assertEqual('mach_ports', tests[1].key.id())
     self.assertEqual('mach_ports_parent', tests[1].parent_test.id())
 
-  def test_LeadingSlash_Ignored(self):
+  def testPost_LeadingSlash_Ignored(self):
     point = copy.deepcopy(_SAMPLE_POINT)
     point['test'] = '/boot_time/pre_plugin_time'
     self.testapp.post(
@@ -396,7 +400,7 @@ class AddPointTest(testing_common.TestCase):
     response = self.testapp.post(
         '/add_point', {'data': json.dumps([point])}, status=400,
         extra_environ={'REMOTE_ADDR': _WHITELISTED_IP})
-    self.assertEqual(
+    self.assertIn(
         'Bad value for "revision", should be numerical.\n', response.body)
 
   def testPost_InvalidSupplementalRevision_DropsRevision(self):
@@ -553,10 +557,10 @@ class AddPointTest(testing_common.TestCase):
     if the Test matches the pattern of the AnomalyConfig.
     """
     anomaly_config1 = anomaly_config.AnomalyConfig(
-        id='modelset1', config='',
+        id='anomaly_config1', config='',
         patterns=['ChromiumPerf/*/dromaeo/jslib']).put()
     anomaly_config2 = anomaly_config.AnomalyConfig(
-        id='modelset2', config='',
+        id='anomaly_config2', config='',
         patterns=['*/*image_benchmark/*', '*/*/scrolling_benchmark/*']).put()
 
     data_param = json.dumps([
@@ -848,7 +852,7 @@ class AddPointTest(testing_common.TestCase):
     response = self.testapp.post(
         '/add_point', {'data': json.dumps([point])}, status=400,
         extra_environ={'REMOTE_ADDR': _WHITELISTED_IP})
-    self.assertEqual('No "value" given.\n', response.body)
+    self.assertIn('No "value" given.\n', response.body)
     self.assertIsNone(graph_data.Row.query().get())
 
   def testPost_WithBadValue_Rejected(self):
@@ -859,7 +863,7 @@ class AddPointTest(testing_common.TestCase):
         '/add_point', {'data': json.dumps([point])}, status=400,
         extra_environ={'REMOTE_ADDR': _WHITELISTED_IP})
     self.ExecuteTaskQueueTasks('/add_point_queue', add_point._TASK_QUEUE_NAME)
-    self.assertEqual(
+    self.assertIn(
         'Bad value for "value", should be numerical.\n', response.body)
     self.assertIsNone(graph_data.Row.query().get())
 

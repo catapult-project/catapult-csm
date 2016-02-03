@@ -16,10 +16,9 @@ tr.b.unittest.testSuite(function() {
 
   var BATTOR_LINES = [
     '# BattOr',
-    '# voltage range [0.000000, 6144.000000] mV',
-    '# current range [0.000000, 2275.555556] mA',
-    '# sample_rate=2000Hz, gain=5.000000x',
-    '# filpot_pos=4, amppot_pos=256, timer_ovf=499, timer_div=4 ovs_bits=1',
+    '# voltage_range [0.0, 6144.0] mV',
+    '# current_range [0.0, 2275.5] mA',
+    '# sample_rate 2000 Hz, gain 5.0x',
     '0.000000 0.000000 4000.000000',
     '0.500000 0.000000 4000.000000',
     '1.000000 0.000000 4000.000000',
@@ -72,6 +71,26 @@ tr.b.unittest.testSuite(function() {
   test('importMissingLinuxTrace', function() {
     var m = tr.c.TestUtils.newModelWithEvents(BATTOR_LINES.join('\n'));
     assert.isTrue(m.hasImportWarnings);
+  });
+
+  test('crossCorrelateWithoutSyncMarkers', function() {
+    // Create model.
+    var m = new tr.Model();
+    var io = new tr.importer.ImportOptions();
+    io.showImportWarnings = false;
+    m.importOptions = io;
+
+    // Create importer and import power trace.
+    var importer = new tr.e.importer.battor.BattorImporter(
+        m, BATTOR_LINES.join('\n'));
+    var series = new tr.model.PowerSeries(m.device);
+    importer.importPowerSamples(series);
+
+    // Check to make sure corrleation sync fails because there are no marks.
+    var syncMarks = [];
+    assert.isUndefined(importer.correlationClockSync(series, syncMarks));
+    assert.isTrue(m.hasImportWarnings);
+    assert.isUndefined(m.device.powerSeries);
   });
 
   test('importNotEnoughSamples', function() {

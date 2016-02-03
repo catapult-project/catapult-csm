@@ -53,7 +53,7 @@ found in the LICENSE file.
   var selectEl;
 
   function loadTraces(filenames, onTracesLoaded) {
-    Timing.markTimeBegin('loadTraces');
+    var loadTracesMakedTimer = Timing.mark('TraceImport', 'loadTraces');
     var traces = [];
     for (var i = 0; i < filenames.length; i++) {
       traces.push(undefined);
@@ -65,7 +65,7 @@ found in the LICENSE file.
         traces[i] = trace;
         numTracesPending--;
         if (numTracesPending == 0) {
-          Timing.markTimeEnd('loadTraces');
+          loadTracesMakedTimer.end();
           onTracesLoaded(filenames, traces);
         }
       });
@@ -78,9 +78,16 @@ found in the LICENSE file.
   }
 
   function createViewFromTraces(filenames, traces) {
-    Timing.markTimeBegin('createViewFromTraces');
+    var createViewFromTracesTimer = Timing.mark(
+        'TraceImport', 'createViewFromTraces');
     var m = new tr.Model();
-    var i = new tr.importer.Import(m);
+
+    var trackDetailedModelStatsEl =
+        tr.b.findDeepElementMatching(document.body,
+                                     '#track-detailed-model-stats');
+    var importOptions = new tr.importer.ImportOptions();
+    importOptions.trackDetailedModelStats = trackDetailedModelStatsEl.checked;
+    var i = new tr.importer.Import(m, importOptions);
     var p = i.importTracesWithProgressDialog(traces);
 
     p.then(
@@ -89,14 +96,14 @@ found in the LICENSE file.
         timelineViewEl.updateDocumentFavicon();
         timelineViewEl.globalMode = true;
         timelineViewEl.viewTitle = '';
-        Timing.markTimeEnd('createViewFromTraces');
+        createViewFromTracesTimer.end();
       },
       function(err) {
         var overlay = new tr.ui.b.Overlay();
         overlay.textContent = tr.b.normalizeException(err).message;
         overlay.title = 'Import error';
         overlay.visible = true;
-        Timing.markTimeEnd('createViewFromTraces');
+        createViewFromTracesTimer.end();
       });
   }
 
@@ -138,9 +145,10 @@ found in the LICENSE file.
   window.addEventListener('hashchange', onHashChange);
 
   function onLoad() {
-    Timing.markTimeBegin('onLoad');
+    var onLoadTimer = Timing.mark('TraceImport', 'onLoad');
     timelineViewEl = document.querySelector('tr-ui-timeline-view');
     timelineViewEl.globalMode = true;
+
 
     selectEl = document.createElement('select');
     timelineViewEl.leftControls.appendChild(selectEl);
@@ -162,8 +170,17 @@ found in the LICENSE file.
       } else {
         onHashChange();
       }
-    }).then(Timing.markTimeEnd.call(this, 'onLoad'));
+    }).then(onLoadTimer.end.call(this));
+
+    var trackDetailedModelStatsEl = tr.ui.b.createCheckBox(
+        this, 'trackDetailedModelStats',
+        'traceViewer.trackDetailedModelStats', false,
+        'Detailed file size stats',
+        onHashChange);
+    trackDetailedModelStatsEl.id = 'track-detailed-model-stats';
+    timelineViewEl.leftControls.appendChild(trackDetailedModelStatsEl);
   }
+
   window.addEventListener('load', onLoad);
   </script>
 </body>

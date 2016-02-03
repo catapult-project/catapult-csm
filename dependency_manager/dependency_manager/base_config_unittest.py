@@ -5,7 +5,6 @@
 # pylint: disable=unused-argument
 
 import os
-import sys
 import unittest
 
 from catapult_base import cloud_storage
@@ -23,25 +22,26 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                              uploader.CloudStorageUploader.__eq__)
     self.setUpPyfakefs()
     self.dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash12',
-                   'download_path': '../../relative/dep1/path2'}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash12',
+                         'download_path': '../../relative/dep1/path2'}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
 
     self.expected_file_lines = [
+      # pylint: disable=bad-continuation
       '{', '"config_type": "BaseConfig",', '"dependencies": {',
         '"dep1": {', '"cloud_storage_base_folder": "dependencies_folder",',
           '"cloud_storage_bucket": "bucket1",', '"file_info": {',
@@ -57,35 +57,36 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
       '}', '}']
 
     self.file_path = os.path.abspath(os.path.join(
-          'path', 'to', 'config', 'file'))
+        'path', 'to', 'config', 'file'))
 
     self.new_dep_path = 'path/to/new/dep'
     self.fs.CreateFile(self.new_dep_path)
     self.new_dep_hash = 'A23B56B7F23E798601F'
     self.new_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': self.new_dep_hash,
-                   'download_path': '../../relative/dep1/path2'}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': self.new_dep_hash,
+                         'download_path': '../../relative/dep1/path2'}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     self.new_bucket = 'bucket1'
     self.new_remote_path = 'dependencies_folder/dep1_%s' % self.new_dep_hash
     self.new_pending_upload = uploader.CloudStorageUploader(
         self.new_bucket, self.new_remote_path, self.new_dep_path)
     self.expected_new_backup_path = '.'.join([self.new_remote_path, 'old'])
     self.new_expected_file_lines = [
+      # pylint: disable=bad-continuation
       '{', '"config_type": "BaseConfig",', '"dependencies": {',
         '"dep1": {', '"cloud_storage_base_folder": "dependencies_folder",',
           '"cloud_storage_bucket": "bucket1",', '"file_info": {',
@@ -110,24 +111,25 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     self.expected_final_backup_path = '.'.join([self.final_remote_path,
                                                 'old'])
     self.final_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': self.new_dep_hash,
-                   'download_path': '../../relative/dep1/path2'}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': self.final_dep_hash,
-                   'download_path': '../../relative/dep2/path1'},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': self.new_dep_hash,
+                         'download_path': '../../relative/dep1/path2'}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': self.final_dep_hash,
+                         'download_path': '../../relative/dep2/path1'},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     self.final_expected_file_lines = [
+      # pylint: disable=bad-continuation
       '{', '"config_type": "BaseConfig",', '"dependencies": {',
         '"dep1": {', '"cloud_storage_base_folder": "dependencies_folder",',
           '"cloud_storage_bucket": "bucket1",', '"file_info": {',
@@ -164,7 +166,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
 
   def testCreateEmptyConfigError(self):
     self.assertRaises(dependency_manager.EmptyConfigError,
-        dependency_manager.BaseConfig, self.file_path)
+                      dependency_manager.BaseConfig, self.file_path)
 
   def testCloudStorageRemotePath(self):
     dependency = 'dep_name'
@@ -221,7 +223,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
 
     self.assertFalse(config.ExecuteUpdateJobs())
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(self.dependencies, config._config_data)
     file_module = fake_filesystem.FakeFileOpen(self.fs)
@@ -775,10 +777,9 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                        contents='\n'.join(self.expected_file_lines))
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     config._config_data = self.new_dependencies.copy()
-    config._is_dirty = True
     config._pending_uploads = [self.new_pending_upload]
     self.assertEqual(self.new_dependencies, config._config_data)
-    self.assertTrue(config._is_dirty)
+    self.assertTrue(config._IsDirty())
     self.assertEqual(1, len(config._pending_uploads))
     self.assertEqual(self.new_pending_upload, config._pending_uploads[0])
     expected_exists_calls = [mock.call(self.new_bucket, self.new_remote_path)]
@@ -788,7 +789,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     expected_delete_calls = []
 
     self.assertTrue(config.ExecuteUpdateJobs())
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(self.new_dependencies, config._config_data)
     file_module = fake_filesystem.FakeFileOpen(self.fs)
@@ -814,10 +815,9 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                        contents='\n'.join(self.expected_file_lines))
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     config._config_data = self.new_dependencies.copy()
-    config._is_dirty = True
     config._pending_uploads = [self.new_pending_upload]
     self.assertEqual(self.new_dependencies, config._config_data)
-    self.assertTrue(config._is_dirty)
+    self.assertTrue(config._IsDirty())
     self.assertEqual(1, len(config._pending_uploads))
     self.assertEqual(self.new_pending_upload, config._pending_uploads[0])
     expected_exists_calls = [mock.call(self.new_bucket, self.new_remote_path)]
@@ -828,7 +828,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                                      self.expected_new_backup_path)]
 
     self.assertTrue(config.ExecuteUpdateJobs(force=True))
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(self.new_dependencies, config._config_data)
     file_module = fake_filesystem.FakeFileOpen(self.fs)
@@ -889,11 +889,10 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                        contents='\n'.join(self.expected_file_lines))
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     config._config_data = self.final_dependencies.copy()
-    config._is_dirty = True
     config._pending_uploads = [self.new_pending_upload,
                                self.final_pending_upload]
     self.assertEqual(self.final_dependencies, config._config_data)
-    self.assertTrue(config._is_dirty)
+    self.assertTrue(config._IsDirty())
     self.assertEqual(2, len(config._pending_uploads))
     self.assertEqual(self.new_pending_upload, config._pending_uploads[0])
     self.assertEqual(self.final_pending_upload, config._pending_uploads[1])
@@ -911,7 +910,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
                                      self.expected_final_backup_path)]
 
     self.assertTrue(config.ExecuteUpdateJobs(force=True))
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(self.final_dependencies, config._config_data)
     file_module = fake_filesystem.FakeFileOpen(self.fs)
@@ -969,7 +968,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     self.fs.CreateFile(self.file_path,
                        contents='\n'.join(self.expected_file_lines))
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertEqual(expected_dependencies, config._config_data)
 
     base_config_cs_mock.CalculateHash.return_value = self.new_dep_hash
@@ -977,7 +976,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     expected_dependencies = self.new_dependencies
     config.AddCloudStorageDependencyUpdateJob(
         'dep1', 'plat2', self.new_dep_path, execute_job=True)
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(expected_dependencies, config._config_data)
     # check that file contents has been updated
@@ -991,7 +990,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     base_config_cs_mock.CalculateHash.return_value = self.final_dep_hash
     config.AddCloudStorageDependencyUpdateJob(
         'dep2', 'plat1', self.final_dep_path, execute_job=True)
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(expected_dependencies, config._config_data)
     # check that file contents has been updated
@@ -1016,7 +1015,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
 
     expected_dependencies = self.dependencies
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
-    self.assertFalse(config._is_dirty)
+    self.assertFalse(config._IsDirty())
     self.assertFalse(config._pending_uploads)
     self.assertEqual(expected_dependencies, config._config_data)
 
@@ -1025,7 +1024,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     expected_dependencies = self.new_dependencies
     config.AddCloudStorageDependencyUpdateJob(
         'dep1', 'plat2', self.new_dep_path, execute_job=False)
-    self.assertTrue(config._is_dirty)
+    self.assertTrue(config._IsDirty())
     self.assertEqual(1, len(config._pending_uploads))
     self.assertEqual(self.new_pending_upload, config._pending_uploads[0])
     self.assertEqual(expected_dependencies, config._config_data)
@@ -1040,7 +1039,7 @@ class BaseConfigCreationAndUpdateUnittests(fake_filesystem_unittest.TestCase):
     base_config_cs_mock.CalculateHash.return_value = self.final_dep_hash
     config.AddCloudStorageDependencyUpdateJob(
         'dep2', 'plat1', self.final_dep_path, execute_job=False)
-    self.assertTrue(config._is_dirty)
+    self.assertTrue(config._IsDirty())
     self.assertEqual(expected_dependencies, config._config_data)
     # check that file contents have not been updated.
     expected_file_lines = list(self.expected_file_lines)
@@ -1066,33 +1065,36 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
                           'download_path': self.download_path,
                           'local_paths': self.local_paths}
     self.dependencies = {
-      'dep1': {'cloud_storage_bucket': self.cs_bucket,
-        'cloud_storage_base_folder': self.cs_base_folder,
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': self.platform_dict
-               }
-      },
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {
+            'cloud_storage_bucket': self.cs_bucket,
+            'cloud_storage_base_folder': self.cs_base_folder,
+            'file_info': {
+                'plat1': {
+                    'cloud_storage_hash': 'hash11',
+                    'download_path': '../../relative/dep1/path1',
+                    'local_paths': ['../../../relative/local/path11',
+                                    '../../../relative/local/path12']},
+                'plat2': self.platform_dict
+            }
+        },
+        'dep2': {
+            'cloud_storage_bucket': 'bucket2',
+            'file_info': {
+                'plat1': {
+                    'cloud_storage_hash': 'hash21',
+                    'download_path': '../../relative/dep2/path1',
+                    'local_paths': ['../../../relative/local/path31',
+                                    '../../../relative/local/path32']},
+                'plat2': {
+                    'cloud_storage_hash': 'hash22',
+                    'download_path': '../../relative/dep2/path2'}}}}
 
     self.file_path = os.path.abspath(os.path.join(
-          'path', 'to', 'config', 'file'))
+        'path', 'to', 'config', 'file'))
 
 
     self.expected_file_lines = [
+      # pylint: disable=bad-continuation
       '{', '"config_type": "BaseConfig",', '"dependencies": {',
         '"dep1": {', '"cloud_storage_base_folder": "dependencies_folder",',
           '"cloud_storage_bucket": "bucket1",', '"file_info": {',
@@ -1137,29 +1139,29 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testSetPlatformDataCloudStorageBucketSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     updated_cs_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'new_bucket',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash12',
-                   'download_path': '../../relative/dep1/path2',
-                   'local_paths': ['../../../relative/local/path21',
-                                   '../../../relative/local/path22']}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'new_bucket',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1',
+                         'local_paths': ['../../../relative/local/path11',
+                                         '../../../relative/local/path12']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash12',
+                         'download_path': '../../relative/dep1/path2',
+                         'local_paths': ['../../../relative/local/path21',
+                                         '../../../relative/local/path22']}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1',
+                         'local_paths': ['../../../relative/local/path31',
+                                         '../../../relative/local/path32']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     config._SetPlatformData('dep1', 'plat2', 'cloud_storage_bucket',
                             'new_bucket')
     self.assertEqual(updated_cs_dependencies, config._config_data)
@@ -1167,29 +1169,29 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testSetPlatformDataCloudStorageBaseFolderSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     updated_cs_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'new_dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash12',
-                   'download_path': '../../relative/dep1/path2',
-                   'local_paths': ['../../../relative/local/path21',
-                                   '../../../relative/local/path22']}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'new_dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1',
+                         'local_paths': ['../../../relative/local/path11',
+                                         '../../../relative/local/path12']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash12',
+                         'download_path': '../../relative/dep1/path2',
+                         'local_paths': ['../../../relative/local/path21',
+                                         '../../../relative/local/path22']}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1',
+                         'local_paths': ['../../../relative/local/path31',
+                                         '../../../relative/local/path32']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     config._SetPlatformData('dep1', 'plat2', 'cloud_storage_base_folder',
                             'new_dependencies_folder')
     self.assertEqual(updated_cs_dependencies, config._config_data)
@@ -1197,29 +1199,29 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testSetPlatformDataHashSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     updated_cs_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': {
-                   'cloud_storage_hash': 'new_hash',
-                   'download_path': '../../relative/dep1/path2',
-                   'local_paths': ['../../../relative/local/path21',
-                                   '../../../relative/local/path22']}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1',
+                         'local_paths': ['../../../relative/local/path11',
+                                         '../../../relative/local/path12']},
+                     'plat2': {
+                         'cloud_storage_hash': 'new_hash',
+                         'download_path': '../../relative/dep1/path2',
+                         'local_paths': ['../../../relative/local/path21',
+                                         '../../../relative/local/path22']}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1',
+                         'local_paths': ['../../../relative/local/path31',
+                                         '../../../relative/local/path32']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     config._SetPlatformData('dep1', 'plat2', 'cloud_storage_hash',
                             'new_hash')
     self.assertEqual(updated_cs_dependencies, config._config_data)
@@ -1227,29 +1229,29 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testSetPlatformDataDownloadPathSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     updated_cs_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash12',
-                   'download_path': '../../new/dep1/path2',
-                   'local_paths': ['../../../relative/local/path21',
-                                   '../../../relative/local/path22']}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1',
+                         'local_paths': ['../../../relative/local/path11',
+                                         '../../../relative/local/path12']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash12',
+                         'download_path': '../../new/dep1/path2',
+                         'local_paths': ['../../../relative/local/path21',
+                                         '../../../relative/local/path22']}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1',
+                         'local_paths': ['../../../relative/local/path31',
+                                         '../../../relative/local/path32']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     config._SetPlatformData('dep1', 'plat2', 'download_path',
                             '../../new/dep1/path2')
     self.assertEqual(updated_cs_dependencies, config._config_data)
@@ -1257,29 +1259,29 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testSetPlatformDataLocalPathSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     updated_cs_dependencies = {
-      'dep1': {'cloud_storage_bucket': 'bucket1',
-               'cloud_storage_base_folder': 'dependencies_folder',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash11',
-                   'download_path': '../../relative/dep1/path1',
-                   'local_paths': ['../../../relative/local/path11',
-                                   '../../../relative/local/path12']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash12',
-                   'download_path': '../../relative/dep1/path2',
-                   'local_paths': ['../../new/relative/local/path21',
-                                   '../../new/relative/local/path22']}}},
-      'dep2': {'cloud_storage_bucket': 'bucket2',
-               'file_info': {
-                 'plat1': {
-                   'cloud_storage_hash': 'hash21',
-                   'download_path': '../../relative/dep2/path1',
-                   'local_paths': ['../../../relative/local/path31',
-                                   '../../../relative/local/path32']},
-                 'plat2': {
-                   'cloud_storage_hash': 'hash22',
-                   'download_path': '../../relative/dep2/path2'}}}}
+        'dep1': {'cloud_storage_bucket': 'bucket1',
+                 'cloud_storage_base_folder': 'dependencies_folder',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash11',
+                         'download_path': '../../relative/dep1/path1',
+                         'local_paths': ['../../../relative/local/path11',
+                                         '../../../relative/local/path12']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash12',
+                         'download_path': '../../relative/dep1/path2',
+                         'local_paths': ['../../new/relative/local/path21',
+                                         '../../new/relative/local/path22']}}},
+        'dep2': {'cloud_storage_bucket': 'bucket2',
+                 'file_info': {
+                     'plat1': {
+                         'cloud_storage_hash': 'hash21',
+                         'download_path': '../../relative/dep2/path1',
+                         'local_paths': ['../../../relative/local/path31',
+                                         '../../../relative/local/path32']},
+                     'plat2': {
+                         'cloud_storage_hash': 'hash22',
+                         'download_path': '../../relative/dep2/path2'}}}}
     config._SetPlatformData('dep1', 'plat2', 'local_paths',
                             ['../../new/relative/local/path21',
                              '../../new/relative/local/path22'])
@@ -1309,25 +1311,25 @@ class BaseConfigDataManipulationUnittests(fake_filesystem_unittest.TestCase):
   def testGetPlatformDataCloudStorageBaseFolderSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     self.assertEqual(self.cs_base_folder, config._GetPlatformData(
-          'dep1', 'plat2', 'cloud_storage_base_folder'))
+        'dep1', 'plat2', 'cloud_storage_base_folder'))
     self.assertEqual(self.dependencies, config._config_data)
 
   def testGetPlatformDataHashSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     self.assertEqual(self.cs_hash, config._GetPlatformData(
-                     'dep1', 'plat2', 'cloud_storage_hash'))
+        'dep1', 'plat2', 'cloud_storage_hash'))
     self.assertEqual(self.dependencies, config._config_data)
 
   def testGetPlatformDataDownloadPathSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     self.assertEqual(self.download_path, config._GetPlatformData(
-          'dep1', 'plat2', 'download_path'))
+        'dep1', 'plat2', 'download_path'))
     self.assertEqual(self.dependencies, config._config_data)
 
   def testGetPlatformDataLocalPathSuccess(self):
     config = dependency_manager.BaseConfig(self.file_path, writable=True)
     self.assertEqual(self.local_paths, config._GetPlatformData(
-          'dep1', 'plat2', 'local_paths'))
+        'dep1', 'plat2', 'local_paths'))
     self.assertEqual(self.dependencies, config._config_data)
 
 class BaseConfigTest(unittest.TestCase):
@@ -1353,39 +1355,39 @@ class BaseConfigTest(unittest.TestCase):
                        'dependencies': {}}
 
     dependency_dict = {
-      'dep': {
-        'cloud_storage_base_folder': 'cs_base_folder1',
-        'cloud_storage_bucket': 'bucket1',
-        'file_info': {
-          'plat1_arch1': {
-            'cloud_storage_hash': 'hash111',
-            'download_path': 'download_path111',
-            'cs_remote_path': 'cs_path111',
-            'version_in_cs': 'version_111',
-            'local_paths': ['local_path1110', 'local_path1111']
-          },
-          'plat1_arch2': {
-            'cloud_storage_hash': 'hash112',
-            'download_path': 'download_path112',
-            'cs_remote_path': 'cs_path112',
-            'local_paths': ['local_path1120', 'local_path1121']
-          },
-          'win_arch1': {
-            'cloud_storage_hash': 'hash1w1',
-            'download_path': 'download\\path\\1w1',
-            'cs_remote_path': 'cs_path1w1',
-            'local_paths': ['local\\path\\1w10', 'local\\path\\1w11']
-          },
-          'all_the_variables': {
-            'cloud_storage_hash': 'hash111',
-            'download_path': 'download_path111',
-            'cs_remote_path': 'cs_path111',
-            'version_in_cs': 'version_111',
-            'path_in_archive': 'path/in/archive',
-            'local_paths': ['local_path1110', 'local_path1111']
-          }
+        'dep': {
+            'cloud_storage_base_folder': 'cs_base_folder1',
+            'cloud_storage_bucket': 'bucket1',
+            'file_info': {
+                'plat1_arch1': {
+                    'cloud_storage_hash': 'hash111',
+                    'download_path': 'download_path111',
+                    'cs_remote_path': 'cs_path111',
+                    'version_in_cs': 'version_111',
+                    'local_paths': ['local_path1110', 'local_path1111']
+                },
+                'plat1_arch2': {
+                    'cloud_storage_hash': 'hash112',
+                    'download_path': 'download_path112',
+                    'cs_remote_path': 'cs_path112',
+                    'local_paths': ['local_path1120', 'local_path1121']
+                },
+                'win_arch1': {
+                    'cloud_storage_hash': 'hash1w1',
+                    'download_path': 'download\\path\\1w1',
+                    'cs_remote_path': 'cs_path1w1',
+                    'local_paths': ['local\\path\\1w10', 'local\\path\\1w11']
+                },
+                'all_the_variables': {
+                    'cloud_storage_hash': 'hash111',
+                    'download_path': 'download_path111',
+                    'cs_remote_path': 'cs_path111',
+                    'version_in_cs': 'version_111',
+                    'path_in_archive': 'path/in/archive',
+                    'local_paths': ['local_path1110', 'local_path1111']
+                }
+            }
         }
-      }
     }
     self.one_dep_dict = {'config_type': self.config_type,
                          'dependencies': dependency_dict}
@@ -1484,4 +1486,3 @@ class BaseConfigTest(unittest.TestCase):
       deps_seen.append(dep_info)
     dep_info_mock.assert_call_args(expected_calls)
     self.assertItemsEqual(expected_dep_info, deps_seen)
-

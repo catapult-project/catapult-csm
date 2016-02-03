@@ -19,6 +19,8 @@ import zipfile
 
 from hooks import install
 
+from catapult_base import xvfb
+
 # URL on omahaproxy.appspot.com which lists the current version for the os
 # and channel.
 VERSION_LOOKUP_URL = 'https://omahaproxy.appspot.com/all?os=%s&channel=%s'
@@ -73,27 +75,6 @@ PLATFORM_MAPPING = {
 }
 
 
-def StartXvfb():
-  display = ':99'
-  xvfb_command = [
-    'Xvfb',
-    display,
-    '-screen',
-    '0',
-    '1024x769x24',
-    '-ac'
-  ]
-  xvfb_process = subprocess.Popen(
-      xvfb_command, stdout=open(os.devnull), stderr=open(os.devnull))
-  time.sleep(0.2)
-  returncode = xvfb_process.poll()
-  if returncode is None:
-    os.environ['DISPLAY'] = display
-  else:
-    logging.error('Xvfb did not start, returncode: %s', returncode)
-  return xvfb_process
-
-
 def IsDepotToolsPath(path):
   return os.path.isfile(os.path.join(path, 'gclient'))
 
@@ -107,7 +88,7 @@ def FindDepotTools():
   # Check if depot_tools is in the path
   for path in os.environ['PATH'].split(os.pathsep):
     if IsDepotToolsPath(path):
-        return path.rstrip(os.sep)
+      return path.rstrip(os.sep)
 
   return None
 
@@ -169,7 +150,7 @@ def GetLocalChromePath(path_from_command_line):
 
   if sys.platform == 'darwin':  # Mac
     chrome_path = (
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     if os.path.isfile(chrome_path):
       return chrome_path
   elif sys.platform.startswith('linux'):
@@ -218,6 +199,13 @@ def Main(argv):
     platform_data = PLATFORM_MAPPING[sys.platform]
     user_data_dir = tempfile.mkdtemp()
     tmpdir = None
+    xvfb_process = None
+
+    # Skip canary channel temporarily
+    # https://github.com/catapult-project/catapult/issues/1939
+    if args.channel == 'canary':
+      return 0
+
     server_path = os.path.join(os.path.dirname(
         os.path.abspath(__file__)), os.pardir, 'bin', 'run_dev_server')
     # TODO(anniesullie): Make OS selection of port work on Windows. See #1235.
@@ -227,7 +215,7 @@ def Main(argv):
       port = '0'
     server_command = [server_path, '--no-install-hooks', '--port', port]
     if sys.platform.startswith('win'):
-        server_command = ['python.exe'] + server_command
+      server_command = ['python.exe'] + server_command
     print "Starting dev_server..."
     server_process = subprocess.Popen(
         server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -236,9 +224,8 @@ def Main(argv):
     if sys.platform != 'win32':
       output = server_process.stderr.readline()
       port = re.search(
-          'Now running on http://127.0.0.1:([\d]+)', output).group(1)
+          r'Now running on http://127.0.0.1:([\d]+)', output).group(1)
 
-    xvfb_process = None
     chrome_info = None
     if args.use_local_chrome:
       chrome_path = GetLocalChromePath(args.chrome_path)
@@ -251,9 +238,11 @@ def Main(argv):
       if sys.platform == 'linux2' and channel == 'canary':
         channel = 'dev'
       assert channel in ['stable', 'beta', 'dev', 'canary']
+
+
       tmpdir, version = DownloadChromium(channel)
-      if platform_data.get('use_xfvb'):
-        xvfb_process = StartXvfb()
+      if xvfb.ShouldStartXvfb():
+        xvfb_process = xvfb.StartXvfb()
       chrome_path = os.path.join(
           tmpdir, platform_data['chromepath'])
       os.chmod(chrome_path, os.stat(chrome_path).st_mode | stat.S_IEXEC)
@@ -264,7 +253,7 @@ def Main(argv):
         contents = os.listdir(
             os.path.join(tmpdir, platform_data['version_path']))
         for path in contents:
-          if re.match('\d+\.\d+\.\d+\.\d+', path):
+          if re.match(r'\d+\.\d+\.\d+\.\d+', path):
             version = path
       if platform_data.get('additional_paths'):
         for path in platform_data.get('additional_paths'):
@@ -282,7 +271,7 @@ def Main(argv):
         '--noerrdialogs',
         '--window-size=1280,1024',
         ('http://localhost:%s/%s/tests.html?' % (port, args.tests)) +
-            'headless=true&testTypeToRun=all',
+        'headless=true&testTypeToRun=all',
     ]
     print "Starting Chrome %s..." % chrome_info
     chrome_process = subprocess.Popen(
@@ -314,8 +303,8 @@ def Main(argv):
         shutil.rmtree(tmpdir)
         shutil.rmtree(user_data_dir)
       except OSError as e:
-        logging.error('Error cleaning up temp dirs %s and %s: %s' % (
-            tmpdir, user_data_dir, e))
+        logging.error('Error cleaning up temp dirs %s and %s: %s',
+                      tmpdir, user_data_dir, e)
     if xvfb_process:
       xvfb_process.kill()
 

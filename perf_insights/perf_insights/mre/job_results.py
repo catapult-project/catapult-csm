@@ -16,7 +16,7 @@ class JobResults(object):
 
   @property
   def failures(self):
-      return self._failures
+    return self._failures
 
   @property
   def all_results(self):
@@ -25,7 +25,7 @@ class JobResults(object):
 
   @property
   def reduce_results(self):
-      return self._reduce_results
+    return self._reduce_results
 
   def AsDict(self):
     return {

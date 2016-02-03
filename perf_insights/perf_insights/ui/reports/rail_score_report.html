@@ -7,10 +7,11 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/iteration_helpers.html">
 <link rel="import" href="/tracing/base/units/histogram.html">
 <link rel="import" href="/tracing/base/units/scalar.html">
-<link rel="import" href="/tracing/base/units/units.html">
+<link rel="import" href="/tracing/base/units/unit.html">
 <link rel="import" href="/tracing/extras/rail/rail_interaction_record.html">
 <link rel="import" href="/tracing/model/source_info/source_info.html">
 <link rel="import" href="/tracing/ui/base/dom_helpers.html">
+<link rel="import" href="/tracing/ui/base/grouping_table.html">
 <link rel="import" href="/tracing/ui/base/info_bar_group.html">
 <link rel="import" href="/tracing/ui/base/overlay.html">
 <link rel="import" href="/tracing/ui/base/table.html">
@@ -20,7 +21,6 @@ found in the LICENSE file.
 <link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/ui/caching_column.html">
 <link rel="import" href="/perf_insights/ui/generic_results_view.html">
-<link rel="import" href="/perf_insights/ui/grouping_table.html">
 <link rel="import" href="/perf_insights/ui/reports/pi_report.html">
 <link rel="import" href="/perf_insights/ui/trace_link_list.html">
 <link rel="import" href="/perf_insights/mappers/slice_cost.html">
@@ -113,13 +113,6 @@ found in the LICENSE file.
         return;
 
       var overallRow = this.convertToRowAndSubRows_(railScoreHistograms);
-      // Mark all first level subrows as using rail sorting.
-      if (overallRow.subRows) {
-        overallRow.subRows.forEach(function(row) {
-          row.isRailName = true;
-        });
-      }
-
       overallRow.title = 'Overall RAIL score';
       table.tableRows = [overallRow];
       table.selectedTableRow = overallRow;
@@ -133,8 +126,6 @@ found in the LICENSE file.
             return row.title;
           },
           cmp: function(a, b) {
-            if (a.isRailName && b.isRailName)
-              return tr.e.rail.railCompare(a.title, b.title);
             return a.title.localeCompare(b.title);
           },
           width: '500px'
@@ -145,7 +136,7 @@ found in the LICENSE file.
           value: function(row) {
             return tr.ui.units.createScalarSpan(
                 new tr.b.u.Scalar(row.histogram.average,
-                                  tr.b.u.Units.normalizedPercentage));
+                                  tr.b.u.Unit.byName.normalizedPercentage));
           },
           cmp: function(a, b) {
             return a.histogram.average - b.histogram.average;
@@ -158,7 +149,7 @@ found in the LICENSE file.
     addToHistograms_: function(histograms, irTree, sourceInfo) {
       histograms.histogram = histograms.histogram ||
           tr.b.u.Histogram.createLinear(
-              tr.b.u.Units.normalizedPercentage,
+              tr.b.u.Unit.byName.normalizedPercentage,
               tr.b.Range.fromExplicitRange(0, 1),
               33);
       if (irTree.overallScore !== undefined)

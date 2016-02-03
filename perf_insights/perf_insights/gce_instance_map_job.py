@@ -4,10 +4,7 @@
 import argparse
 import json
 import os
-import sys
-import traceback
 
-import perf_insights
 from perf_insights import corpus_driver_cmdline
 from perf_insights import corpus_query
 from perf_insights import map_runner

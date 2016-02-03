@@ -6,8 +6,6 @@ import json
 import os
 import multiprocessing
 import sys
-import threading
-import time
 import tempfile
 
 from perf_insights.mre import job_results as job_results_module
@@ -19,10 +17,13 @@ from perf_insights.results import gtest_progress_reporter
 
 AUTO_JOB_COUNT = -1
 
+
 class MapError(Exception):
+
   def __init__(self, *args):
     super(MapError, self).__init__(*args)
-    self.run_info = None
+    self.canonical_url = None
+
 
 class MapRunner(object):
   def __init__(self, trace_handles, job,
@@ -31,7 +32,7 @@ class MapRunner(object):
                output_formatters=None):
     self._job = job
     self._stop_on_error = stop_on_error
-    self._failed_run_info_to_dump = None
+    self._failed_canonical_url_to_dump = None
     if progress_reporter is None:
       self._progress_reporter = gtest_progress_reporter.GTestProgressReporter(
                                     sys.stdout)
@@ -49,8 +50,9 @@ class MapRunner(object):
     self._wq = threaded_work_queue.ThreadedWorkQueue(num_threads=jobs)
 
   def _ProcessOneTrace(self, trace_handle):
+    canonical_url = trace_handle.canonical_url
     subresults = map_results.MapResults()
-    print 'Will run ' + trace_handle.source_url
+    print 'Will run ' + canonical_url
 
     map_single_trace.MapSingleTrace(
         subresults,
@@ -60,7 +62,7 @@ class MapRunner(object):
     had_failure = len(subresults.failures) > 0
 
     if had_failure:
-      print "Failure while mapping " + trace_handle.source_url
+      print "Failure while mapping " + canonical_url
       for failure in subresults.failures:
         print failure
 

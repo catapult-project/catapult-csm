@@ -1,21 +1,14 @@
 # Copyright (c) 2015 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-import json
-import logging
 import os
-import urllib
-import uuid
 import webapp2
 
-from google.appengine.api import modules
-from google.appengine.api import taskqueue
-from google.appengine.api import urlfetch
-from perf_insights.endpoints.cloud_mapper import job_info
 from perf_insights import cloud_config
 
+
 def _is_devserver():
-  return os.environ.get('SERVER_SOFTWARE','').startswith('Development')
+  return os.environ.get('SERVER_SOFTWARE', '').startswith('Development')
 
 _DEFAULT_MAPPER = """
 <!DOCTYPE html>
@@ -25,6 +18,9 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 <link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import"
+    href="/tracing/metrics/system_health/system_health_metric.html">
+<link rel="import" href="/tracing/value/value.html">
 
 <script>
 'use strict';
@@ -104,6 +100,7 @@ Corpus: <br><input type="text" name="corpus" value="{corpus}"/>
 </body>
 </html>
 """
+
 
 class TestPage(webapp2.RequestHandler):
 

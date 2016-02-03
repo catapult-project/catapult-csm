@@ -9,15 +9,16 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/range.html">
 <link rel="import" href="/tracing/extras/chrome/chrome_browser_helper.html">
 <link rel="import" href="/tracing/extras/chrome/chrome_renderer_helper.html">
+<link rel="import" href="/tracing/value/value.html">
 
 <script>
 'use strict';
 
 tr.exportTo('pie', function() {
-  function mapStartupInfo(results, runInfo, model) {
+  function mapStartupInfo(results, canonicalUrl, model) {
     var startupIRs = model.interactionRecords.filter(function(ir) {
       return ir instanceof tr.e.rail.LoadInteractionRecord &&
-             ir.name === 'Startup';
+             ir.initiatorTitle === tr.e.rail.LOAD_SUBTYPE_NAMES.STARTUP;
     });
     // Find the Startup IRs in the browser and renderer processes.
     var ChromeBrowserHelper = tr.e.audits.ChromeBrowserHelper;

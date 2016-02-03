@@ -36,10 +36,10 @@ class BisectFYIHandler(request_handler.RequestHandler):
   def post(self):
     """Runs auto bisects."""
     datastore_hooks.SetPrivilegedRequest()
-    _RunBisectIngrationTests()
+    _RunBisectIntegrationTests()
 
 
-def _RunBisectIngrationTests():
+def _RunBisectIntegrationTests():
   """Runs bisect jobs with pre determined configs."""
   errors_list = {}
   bisect_fyi_configs = stored_object.Get(_BISECT_FYI_CONFIGS_KEY)
@@ -49,7 +49,7 @@ def _RunBisectIngrationTests():
       if 'error' in results:
         errors_list[test_name] = {
             'error': results['error'],
-            'info':config.get('bisect_config')}
+            'info': config.get('bisect_config')}
     else:
       errors_list[test_name] = {'error': 'Missing bisect config.'}
   if errors_list:
@@ -73,13 +73,13 @@ def _StartBisectFYIJob(test_name, bisect_config):
     bisect_job = _MakeBisectFYITryJob(test_name, bisect_config)
   except auto_bisect.NotBisectableError as e:
     return {'error': e.message}
-  bisect_job_key = bisect_job.put()
   try:
     bisect_result = start_try_job.PerformBisect(bisect_job)
   except request_handler.InvalidInputError as e:
     bisect_result = {'error': e.message}
   if 'error' in bisect_result:
-    bisect_job_key.delete()
+    if bisect_job.key:
+      bisect_job.key.delete()
   return bisect_result
 
 
@@ -169,7 +169,7 @@ def _TextBody(errors_list):
   for test_name, data in errors_list.iteritems():
     test_alerts.append(
         _TEST_FAILURE_TEMPLATE % {
-            'test_name':test_name,
+            'test_name': test_name,
             'error': data.get('error'),
             'info': data.get('info', '')
         }
