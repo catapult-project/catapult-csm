@@ -58,6 +58,7 @@ tr.b.unittest.testSuite(function() {
         undefined /* sum over all types */, 1406976 /* 1.3 MiB */);
     hd1.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall'),
         'blink::Node', 331776 /* 324 KiB */);
+    hd1.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall'),
         'v8::Context', 1024000 /* 1000 KiB */);
     hd1.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall', '<self>'),
         undefined /* sum over all types */, 102400 /* 100 KiB */);
@@ -129,6 +130,7 @@ tr.b.unittest.testSuite(function() {
     hd2.addEntry(undefined /* sum over all traces */,
         'blink::Node', 1048576 /* 1 MiB */);
     hd2.addEntry(heapTrace('<self>'), undefined /* sum over all types */,
+        131072 /* 128 KiB */);
     hd2.addEntry(heapTrace('<self>'), 'v8::Context', 131072 /* 128 KiB */);
     hd2.addEntry(heapTrace('MessageLoop::RunTask'),
         undefined /* sum over all types */, 4823449 /* 4.6 MiB */);
@@ -137,6 +139,7 @@ tr.b.unittest.testSuite(function() {
 
     hd2.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall'),
         undefined /* sum over all types */, 2170880 /* 2.1 MiB */);
+    hd2.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall'),
         'v8::Context', 1024000 /* 1000 KiB */);
     hd2.addEntry(heapTrace('MessageLoop::RunTask', 'FunctionCall'),
         'blink::Node', 819200 /* 800 KiB */);
@@ -1903,9 +1906,6 @@ tr.b.unittest.testSuite(function() {
                     title: 'MissingSumOverAllTypes',
                     size: [51200, undefined],
                     defined: [true, false],
-                    title: 'FunctionCall',
-                    size: [undefined, 204800],
-                    defined: [undefined, true],
                     children: [
                       {
                         dimension: STACK_FRAME,
@@ -1951,6 +1951,7 @@ tr.b.unittest.testSuite(function() {
                   },
                   {
                     dimension: STACK_FRAME,
+                    title: 'FunctionCall',
                     size: [153600, 122880],
                     defined: [true, true],
                   }

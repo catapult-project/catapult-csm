@@ -4,7 +4,6 @@
 
 import datetime
 import logging
-import time
 import webapp2
 
 from perf_insights import cloud_config
@@ -13,14 +12,15 @@ from perf_insights.endpoints.cloud_mapper.cloud_helper import \
 from perf_insights.trace_info import TraceInfo
 import third_party.cloudstorage as gcs
 
-BATCH_SIZE=100
-MAX_DAYS=30
+BATCH_SIZE = 100
+MAX_DAYS = 30
+
 
 class CorpusCleanupPage(webapp2.RequestHandler):
 
   def _delete_traces(self):
     trace_bucket = cloud_config.Get().trace_upload_bucket
-    deleted_traces = 0;
+    deleted_traces = 0
 
     oldest_time = datetime.datetime.now() - datetime.timedelta(days=MAX_DAYS)
     q = TraceInfo.query(TraceInfo.date < oldest_time)
@@ -41,7 +41,7 @@ class CorpusCleanupPage(webapp2.RequestHandler):
     self.response.out.write('<html><body>')
 
     while True:
-      deleted_traces = self._delete_traces();
+      deleted_traces = self._delete_traces()
       self.response.out.write("<br><div><bold>Traces Cleaned:</bold> %s</div>"
           % deleted_traces)
 
