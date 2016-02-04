@@ -105,27 +105,11 @@ indexes:
   - name: end_revision
 
 # Might be unused!
-# This index would enable querying for non-internal-only points for a
-# particular test, filtering or sorting by revision.
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: parent_test
-  - name: revision
-
-# Might be unused!
 # This index would enable querying for points for a particular test,
 # filtering or sorting by revision, and possibly doing a projection
 # query including value.
 - kind: Row
   properties:
-  - name: parent_test
-  - name: revision
-  - name: value
-  - name: value
-- kind: Row
-  properties:
-  - name: internal_only
   - name: parent_test
   - name: revision
   - name: value
@@ -137,18 +121,7 @@ indexes:
   - name: parent_test
   - name: revision
     direction: desc
-    direction: desc
-# Might be unused!
-# The version of the above index that filters by internal_only may not be used
-# since requests to /add_point_queue should always be made by task queue, and
-# should always be authorized to fetch internal points.
-# Used in several modules (graph_json.py and graph_csv.py) to fetch the latest
-# points for a test.
-- kind: Row
-  properties:
-  - name: parent_test
-  - name: revision
-    direction: desc
+  - name: value
 
 # Used in graph_revisions.py to do a projection query for timestamp, revision
 # and value for points from a particular test.
@@ -158,24 +131,11 @@ indexes:
   - name: revision
   - name: timestamp
   - name: value
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: parent_test
-  - name: revision
-  - name: timestamp
-  - name: value
 
 # Used in several modules (graph_json.py and graph_csv.py) to fetch the latest
 # points for a test.
 - kind: Row
   properties:
-  - name: parent_test
-  - name: revision
-    direction: desc
-- kind: Row
-  properties:
-  - name: internal_only
   - name: parent_test
   - name: revision
     direction: desc
@@ -187,13 +147,6 @@ indexes:
   properties:
   - name: parent_test
   - name: revision
-
-# There is no composite index required when the user is logged in, since
-# then the query only depends on one property (timestamp).
-  properties:
-  - name: internal_only
-  - name: timestamp
-    direction: desc
 
 # May be unused!
 # Likely used in new_points.py to query newest points for a particular test.

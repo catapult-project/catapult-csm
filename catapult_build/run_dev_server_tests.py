@@ -52,8 +52,7 @@ PLATFORM_MAPPING = {
         'omaha': 'linux',
         'prefix': 'Linux_x64',
         'zip_prefix': 'linux',
-        'chromepath': 'chrome-linux/chrome',
-        'use_xfvb': True,
+        'chromepath': 'chrome-linux/chrome'
     },
     'win32': {
         'omaha': 'win',
