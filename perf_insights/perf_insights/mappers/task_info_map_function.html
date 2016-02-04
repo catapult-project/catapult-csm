@@ -5,12 +5,14 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
-<link rel="import" href="/perf_insights/mappers/thread_grouping.html">
 <link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mappers/thread_grouping.html">
 <link rel="import" href="/tracing/base/units/histogram.html">
+<link rel="import" href="/tracing/base/units/unit.html">
 <link rel="import" href="/tracing/model/flow_event.html">
 <link rel="import" href="/tracing/model/slice.html">
 <link rel="import" href="/tracing/model/source_info/source_info.html">
+<link rel="import" href="/tracing/value/value.html">
 
 <script>
 'use strict';
@@ -21,10 +23,11 @@ tr.exportTo('pi.m', function() {
   var NUM_BINS = 50;
 
   function taskInfoMapFunction(results, model) {
+    var canonicalUrl = model.canonicalUrlThatCreatedThisTrace;
     var threadGrouping = new pi.m.ThreadGrouping();
     threadGrouping.autoInitUsingHelpers(model);
-    addTimeInQueue(results, run_info, model, threadGrouping);
-    addTopLevelTasksDuration(results, run_info, model, threadGrouping);
+    addTimeInQueue(results, canonicalUrl, model, threadGrouping);
+    addTopLevelTasksDuration(results, canonicalUrl, model, threadGrouping);
   }
 
   function eatTrailingDigits(str) {
@@ -39,7 +42,7 @@ tr.exportTo('pi.m', function() {
     }
   }
 
-  function addTimeInQueue(results, model, threadGrouping) {
+  function addTimeInQueue(results, canonicalUrl, model, threadGrouping) {
     var timeInQueue = {};
     model.flowEvents.forEach(function(flowEvent) {
       if (!flowEvent.endSlice instanceof tr.model.Slice)
@@ -55,13 +58,17 @@ tr.exportTo('pi.m', function() {
       var sourceURL = model.sourceURLThatCreatedThisTrace;
       var sourceInfo = tr.model.source_info.SourceInfo(sourceURL);
       addToHistogram(timeInQueue, processName, threadName, flowEvent.duration,
-          sourceInfo);
+          canonicalUrl);
     });
     histogramsToDict(timeInQueue);
-    results.addResult('time_spent_in_queue', timeInQueue);
+    results.addValue(new tr.v.DictValue(
+        canonicalUrl,
+        'time_spent_in_queue',
+        timeInQueue));
   }
 
-  function addTopLevelTasksDuration(results, model, threadGrouping) {
+  function addTopLevelTasksDuration(results, canonicalUrl, model,
+                                    threadGrouping) {
     var timeInTask = {};
     var cpuTimeInTask = {};
     var sourceURL = model.sourceURLThatCreatedThisTrace;
@@ -78,9 +85,9 @@ tr.exportTo('pi.m', function() {
         if (!isTopLevelTask(slice))
           return;
         addToHistogram(timeInTask, processName, threadName, slice.duration,
-            sourceInfo);
+            canonicalUrl);
         addToHistogram(cpuTimeInTask, processName, threadName,
-            slice.cpuDuration, sourceInfo);
+            slice.cpuDuration, canonicalUrl);
       });
     });
     histogramsToDict(timeInTask);
@@ -101,7 +108,7 @@ tr.exportTo('pi.m', function() {
     dict[processName] = dict[processName] || {};
     dict[processName][threadName] = dict[processName][threadName] ||
         tr.b.u.Histogram.createLinear(
-            tr.b.u.Units.timeDurationInMs,
+            tr.b.u.Unit.byName.timeDurationInMs,
             tr.b.Range.fromExplicitRange(0, HISTOGRAM_MAX),
             NUM_BINS);
     dict[processName][threadName].add(value, url);

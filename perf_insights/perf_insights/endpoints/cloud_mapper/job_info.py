@@ -22,4 +22,6 @@ class JobInfo(ndb.Model):
 
   running_tasks = ndb.StringProperty(repeated=True)
 
+  running_tasks = ndb.StringProperty(repeated=True)
+
   results = ndb.StringProperty(indexed=True)

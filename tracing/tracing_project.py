@@ -36,7 +36,7 @@ def _FindAllFilesRecursive(source_paths):
         all_filenames.add(x)
   return all_filenames
 
-def _IsFilenameATest(x):  # pylint: disable=unused-argument
+def _IsFilenameATest(x):
   if x.endswith('_test.js'):
     return True
 
@@ -53,7 +53,7 @@ def _IsFilenameATest(x):  # pylint: disable=unused-argument
   return False
 
 
-class TracingProject():
+class TracingProject(object):
   catapult_path = os.path.abspath(
       os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -78,6 +78,8 @@ class TracingProject():
   chai_path = os.path.join(tracing_third_party_path, 'chai')
   mocha_path = os.path.join(tracing_third_party_path, 'mocha')
 
+  value_ui_path = os.path.join(tracing_src_path, 'value', 'ui')
+
   test_data_path = os.path.join(tracing_root_path, 'test_data')
   skp_data_path = os.path.join(tracing_root_path, 'skp_data')
 
@@ -101,7 +103,13 @@ class TracingProject():
     return project_module.Project(self.source_paths)
 
   def IsD8CompatibleFile(self, filename):
-    return not filename.startswith(self.ui_path)
+    if filename.startswith(self.ui_path):
+      return False
+
+    if filename.startswith(self.value_ui_path):
+      return False
+
+    return True
 
   def FindAllTestModuleRelPaths(self, pred=None):
     if pred is None:

@@ -12,7 +12,7 @@ found in the LICENSE file.
 <script>
 /**
  * @fileoverview Imports text files in the BattOr format into the
- * Model. This format is output by the BattOr executable.
+ * Model. This format is output by the battor_agent executable and library.
  *
  * This importer assumes the events arrive as a string. The unit tests provide
  * examples of the trace format.
@@ -21,7 +21,7 @@ found in the LICENSE file.
 
 tr.exportTo('tr.e.importer.battor', function() {
   /**
-   * Imports linux perf events into a specified model.
+   * Imports a BattOr power trace into a specified model.
    * @constructor
    */
   function BattorImporter(model, events) {
@@ -35,7 +35,7 @@ tr.exportTo('tr.e.importer.battor', function() {
 
   var battorDataLineRE = /^(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)$/;
   var battorHeaderLineRE = /^# BattOr/;
-  var sampleRateLineRE = /^# sample_rate=(\d+)Hz/;
+  var sampleRateLineRE = /^# sample_rate (\d+) Hz/;
 
   /**
    * Guesses whether the provided events is a BattOr string.
@@ -79,18 +79,11 @@ tr.exportTo('tr.e.importer.battor', function() {
       var series = new tr.model.PowerSeries(this.model_.device);
       this.importPowerSamples(series);
 
-      // Find the sync markers.
-      var syncMarks = this.model_.getClockSyncRecordsNamed('battor');
-      if (syncMarks.length < 1) {
-        this.model_.importWarning({
-          type: 'clock_sync',
-          message: 'Cannot import BattOr power trace without a sync signal.'
-        });
-        return;
-      }
+      // Find the sync markers that are identified as being for the BattOr.
+      var battorSyncMarks = this.model_.getClockSyncRecordsNamed('battor');
 
       // Try each of the clock sync techinques in order of their accuracy.
-      var shiftTs = this.correlationClockSync(syncMarks, series);
+      var shiftTs = this.correlationClockSync(battorSyncMarks, series);
 
       if (shiftTs === undefined) {
         this.model_.importWarning({
@@ -147,6 +140,15 @@ tr.exportTo('tr.e.importer.battor', function() {
     },
 
     correlationClockSync: function(syncMarks, series) {
+      // Check for the two markers that surround the sync signal are present.
+      if (syncMarks.length !== 2) {
+        this.model_.importWarning({
+          type: 'clock_sync',
+          message: 'Cannot correlate BattOr power trace without a sync signal.'
+        });
+        return undefined;
+      }
+
       // Find the regulator counter for the sync.
       var syncCtr = this.model_.kernel.counters[
           'null.vreg ' + syncMarks[0].args['regulator'] + ' enabled'];

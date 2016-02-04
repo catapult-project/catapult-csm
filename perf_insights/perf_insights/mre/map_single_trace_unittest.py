@@ -2,11 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import json
-import tempfile
 import unittest
 
 from perf_insights.mre import function_handle
-from perf_insights.mre import trace_handle as trace_handle_module
+from perf_insights.mre import file_handle
 from perf_insights.mre import job as job_module
 from perf_insights.mre import map_single_trace
 from perf_insights.mre import map_results
@@ -17,6 +16,7 @@ def _Handle(filename):
   return function_handle.FunctionHandle(modules_to_load=[module],
                                         function_name='MyMapFunction')
 
+
 class MapSingleTraceTests(unittest.TestCase):
 
   def testPassingMapScript(self):
@@ -26,9 +26,8 @@ class MapSingleTraceTests(unittest.TestCase):
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        'file:///a.json', json.dumps(events), {'m': 1})
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
     results = map_results.MapResults()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
@@ -50,17 +49,14 @@ class MapSingleTraceTests(unittest.TestCase):
     self.assertEquals(result[0]['numProcesses'], 1)
 
   def testTraceDidntImport(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     trace_string = 'This is intentionally not a trace-formatted string.'
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, trace_string);
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', trace_string)
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
-          function MyMapFunction(results, run_info, model) {
+          function MyMapFunction(results, model) {
           });
     """) as map_script:
       map_single_trace.MapSingleTrace(results, trace_handle,
@@ -68,25 +64,22 @@ class MapSingleTraceTests(unittest.TestCase):
 
     self.assertEquals(len(results.all_values), 1)
     v = results.all_values[0]
-    self.assertIsInstance(v, map_single_trace.TraceImportErrorValue);
+    self.assertIsInstance(v, map_single_trace.TraceImportErrorValue)
 
   def testMapFunctionThatThrows(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
-          function MyMapFunction(results, run_info, model) {
+          function MyMapFunction(results, model) {
             throw new Error('Expected error');
           });
     """) as map_script:
@@ -95,20 +88,17 @@ class MapSingleTraceTests(unittest.TestCase):
 
     self.assertEquals(len(results.all_values), 1)
     v = results.all_values[0]
-    self.assertIsInstance(v, map_single_trace.MapFunctionErrorValue);
+    self.assertIsInstance(v, map_single_trace.MapFunctionErrorValue)
 
   def testMapperWithLoadeError(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
@@ -119,21 +109,17 @@ class MapSingleTraceTests(unittest.TestCase):
 
     self.assertEquals(len(results.all_values), 1)
     v = results.all_values[0]
-    self.assertIsInstance(v, map_single_trace.FunctionLoadingErrorValue);
-
+    self.assertIsInstance(v, map_single_trace.FunctionLoadingErrorValue)
 
   def testNoMapper(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
@@ -143,26 +129,22 @@ class MapSingleTraceTests(unittest.TestCase):
 
     self.assertEquals(len(results.all_values), 1)
     v = results.all_values[0]
-    self.assertIsInstance(v, map_single_trace.FunctionNotDefinedErrorValue);
-
+    self.assertIsInstance(v, map_single_trace.FunctionNotDefinedErrorValue)
 
   def testMapperDoesntAddValues(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
-          function MyMapFunction(results, run_info, model) {
+          function MyMapFunction(results, model) {
       });
     """) as map_script:
       map_single_trace.MapSingleTrace(results, trace_handle,
@@ -170,27 +152,25 @@ class MapSingleTraceTests(unittest.TestCase):
 
     self.assertEquals(len(results.all_values), 1)
     v = results.all_values[0]
-    self.assertIsInstance(v, map_single_trace.NoResultsAddedErrorValue);
+    self.assertIsInstance(v, map_single_trace.NoResultsAddedErrorValue)
 
   def testMapperSkips(self):
-    run_info = run_info_module.RunInfo('file:///a.json', '/a.json',
-                                       metadata={'m': 1})
     events = [
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'a', 'cat': 'c',
        'ts': 0, 'dur': 10, 'args': {}},
       {'pid': 1, 'tid': 2, 'ph': 'X', 'name': 'b', 'cat': 'c',
        'ts': 3, 'dur': 5, 'args': {}}
     ]
-    trace_handle = trace_handle_module.InMemoryTraceHandle(
-        run_info, json.dumps(events));
-
+    trace_handle = file_handle.InMemoryFileHandle(
+        '/a.json', json.dumps(events))
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
       pi.mre.FunctionRegistry.register(
-          function MyMapFunction(results, run_info, model) {
-            results.addValue(new pi.v.SkipValue(
-                run_info, 'SkippedFieldName',
+          function MyMapFunction(results, model) {
+            var canonicalUrl = model.canonicalUrlThatCreatedThisTrace;
+            results.addValue(new tr.v.SkipValue(
+                canonicalUrl, 'SkippedFieldName',
                 {description: 'SkippedReason'}));
 
       });

@@ -13,6 +13,8 @@ __all__ = [
 
 
 class Class(base_symbol.AnnotatedSymbol):
+  # pylint: disable=abstract-class-not-used
+
   @classmethod
   def Annotate(cls, symbol_type, children):
     if symbol_type != symbol.stmt:
@@ -26,13 +28,14 @@ class Class(base_symbol.AnnotatedSymbol):
     if statement.type == symbol.classdef:
       return cls(statement.type, statement.children)
     elif (statement.type == symbol.decorated and
-        statement.children[-1].type == symbol.classdef):
+          statement.children[-1].type == symbol.classdef):
       return cls(statement.type, statement.children)
     else:
       return None
 
   @property
   def suite(self):
+    # TODO: Complete.
     raise NotImplementedError()
 
   def FindChild(self, snippet_type, **kwargs):

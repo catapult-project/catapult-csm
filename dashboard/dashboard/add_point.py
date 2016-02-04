@@ -37,7 +37,7 @@ _MAX_NUM_COLUMNS = 30
 # Maximum length for a test path. This limit is required because the test path
 # used as the string ID for TestContainer (the parent in the datastore for Row
 # entities), and datastore imposes a maximum string ID length.
-_MAX_TESTPATH_LENGTH = 500
+_MAX_TEST_PATH_LENGTH = 500
 
 
 class BadRequestError(Exception):
@@ -152,7 +152,7 @@ class AddPointHandler(post_data_handler.PostDataHandler):
       test_map = _ConstructTestPathMap(data)
       for row_dict in data:
         _ValidateRowDict(row_dict, test_map)
-      _AddTasksAsync(data)
+      _AddTasks(data)
     except BadRequestError as error:
       # If any of the data was invalid, abort immediately and return an error.
       self.ReportError(error.message, status=400)
@@ -163,7 +163,7 @@ def _DashboardJsonToRawRows(dash_json_dict):
 
   For the dashboard to begin accepting the Telemetry Dashboard JSON format
   as per go/telemetry-json, this function chunks a Dashboard JSON literal
-  into rows and passes the resulting list to _AddTasksAsync.
+  into rows and passes the resulting list to _AddTasks.
 
   Args:
     dash_json_dict: A dashboard JSON v1.0 dict.
@@ -246,20 +246,30 @@ def _TestSuiteName(dash_json_dict):
     raise BadRequestError('Could not find test suite name. ' + e.message)
 
 
-def _AddTasksAsync(data):
-  """Puts tasks on queue for adding row and analyzing for anomalies.
+def _AddTasks(data):
+  """Puts tasks on queue for adding data.
 
   Args:
-    data: A list of dictionary each of which represents one point.
+    data: A list of dictionaries, each of which represents one point.
   """
-  queue = taskqueue.Queue(_TASK_QUEUE_NAME)
   task_list = []
-  for i in range(0, len(data), _TASK_QUEUE_SIZE):
-    data_chunk = data[i:i + _TASK_QUEUE_SIZE]
-    task = taskqueue.Task(url='/add_point_queue',
-                          params={'data': json.dumps(data_chunk)})
-    task_list.append(task)
-  queue.add_async(task_list).get_result()
+  for data_sublist in _Chunk(data, _TASK_QUEUE_SIZE):
+    task_list.append(taskqueue.Task(
+        url='/add_point_queue',
+        params={'data': json.dumps(data_sublist)}))
+  queue = taskqueue.Queue(_TASK_QUEUE_NAME)
+  for task_sublist in _Chunk(task_list, taskqueue.MAX_TASKS_PER_ADD):
+    # Calling get_result waits for all tasks to be added. It's possible that
+    # this is different, and maybe faster, than just calling queue.add.
+    queue.add_async(task_sublist).get_result()
+
+
+def _Chunk(items, chunk_size):
+  """Breaks a long list into sub-lists of a particular size."""
+  chunks = []
+  for i in range(0, len(items), chunk_size):
+    chunks.append(items[i:i + chunk_size])
+  return chunks
 
 
 def _MakeRowTemplate(dash_json_dict):
@@ -498,7 +508,7 @@ def _ConstructTestPathMap(row_dicts):
     if not ('master' in row and 'bot' in row and 'test' in row):
       continue
     path = '%s/%s/%s' % (row['master'], row['bot'], row['test'].strip('/'))
-    if len(path) > _MAX_TESTPATH_LENGTH:
+    if len(path) > _MAX_TEST_PATH_LENGTH:
       continue
     last_added_revision_keys.append(ndb.Key('LastAddedRevision', path))
 
@@ -555,7 +565,7 @@ def _ValidateTestPath(test_path):
   """Checks whether all the parts of the test path are valid."""
   # A test with a test path length over the max key length shouldn't be
   # created, since the test path is used in TestContainer keys.
-  if len(test_path) > _MAX_TESTPATH_LENGTH:
+  if len(test_path) > _MAX_TEST_PATH_LENGTH:
     raise BadRequestError('Test path too long: %s' % test_path)
 
   # Stars are reserved for test path patterns, so they can't be used in names.

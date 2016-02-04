@@ -97,20 +97,12 @@ indexes:
     direction: desc
 
 # Used in group_report.py when querying for anomalies around a revision.
+# No composite index is required without internal_only because then the
+# query uses only one (indexed) property, end_revision.
 - kind: Anomaly
   properties:
   - name: internal_only
   - name: end_revision
-    direction: asc
-
-# Might be unused!
-# This index would enable querying for non-internal-only points for a
-# particular test, filtering or sorting by revision.
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: parent_test
-  - name: revision
 
 # Might be unused!
 # This index would enable querying for points for a particular test,
@@ -121,28 +113,11 @@ indexes:
   - name: parent_test
   - name: revision
   - name: value
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: parent_test
-  - name: revision
-  - name: value
 
 # Used in find_anomalies.GetRowsToAnalyze when getting latest points,
 # with projection query for properties revision and value.
 - kind: Row
   properties:
-  - name: parent_test
-  - name: revision
-    direction: desc
-  - name: value
-# Might be unused!
-# The version of the above index that filters by internal_only may not be used
-# since requests to /add_point_queue should always be made by task queue, and
-# should always be authorized to fetch internal points.
-- kind: Row
-  properties:
-  - name: internal_only
   - name: parent_test
   - name: revision
     direction: desc
@@ -156,24 +131,11 @@ indexes:
   - name: revision
   - name: timestamp
   - name: value
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: parent_test
-  - name: revision
-  - name: timestamp
-  - name: value
 
 # Used in several modules (graph_json.py and graph_csv.py) to fetch the latest
 # points for a test.
 - kind: Row
   properties:
-  - name: parent_test
-  - name: revision
-    direction: desc
-- kind: Row
-  properties:
-  - name: internal_only
   - name: parent_test
   - name: revision
     direction: desc
@@ -185,15 +147,6 @@ indexes:
   properties:
   - name: parent_test
   - name: revision
-
-# Used in new_points.py to query newest points for all tests.
-# There is no composite index required when the user is logged in, since
-# then the query only depends on one property (timestamp).
-- kind: Row
-  properties:
-  - name: internal_only
-  - name: timestamp
-    direction: desc
 
 # May be unused!
 # Likely used in new_points.py to query newest points for a particular test.
@@ -227,6 +180,24 @@ indexes:
 - kind: StoppageAlert
   properties:
   - name: internal_only
+  - name: sheriff
+  - name: timestamp
+    direction: desc
+
+# Used in /alerts to query for stoppage alerts, for internal and external
+# sheriffs.
+- kind: StoppageAlert
+  properties:
+  - name: bug_id
+  - name: internal_only
+  - name: recovered
+  - name: sheriff
+  - name: timestamp
+    direction: desc
+- kind: StoppageAlert
+  properties:
+  - name: bug_id
+  - name: recovered
   - name: sheriff
   - name: timestamp
     direction: desc

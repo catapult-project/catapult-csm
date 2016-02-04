@@ -21,6 +21,10 @@ from dashboard.models import anomaly
 from dashboard.models import bug_data
 from dashboard.models import try_job
 
+# TODO(qyearsley): Shorten this module.
+# See https://github.com/catapult-project/catapult/issues/1917
+# pylint: disable=too-many-lines
+
 # Bisect log with multiple potential culprits with different authors.
 _BISECT_LOG_MULTI_OWNER = """
 @@@STEP_CURSOR Results@@@
@@ -275,7 +279,7 @@ _ISSUE_RESPONSE = """
 _BISECT_LOG_INFRA_FAILURE = 'Failed to produce build'
 
 # Globals that are set in mock functions and then checked in tests.
-_TEST_RECEIEVED_EMAIL_RESULTS = None
+_TEST_RECEIVED_EMAIL_RESULTS = None
 _TEST_RECEIVED_EMAIL = None
 
 
@@ -389,9 +393,7 @@ def _MockFetch(url=None):
               'text': ['failed', 'slave_steps', 'failed', 'Working on def']})
       ],
       ('http://build.chromium.org/builders/bb66666'
-       '/steps/Results/logs/stdio/text'): [
-           404, ''
-       ],
+       '/steps/Results/logs/stdio/text'): [404, ''],
       'http://build.chromium.org/json/builders/516': [
           200,
           json.dumps({'steps': [{'name': 'gclient', 'results': [2]}]})
@@ -458,8 +460,8 @@ def _MockMakeRequest(path, method):  # pylint: disable=unused-argument
 
 
 def _MockSendPerfTryJobEmail(_, results):
-  global _TEST_RECEIEVED_EMAIL_RESULTS
-  _TEST_RECEIEVED_EMAIL_RESULTS = results
+  global _TEST_RECEIVED_EMAIL_RESULTS
+  _TEST_RECEIVED_EMAIL_RESULTS = results
 
 
 def _MockSendMail(**kwargs):
@@ -798,7 +800,9 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
   @mock.patch.object(
       update_bug_with_results, '_GetBisectResults',
       mock.MagicMock(return_value={
-          'results': 'Status: Positive\nCommit  : abcd123',
+          'results': ('Status: Positive\n'
+                      'Commit  : abcd123\n'
+                      'Author  : culprit@chromium.org\n'),
           'status': 'Completed',
           'bisect_bot': 'bar',
           'issue_url': 'bar',
@@ -817,7 +821,9 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
   @mock.patch.object(
       update_bug_with_results, '_GetBisectResults',
       mock.MagicMock(return_value={
-          'results': 'Status: Negative\nCommit  : a121212',
+          'results': ('Status: Negative\n'
+                      'Commit  : a121212\n'
+                      'Author  : culprit@chromium.org\n'),
           'status': 'Completed',
           'bisect_bot': 'bar',
           'issue_url': 'bar',
@@ -836,7 +842,10 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
   @mock.patch.object(
       update_bug_with_results, '_GetBisectResults',
       mock.MagicMock(return_value={
-          'results': 'Status: Positive\nCommit  : a12\nCommit  : b23',
+          'results': ('Status: Positive\n'
+                      'Commit  : a12\n'
+                      'Commit  : b23\n'
+                      'Author  : culprit@chromium.org\n'),
           'status': 'Completed',
           'bisect_bot': 'bar',
           'issue_url': 'bar',
@@ -848,6 +857,53 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
         status='started', bot='win_perf').put()
     self.testapp.get('/update_bug_with_results')
     self.assertIsNone(layered_cache.GetExternal('commit_hash_a12b23'))
+
+  @mock.patch.object(
+      update_bug_with_results, '_GetBisectResults',
+      mock.MagicMock(return_value={
+          'results': ('Status: Positive\n'
+                      'Commit  : a121212\n'
+                      'Author  : culprit@chromium.org\n'),
+          'status': 'Completed',
+          'bisect_bot': 'bar',
+          'issue_url': 'bar',
+          'buildbot_log_url': 'bar',
+      }))
+  @mock.patch.object(
+      update_bug_with_results.issue_tracker_service.IssueTrackerService,
+      'AddBugComment')
+  def testGet_PositiveResult_CCsAuthor(self, mock_update_bug):
+    try_job.TryJob(
+        bug_id=12345, rietveld_issue_id=200034, rietveld_patchset_id=1,
+        status='started', bot='win_perf').put()
+    bug_data.Bug(id=12345).put()
+    self.testapp.get('/update_bug_with_results')
+    mock_update_bug.assert_called_with(
+        12345, mock.ANY, cc_list=['culprit@chromium.org'],
+        merge_issue=None, labels=None, owner='culprit@chromium.org')
+
+  @mock.patch.object(
+      update_bug_with_results, '_GetBisectResults',
+      mock.MagicMock(return_value={
+          'results': ('Status: Negative\n'
+                      'Commit  : a121212\n'
+                      'Author  : culprit@chromium.org\n'),
+          'status': 'Completed',
+          'bisect_bot': 'bar',
+          'issue_url': 'bar',
+          'buildbot_log_url': 'bar',
+      }))
+  @mock.patch.object(
+      update_bug_with_results.issue_tracker_service.IssueTrackerService,
+      'AddBugComment')
+  def testGet_NegativeResult_DoesNotCCAuthor(self, mock_update_bug):
+    try_job.TryJob(
+        bug_id=12345, rietveld_issue_id=200034, rietveld_patchset_id=1,
+        status='started', bot='win_perf').put()
+    bug_data.Bug(id=12345).put()
+    self.testapp.get('/update_bug_with_results')
+    mock_update_bug.assert_called_with(
+        12345, mock.ANY, cc_list=[], merge_issue=None, labels=None, owner=None)
 
   def testMapAnomaliesToMergeIntoBug(self):
     # Add anomalies.
@@ -955,12 +1011,12 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
         rietveld_issue_id=200034, rietveld_patchset_id=1,
         status='started', bot='win_perf', email='just@atestemail.com',
         job_type='perf-try', config=_PERF_TEST_CONFIG).put()
-    global _TEST_RECEIEVED_EMAIL_RESULTS
-    _TEST_RECEIEVED_EMAIL_RESULTS = None
+    global _TEST_RECEIVED_EMAIL_RESULTS
+    _TEST_RECEIVED_EMAIL_RESULTS = None
 
     self.testapp.get('/update_bug_with_results')
 
-    results = _TEST_RECEIEVED_EMAIL_RESULTS
+    results = _TEST_RECEIVED_EMAIL_RESULTS
     self.assertEqual('Completed', results['status'])
     self.assertEqual(2, len(results['profiler_results']))
     self.assertEqual(_PERF_LOG_EXPECTED_HTML_LINK,
@@ -992,12 +1048,12 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
         rietveld_issue_id=200035, rietveld_patchset_id=1,
         status='started', bot='win_perf', email='just@atestemail.com',
         job_type='perf-try', config=_PERF_TEST_CONFIG).put()
-    global _TEST_RECEIEVED_EMAIL_RESULTS
-    _TEST_RECEIEVED_EMAIL_RESULTS = None
+    global _TEST_RECEIVED_EMAIL_RESULTS
+    _TEST_RECEIVED_EMAIL_RESULTS = None
 
     self.testapp.get('/update_bug_with_results')
 
-    results = _TEST_RECEIEVED_EMAIL_RESULTS
+    results = _TEST_RECEIVED_EMAIL_RESULTS
     self.assertEqual('Completed', results['status'])
     self.assertEqual(0, len(results['profiler_results']))
     self.assertEqual('', results['html_results'])
@@ -1134,14 +1190,14 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
     buildbucket_response_canceled = r"""{
       "build": {
         "status": "COMPLETED",
-        "cancelation_reason": "TIMEOUT",
+        "cancellation_reason": "TIMEOUT",
         "id": "9043278384371361584",
         "result": "CANCELED"
       }
     }"""
     try_job.TryJob(
-          bug_id=12345, rietveld_issue_id=200037, rietveld_patchset_id=1,
-          status='started', bot='win_perf').put()
+        bug_id=12345, rietveld_issue_id=200037, rietveld_patchset_id=1,
+        status='started', bot='win_perf').put()
     pending_jobs = try_job.TryJob.query().fetch()
     self.assertEqual(1, len(pending_jobs))
     # Create bug.
@@ -1163,8 +1219,8 @@ class UpdateBugWithResultsTest(testing_common.TestCase):
       }
     }"""
     try_job.TryJob(
-          bug_id=12345, rietveld_issue_id=200037, rietveld_patchset_id=1,
-          status='started', bot='win_perf').put()
+        bug_id=12345, rietveld_issue_id=200037, rietveld_patchset_id=1,
+        status='started', bot='win_perf').put()
     pending_jobs = try_job.TryJob.query().fetch()
     self.assertEqual(1, len(pending_jobs))
     # Create bug.

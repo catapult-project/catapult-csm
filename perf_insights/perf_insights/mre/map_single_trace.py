@@ -74,7 +74,7 @@ def MapSingleTrace(results, trace_handle, job):
   all_source_paths = list(project.source_paths)
   all_source_paths.append(project.perf_insights_root_path)
 
-  with trace_handle.PrepareTraceForMapping() as prepared_trace_handle:
+  with trace_handle.PrepareFileForProcessing() as prepared_trace_handle:
     js_args = [
       json.dumps(prepared_trace_handle.AsDict()),
       json.dumps(job.AsDict()),

@@ -4,7 +4,7 @@
 
 from perf_insights.mre import function_handle as function_handle_module
 from perf_insights.mre import job as job_module
-from perf_insights.mre import trace_handle as trace_handle_module
+from perf_insights.mre import file_handle
 
 class Failure(object):
 
@@ -13,7 +13,7 @@ class Failure(object):
     assert isinstance(job, job_module.Job)
     assert isinstance(function_handle, function_handle_module.FunctionHandle)
     assert trace_handle is None or (
-        isinstance(trace_handle, trace_handle_module.TraceHandle))
+        isinstance(trace_handle, file_handle.FileHandle))
 
     self.job = job
     self.function_handle = function_handle
@@ -26,11 +26,11 @@ class Failure(object):
     return (
       'Failure for job %s with function handle %s and trace handle %s:\n'
       'of type %s wtih description %s. Stack:\n\n%s' % (
-        self.job.guid, self.function_handle.guid, self.trace_handle.source_url,
+        self.job.guid, self.function_handle.guid, self.trace_handle.canonical_url,
         self.failure_type_name, self.description, self.stack))
 
   def AsDict(self):
-    return  {
+    return {
         'job_guid': self.job.guid,
         'function_handle_guid': self.function_handle.guid,
         'trace_handle_guid': self.trace_handle.guid,

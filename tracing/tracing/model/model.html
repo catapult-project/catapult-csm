@@ -10,7 +10,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/interval_tree.html">
 <link rel="import" href="/tracing/base/range.html">
 <link rel="import" href="/tracing/base/task.html">
-<link rel="import" href="/tracing/base/units/units.html">
+<link rel="import" href="/tracing/base/units/unit.html">
 <link rel="import" href="/tracing/core/auditor.html">
 <link rel="import" href="/tracing/core/filter.html">
 <link rel="import" href="/tracing/model/alert.html">
@@ -22,6 +22,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/model/interaction_record.html">
 <link rel="import" href="/tracing/model/kernel.html">
 <link rel="import" href="/tracing/model/model_indices.html">
+<link rel="import" href="/tracing/model/model_stats.html">
 <link rel="import" href="/tracing/model/process.html">
 <link rel="import" href="/tracing/model/process_memory_dump.html">
 <link rel="import" href="/tracing/model/sample.html">
@@ -58,6 +59,9 @@ tr.exportTo('tr', function() {
   var InteractionRecord = tr.model.InteractionRecord;
   var Sample = tr.model.Sample;
 
+  // TODO(charliea): Rethink what ClockSyncRecords should look like in the
+  // world with the new clock sync. Should they have a duration? Should
+  // the have an ID instead of a name?
   function ClockSyncRecord(name, ts, args) {
     this.name = name;
     this.ts = ts;
@@ -101,6 +105,8 @@ tr.exportTo('tr', function() {
 
     this.annotationsByGuid_ = {};
     this.modelIndices = undefined;
+
+    this.stats = new tr.model.ModelStats();
 
     this.importWarnings_ = [];
     this.reportedImportWarnings_ = {};
@@ -182,7 +188,7 @@ tr.exportTo('tr', function() {
     convertTimestampToModelTime: function(sourceClockDomainName, ts) {
       if (sourceClockDomainName !== 'traceEventClock')
         throw new Error('Only traceEventClock is supported.');
-      return tr.b.u.Units.timestampFromUs(ts) +
+      return tr.b.u.Unit.timestampFromUs(ts) +
         this.timestampShiftToZeroAmount_;
     },
 
@@ -348,6 +354,10 @@ tr.exportTo('tr', function() {
       return namedThreads;
     },
 
+    get importOptions() {
+      return this.importOptions_;
+    },
+
     set importOptions(options) {
       this.importOptions_ = options;
     },
@@ -386,19 +396,19 @@ tr.exportTo('tr', function() {
 
     /**
      * Returns a link to a trace data file that this model was imported from.
-     * Note that this is NOT a URL in the trace, but merely an indicator of
+     * This is NOT the URL of a site being traced, but instead an indicator of
      * where the data is stored.
      */
-    get sourceURLThatCreatedThisTrace() {
-      return this.sourceURLThatCreatedThisTrace_;
+    get canonicalUrlThatCreatedThisTrace() {
+      return this.canonicalUrlThatCreatedThisTrace_;
     },
 
-    set sourceURLThatCreatedThisTrace(value) {
-      if (this.sourceURLThatCreatedThisTrace_ === value)
+    set canonicalUrlThatCreatedThisTrace(value) {
+      if (this.canonicalUrlThatCreatedThisTrace_ === value)
         return;
-      if (this.sourceURLThatCreatedThisTrace_ !== undefined)
-        throw new Error('sourceURLThatCreatedThisTrace already set');
-      this.sourceURLThatCreatedThisTrace_ = value;
+      if (this.canonicalUrlThatCreatedThisTrace_ !== undefined)
+        throw new Error('canonicalUrlThatCreatedThisTrace already set');
+      this.canonicalUrlThatCreatedThisTrace_ = value;
     },
 
     /**
@@ -511,9 +521,9 @@ tr.exportTo('tr', function() {
         this.processes[pid].sortMemoryDumps();
     },
 
-    calculateMemoryGraphAttributes: function() {
+    finalizeMemoryGraphs: function() {
       this.globalMemoryDumps.forEach(function(dump) {
-        dump.calculateGraphAttributes();
+        dump.finalizeGraph();
       });
     },
 

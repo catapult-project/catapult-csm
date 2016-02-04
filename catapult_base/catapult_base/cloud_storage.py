@@ -49,8 +49,8 @@ _GSUTIL_PATH = os.path.join(util.GetCatapultDir(), 'third_party', 'gsutil',
 _CROS_GSUTIL_HOME_WAR = '/home/chromeos-test/'
 
 
-
 class CloudStorageError(Exception):
+
   @staticmethod
   def _GetConfigInstructions():
     command = _GSUTIL_PATH
@@ -63,6 +63,7 @@ class CloudStorageError(Exception):
 
 
 class PermissionError(CloudStorageError):
+
   def __init__(self):
     super(PermissionError, self).__init__(
         'Attempted to access a file from Cloud Storage but you don\'t '
@@ -70,6 +71,7 @@ class PermissionError(CloudStorageError):
 
 
 class CredentialsError(CloudStorageError):
+
   def __init__(self):
     super(CredentialsError, self).__init__(
         'Attempted to access a file from Cloud Storage but you have no '
@@ -93,11 +95,13 @@ def _FindExecutableInPath(relative_executable_path, *extra_search_paths):
       return executable_path
   return None
 
+
 def _EnsureExecutable(gsutil):
   """chmod +x if gsutil is not executable."""
   st = os.stat(gsutil)
   if not st.st_mode & stat.S_IEXEC:
     os.chmod(gsutil, st.st_mode | stat.S_IEXEC)
+
 
 def _RunCommand(args):
   # On cros device, as telemetry is running as root, home will be set to /root/,
@@ -159,7 +163,7 @@ def Exists(bucket, remote_path):
 def Move(bucket1, bucket2, remote_path):
   url1 = 'gs://%s/%s' % (bucket1, remote_path)
   url2 = 'gs://%s/%s' % (bucket2, remote_path)
-  logging.info('Moving %s to %s' % (url1, url2))
+  logging.info('Moving %s to %s', url1, url2)
   _RunCommand(['mv', url1, url2])
 
 
@@ -177,13 +181,13 @@ def Copy(bucket_from, bucket_to, remote_path_from, remote_path_to):
   """
   url1 = 'gs://%s/%s' % (bucket_from, remote_path_from)
   url2 = 'gs://%s/%s' % (bucket_to, remote_path_to)
-  logging.info('Copying %s to %s' % (url1, url2))
+  logging.info('Copying %s to %s', url1, url2)
   _RunCommand(['cp', url1, url2])
 
 
 def Delete(bucket, remote_path):
   url = 'gs://%s/%s' % (bucket, remote_path)
-  logging.info('Deleting %s' % url)
+  logging.info('Deleting %s', url)
   _RunCommand(['rm', url])
 
 
@@ -225,7 +229,7 @@ def _CreateDirectoryIfNecessary(directory):
 
 def _GetLocked(bucket, remote_path, local_path):
   url = 'gs://%s/%s' % (bucket, remote_path)
-  logging.info('Downloading %s to %s' % (url, local_path))
+  logging.info('Downloading %s to %s', url, local_path)
   _CreateDirectoryIfNecessary(os.path.dirname(local_path))
   with tempfile.NamedTemporaryFile(
       dir=os.path.dirname(local_path),
@@ -263,7 +267,7 @@ def Insert(bucket, remote_path, local_path, publicly_readable=False):
     command_and_args += ['-a', 'public-read']
     extra_info = ' (publicly readable)'
   command_and_args += [local_path, url]
-  logging.info('Uploading %s to %s%s' % (local_path, url, extra_info))
+  logging.info('Uploading %s to %s%s', local_path, url, extra_info)
   _RunCommand(command_and_args)
   return 'https://console.developers.google.com/m/cloudstorage/b/%s/o/%s' % (
       bucket, remote_path)
@@ -302,7 +306,7 @@ def GetIfChanged(file_path, bucket):
   with _PseudoFileLock(file_path):
     hash_path = file_path + '.sha1'
     if not os.path.exists(hash_path):
-      logging.warning('Hash file not found: %s' % hash_path)
+      logging.warning('Hash file not found: %s', hash_path)
       return False
 
     expected_hash = ReadHash(hash_path)
@@ -318,7 +322,7 @@ def GetFilesInDirectoryIfChanged(directory, bucket):
   there is no local copy.
   """
   if not os.path.isdir(directory):
-    raise ValueError('Must provide a valid directory.')
+    raise ValueError('%s does not exist. Must provide a valid directory path.')
   # Don't allow the root directory to be a serving_dir.
   if directory == os.path.abspath(os.sep):
     raise ValueError('Trying to serve root directory from HTTP server.')
@@ -330,13 +334,14 @@ def GetFilesInDirectoryIfChanged(directory, bucket):
         continue
       GetIfChanged(path_name, bucket)
 
+
 def CalculateHash(file_path):
   """Calculates and returns the hash of the file at file_path."""
   sha1 = hashlib.sha1()
   with open(file_path, 'rb') as f:
     while True:
       # Read in 1mb chunks, so it doesn't all have to be loaded into memory.
-      chunk = f.read(1024*1024)
+      chunk = f.read(1024 * 1024)
       if not chunk:
         break
       sha1.update(chunk)

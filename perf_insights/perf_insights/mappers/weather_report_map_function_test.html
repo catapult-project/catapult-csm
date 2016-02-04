@@ -6,11 +6,10 @@ found in the LICENSE file.
 -->
 
 <link rel="import" href="/perf_insights/mre/map_results.html">
-<link rel="import" href="/perf_insights/value/run_info.html">
-<link rel="import" href="/perf_insights/value/value.html">
 <link rel="import" href="/perf_insights/mappers/weather_report_map_function.html">
 <link rel="import" href="/tracing/core/test_utils.html">
 <link rel="import" href="/tracing/extras/rail/idle_interaction_record.html">
+<link rel="import" href="/tracing/value/value.html">
 
 <script>
 'use strict';
@@ -30,11 +29,11 @@ tr.b.unittest.testSuite(function() {
     });
 
     var results = new pi.r.Results();
-    var runInfo = new pi.v.RunInfo('my_test.json');
-    pi.m.weatherReportMapFunction(results, runInfo, m);
+    var canonicalUrl = 'my_test.json';
+    pi.m.weatherReportMapFunction(results, m);
 
     assert.equal(results.allValues.length, 1);
-    assert.isTrue(results.allValues[0] instanceof pi.v.DictValue);
+    assert.isTrue(results.allValues[0] instanceof tr.v.DictValue);
   });
 
   test('basicWrTest', function() {

@@ -1,27 +1,49 @@
 <!DOCTYPE html>
 <!--
-Copyright 2015 The Chromium Authors. All rights reserved.
+Copyright (c) 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
+<link rel="import" href="/perf_insights/mre/file_handle.html">
+<link rel="import" href="/perf_insights/mre/function_handle.html">
 <link rel="import" href="/perf_insights/mre/job.html">
+<link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/mre/map_single_trace.html">
 <link rel="import"
       href="/perf_insights/mre/run_and_convert_errors_to_failures.html">
-<link rel="import" href="/perf_insights/mre/map_results.html">
-<link rel="import" href="/perf_insights/mre/trace_handle.html">
 
 <script>
 'use strict';
 
-tr.exportTo('pi.mre', function() {
+tr.exportTo('pi', function() {
+
+  //var FailureValue = tr.v.FailureValue;
+
+  function createModelFromTraceData(traceData, canonicalUrl) {
+    var model = new tr.Model();
+    try {
+      var importOptions = new tr.importer.ImportOptions();
+      importOptions.pruneEmptyContainers = false;
+      importOptions.showImportWarnings = false;
+
+      var i = new tr.importer.Import(model, importOptions);
+      i.importTraces([traceData]);
+    } catch (ex) {
+      ex.name = 'TraceImportError';
+      throw ex;
+    }
+
+    model.canonicalUrlThatCreatedThisTrace = canonicalUrl;
+
+    return model;
+  }
 
   function mapSingleTraceMain(args) {
     if (args.length !== 2)
       throw new Error('Must provide two arguments');
 
     var options = {
-      traceHandle: pi.mre.TraceHandle.fromDict(JSON.parse(args[0])),
+      traceHandle: pi.mre.FileHandle.fromDict(JSON.parse(args[0])),
       job: pi.mre.Job.fromDict(JSON.parse(args[1]))
     };
 
@@ -32,12 +54,12 @@ tr.exportTo('pi.mre', function() {
         options.traceHandle,
         function() {
           var mapFunction = options.job.mapFunctionHandle.load();
-          var traceData = options.traceHandle.read();
-          // TODO: Land this
-//          model = createModelFromTraceData(traceData);
-//          model.soruceURLThatCreatedThisTrace = traceHadle;
+          var traceData = options.traceHandle.load();
+          var model = createModelFromTraceData(
+              traceData, options.traceHandle.canonicalUrl);
+
           pi.mre.mapSingleTrace(
-              results, traceData, mapFunction, options.traceHandle.sourceURL_);
+              results, model, mapFunction, options.traceHandle.sourceURL_);
         });
 
     if (Object.keys(results.results).length !== 0)
@@ -45,6 +67,7 @@ tr.exportTo('pi.mre', function() {
     results.failures.forEach(function(failure) {
       console.log('MAP_FAILURE: ' + JSON.stringify(failure.asDict()));
     });
+
     return 0;
   }
 
@@ -54,7 +77,6 @@ tr.exportTo('pi.mre', function() {
 });
 
 if (tr.isHeadless)
-  quit(pi.mre.mapSingleTraceMain(sys.argv.slice(1)));
+  quit(pi.mapSingleTraceMain(sys.argv.slice(1)));
 
 </script>
-
