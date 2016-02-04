@@ -76,10 +76,13 @@ found in the LICENSE file.
       table.sortColumnIndex = 1;
       table.sortDescending = true;
 
-      var categoryRows = [{
-        title: "Foo",
-        total: results.reduceResults["simon"][0].value
-      }];
+      var categoryRows = [];
+      for (var i = 0; i < results.reduceResults["simon"].length; i++) {
+        categoryRows.push({
+          title: "Foo",
+          total: results.reduceResults["simon"][i].value
+        });
+      }
 
       table.tableRows = categoryRows;
       table.rebuild();
