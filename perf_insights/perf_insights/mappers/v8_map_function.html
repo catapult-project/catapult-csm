@@ -41,7 +41,7 @@ tr.exportTo('pi.m', function() {
       if (!(event instanceof tr.model.ThreadSlice))
         return;
 
-      if (!event.title.startsWith('V8.'))
+      if (!event.title.startsWith('V8.') && !event.title.startsWith('V8Test.'))
         return;
 
       function _get_parent_data(event) {
@@ -62,6 +62,12 @@ tr.exportTo('pi.m', function() {
               if (scriptName.indexOf('http') != -1) {
                 data['js'] = scriptName;
               }
+          } else if (curSlice.title === 'V8Test.ParseScript') {
+            data['js'] = curSlice.args['name'];
+          } else if (curSlice.title === 'V8Test.Compile') {
+            data['js'] = curSlice.args['name'];
+          } else if (curSlice.title === 'V8Test.CompileFullCode') {
+            data['js'] = curSlice.args['name'];
           }
           curSlice = curSlice.parentSlice;
         }
