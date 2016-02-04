@@ -27,7 +27,6 @@ tr.exportTo('pi.m', function() {
       if (!(ir instanceof tr.e.rail.RAILInteractionRecord))
         return;
       allIRs.push(ir);
-      var railName = tr.e.rail.userFriendlyRailTypeName(ir.railTypeName);
     });
 
     var railTypeNameByGUID = getRAILTypeNameForEventsByGUID(model, allIRs);
@@ -247,8 +246,7 @@ tr.exportTo('pi.m', function() {
         // Unassociated events have already been assigned to a RTN.
         if (railTypeNameByGUID[event.guid] !== undefined)
           return;
-        railTypeNameByGUID[event.guid] = tr.e.rail.userFriendlyRailTypeName(
-            ir.railTypeName);
+        railTypeNameByGUID[event.guid] = ir.stageTitle;
       }, this);
     }, this);
 
