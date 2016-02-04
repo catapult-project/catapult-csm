@@ -4,10 +4,13 @@ Copyright (c) 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
-<link rel="import" href="/perf_insights/mre/function_handle.html">
-<link rel="import" href="/perf_insights/mre/map_single_trace.html">
 <link rel="import" href="/perf_insights/mre/file_handle.html">
+<link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/mre/job.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
+<link rel="import" href="/perf_insights/mre/map_single_trace.html">
+<link rel="import"
+      href="/perf_insights/mre/run_and_convert_errors_to_failures.html">
 
 <script>
 'use strict';
@@ -41,33 +44,30 @@ tr.exportTo('pi', function() {
 
     var options = {
       traceHandle: pi.mre.FileHandle.fromDict(JSON.parse(args[0])),
-      mapFunctionHandle: pi.mre.FunctionHandle.fromDict(JSON.parse(args[1]))
+      job: pi.mre.Job.fromDict(JSON.parse(args[1]))
     };
 
-    var results = new pi.r.Results();
+    var results = new pi.mre.MapResults();
 
-    var canonicalUrl = options.traceHandle.canonicalUrl;
-
-    results.willRun(options.traceHandle);
-
-    pi.runAndConvertErrorsToFailureValues(
-        results, canonicalUrl,
+    pi.mre.runAndConvertErrorsToFailures(
+        results, options.job, options.job.mapFunctionHandle,
+        options.traceHandle,
         function() {
-          var mapFunction = options.mapFunctionHandle.load();
-
+          var mapFunction = options.job.mapFunctionHandle.load();
           var traceData = options.traceHandle.load();
+          var model = createModelFromTraceData(
+              traceData, options.traceHandle.canonicalUrl);
 
-          var model = createModelFromTraceData(traceData, canonicalUrl);
-          pi.mapSingleTrace(results, model, mapFunction);
+          pi.mre.mapSingleTrace(
+              results, model, mapFunction, options.traceHandle.sourceURL_);
         });
 
-    results.didRun(options.traceHandle);
-    results.didFinishAllRuns();
-
-    results.allValues.forEach(function(value) {
-      var valueAsDict = value.asDict();
-      console.log('MAP_RESULT_VALUE: ' + JSON.stringify(valueAsDict));
+    if (Object.keys(results.results).length !== 0)
+      console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
+    results.failures.forEach(function(failure) {
+      console.log('MAP_FAILURE: ' + JSON.stringify(failure.asDict()));
     });
+
     return 0;
   }
 
