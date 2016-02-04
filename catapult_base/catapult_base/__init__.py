@@ -18,7 +18,9 @@ def _AddDirToPythonPath(*path_parts):
     # containing the script, so we add these extra paths to right after it.
     sys.path.insert(1, path)
 
+_AddDirToPythonPath(os.path.join(util.GetCatapultDir(), 'dependency_manager'))
 _AddDirToPythonPath(os.path.join(util.GetCatapultDir(), 'third_party', 'mock'))
+# mox3 is needed for pyfakefs usage, but not for pylint.
 _AddDirToPythonPath(os.path.join(util.GetCatapultDir(), 'third_party', 'mox3'))
 _AddDirToPythonPath(
     os.path.join(util.GetCatapultDir(), 'third_party', 'pyfakefs'))
