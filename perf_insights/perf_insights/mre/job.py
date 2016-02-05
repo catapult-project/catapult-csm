@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 import uuid
 
-from perf_insights.mre import function_handle
+from perf_insights import function_handle
 
 class Job(object):
 

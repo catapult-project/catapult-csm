@@ -9,7 +9,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/info_bar_group.html">
 <link rel="import" href="/tracing/ui/base/polymer_utils.html">
 <link rel="import" href="/perf_insights/ui/reports/pi_report.html">
-<link rel="import" href="/perf_insights/mre/function_handle.html">
+<link rel="import" href="/perf_insights/function_handle.html">
 <link rel="import" href="/perf_insights/mre/job.html">
 <link rel="import" href="/perf_insights/mre/job_results.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
@@ -304,14 +304,14 @@ tr.exportTo('pi.ui', function() {
         }
         var mapFunctionName = pe.getAttribute('map-function-name');
         var mapFunctionHref = pe.getAttribute('map-function-href');
-        var mapModuleToLoad = new pi.mre.ModuleToLoad(mapFunctionHref);
-        var mapFunctionHandle = new pi.mre.FunctionHandle(
+        var mapModuleToLoad = new pi.ModuleToLoad(mapFunctionHref);
+        var mapFunctionHandle = new pi.FunctionHandle(
             [mapModuleToLoad], mapFunctionName);
 
         var reduceFunctionName = pe.getAttribute('reduce-function-name');
         var reduceFunctionHref = pe.getAttribute('reduce-function-href');
-        var reduceModuleToLoad = new pi.mre.ModuleToLoad(reduceFunctionHref);
-        var reduceFunctionHandle = new pi.mre.FunctionHandle(
+        var reduceModuleToLoad = new pi.ModuleToLoad(reduceFunctionHref);
+        var reduceFunctionHandle = new pi.FunctionHandle(
             [reduceModuleToLoad], reduceFunctionName);
 
         var job = new pi.mre.Job(mapFunctionHandle, reduceFunctionHandle);

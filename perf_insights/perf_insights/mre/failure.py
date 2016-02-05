@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from perf_insights.mre import function_handle as function_handle_module
+from perf_insights import function_handle as function_handle_module
 from perf_insights.mre import job as job_module
 from perf_insights.mre import file_handle
 
