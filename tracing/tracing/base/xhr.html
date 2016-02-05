@@ -64,7 +64,7 @@ tr.exportTo('tr.b', function() {
     if (url.startsWith('file:///'))
       filename = url.substring(7);
     else
-      filename = global.hrefToAbsolutePath(url);
+      filename = global.HTMLImportsLoader.hrefToAbsolutePath(url);
     var isBinary = guessBinary(url);
     return Promise.resolve().then(function() {
       if (isBinary)
@@ -80,9 +80,7 @@ tr.exportTo('tr.b', function() {
     if (url.startsWith('file:///'))
       filename = url.substring(7);
     else {
-      filename = global.hrefToAbsolutePath(url);
-      console.log(filename);
-    }
+      filename = global.HTMLImportsLoader.hrefToAbsolutePath(url);
     var isBinary = guessBinary(url);
     if (isBinary)
       return readbuffer(filename);
