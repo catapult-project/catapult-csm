@@ -79,7 +79,7 @@ tr.exportTo('tr.b', function() {
     var filename;
     if (url.startsWith('file:///'))
       filename = url.substring(7);
-    else {
+    else
       filename = global.HTMLImportsLoader.hrefToAbsolutePath(url);
     var isBinary = guessBinary(url);
     if (isBinary)
