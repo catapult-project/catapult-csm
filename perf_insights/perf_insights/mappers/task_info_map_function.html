@@ -114,7 +114,7 @@ tr.exportTo('pi.m', function() {
     dict[processName][threadName].add(value, url);
   }
 
-  pi.mre.FunctionRegistry.register(taskInfoMapFunction);
+  pi.FunctionRegistry.register(taskInfoMapFunction);
 
   // Exporting for tests.
   return {

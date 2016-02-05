@@ -17,7 +17,7 @@ tr.exportTo('pi.r', function() {
     return mapResults[key][0];
   }
 
-  pi.mre.FunctionRegistry.register(weatherReportReduceFunction);
+  pi.FunctionRegistry.register(weatherReportReduceFunction);
 
   return {
     weatherReportReduceFunction: weatherReportReduceFunction

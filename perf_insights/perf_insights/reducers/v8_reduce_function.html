@@ -116,7 +116,7 @@ tr.exportTo('pi.r', function() {
     return reduceResults;
   }
 
-  pi.mre.FunctionRegistry.register(v8ReportReduceFunction);
+  pi.FunctionRegistry.register(v8ReportReduceFunction);
 
   return {
     v8ReportReduceFunction: v8ReportReduceFunction

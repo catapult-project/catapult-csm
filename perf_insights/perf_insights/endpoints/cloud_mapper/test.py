@@ -31,7 +31,7 @@ tr.exportTo('pi.m', function() {
     var someValue = 4; // Chosen by fair roll of the dice.
     results.addResult('simon', {value: someValue});
   }
-  pi.mre.FunctionRegistry.register(testMapFunction);
+  pi.FunctionRegistry.register(testMapFunction);
 
   return {
     testMapFunction: testMapFunction
@@ -64,7 +64,7 @@ tr.exportTo('pi.r', function() {
     return {value: total};
   }
 
-  pi.mre.FunctionRegistry.register(testReduceFunction);
+  pi.FunctionRegistry.register(testReduceFunction);
 
   return {
     testReduceFunction: testReduceFunction

@@ -40,7 +40,7 @@ tr.exportTo('pi.m', function() {
          startupDuration: startupIR.duration}));
   }
 
-  pi.mre.FunctionRegistry.register(startupMapFunction);
+  pi.FunctionRegistry.register(startupMapFunction);
 
   // Exporting for tests.
   return {

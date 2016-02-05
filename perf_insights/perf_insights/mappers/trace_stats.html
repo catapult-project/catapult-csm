@@ -65,7 +65,7 @@ tr.exportTo('pi.m', function() {
     results.addValue(new tr.v.DictValue(canonicalUrl, 'stats', stats));
   }
 
-  pi.mre.FunctionRegistry.register(traceStatsFunction);
+  pi.FunctionRegistry.register(traceStatsFunction);
 
   //Exporting for tests.
   return {

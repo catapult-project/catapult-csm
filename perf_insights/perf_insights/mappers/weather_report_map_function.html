@@ -95,7 +95,7 @@ tr.exportTo('pi.m', function() {
     var wr = pi.m.getWeatherReportFromModel(model);
     results.addResult('wr', wr);
   }
-  pi.mre.FunctionRegistry.register(weatherReportMapFunction);
+  pi.FunctionRegistry.register(weatherReportMapFunction);
 
   return {
     getWeatherReportFromModel: getWeatherReportFromModel,

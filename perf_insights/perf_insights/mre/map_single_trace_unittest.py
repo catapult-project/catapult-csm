@@ -30,7 +30,7 @@ class MapSingleTraceTests(unittest.TestCase):
         '/a.json', json.dumps(events))
     results = map_results.MapResults()
     with map_single_trace.TemporaryMapScript("""
-      pi.mre.FunctionRegistry.register(
+      pi.FunctionRegistry.register(
           function MyMapFunction(results, model, key) {
             results.addResult(
                 'result', {
@@ -55,7 +55,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.mre.FunctionRegistry.register(
+      pi.FunctionRegistry.register(
           function MyMapFunction(results, model) {
           });
     """) as map_script:
@@ -78,7 +78,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.mre.FunctionRegistry.register(
+      pi.FunctionRegistry.register(
           function MyMapFunction(results, model) {
             throw new Error('Expected error');
           });
@@ -143,7 +143,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.mre.FunctionRegistry.register(
+      pi.FunctionRegistry.register(
           function MyMapFunction(results, model) {
       });
     """) as map_script:
@@ -166,7 +166,7 @@ class MapSingleTraceTests(unittest.TestCase):
 
     results = results_module.Results()
     with map_single_trace.TemporaryMapScript("""
-      pi.mre.FunctionRegistry.register(
+      pi.FunctionRegistry.register(
           function MyMapFunction(results, model) {
             var canonicalUrl = model.canonicalUrlThatCreatedThisTrace;
             results.addValue(new tr.v.SkipValue(

@@ -23,7 +23,7 @@ tr.exportTo('pi.m', function() {
     results.addValue(new tr.v.DictValue(
         canonicalUrl, 'railScore', {overallScore: health}));
   }
-  pi.mre.FunctionRegistry.register(railMapFunction);
+  pi.FunctionRegistry.register(railMapFunction);
 
   return {
     railMapFunction: railMapFunction

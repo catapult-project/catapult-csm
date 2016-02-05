@@ -16,7 +16,7 @@ tr.exportTo('pi.r', function() {
     return mapResults[key][0];
   }
 
-  pi.mre.FunctionRegistry.register(coverageReportReduceFunction);
+  pi.FunctionRegistry.register(coverageReportReduceFunction);
 
   return {
     coverageReportReduceFunction: coverageReportReduceFunction
