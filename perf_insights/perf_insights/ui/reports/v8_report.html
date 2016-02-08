@@ -37,6 +37,15 @@ found in the LICENSE file.
         padding: 4px;
       }
 
+      traces-processed {
+        display: flex;
+        flex: 0 0 auto;
+        flex-flow: wrap;
+        background-color: rgb(236, 236, 236);
+        border-bottom: 1px solid #8e8e8e;
+        padding: 4px;
+      }
+
       content-pane {
         min-height: 0;
         display: flex;
@@ -71,6 +80,8 @@ found in the LICENSE file.
       <tr-ui-b-grouping-table-groupby-picker id="picker">
       </tr-ui-b-grouping-table-groupby-picker>
     </top-controls>
+    <traces-processed id="traces_processed">
+    </traces-processed>
     <content-pane>
       <table-container>
         <tr-ui-b-grouping-table id="table"></tr-ui-b-grouping-table>
@@ -250,6 +261,7 @@ found in the LICENSE file.
         results = new pi.mre.MapResults();
 
       var allSliceCosts = [];
+      var allTraceUrls = {};
       tr.b.iterItems(results.reduceResults, function(name, result) {
         if (name != 'wr')
           return;
@@ -260,9 +272,17 @@ found in the LICENSE file.
               runInfo: currentResult,
               sliceCostInfo: item
             });
+            var keys = Object.keys(item.traceURLs);
+            keys.forEach(function(traceURL) {
+              allTraceUrls[traceURL] = true;
+            });
           });
         });
       });
+
+      allTraceUrls = Object.keys(allTraceUrls);
+      this.$.traces_processed.innerText = "Traces Processed: " +
+                                          allTraceUrls.length;
 
       table.rowStatsConstructor = this.createRowStatsConstructor_();
 
