@@ -187,7 +187,7 @@ tr.exportTo('pi.m', function() {
             scriptURL: data.js,
             scriptURLClean: scriptURLClean,
             framework: data.framework,
-            traceURL: model.sourceURLThatCreatedThisTrace
+            traceURL: model.canonicalUrlThatCreatedThisTrace
           }
 
           var JSSourceState = tr.model.source_info.JSSourceState;
@@ -225,7 +225,7 @@ tr.exportTo('pi.m', function() {
         scriptURL: data.js,
         scriptURLClean: scriptURLClean,
         framework: data.framework,
-        traceURL: model.sourceURLThatCreatedThisTrace
+        traceURL: model.canonicalUrlThatCreatedThisTrace
       }
 
       var key = sliceData.threadGroup + '/' +

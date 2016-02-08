@@ -52,7 +52,10 @@ tr.exportTo('pi.r', function() {
     sliceCostInfo.scriptURLClean = firstValue.scriptURLClean;
     sliceCostInfo.framework = firstValue.framework;
     sliceCostInfo.userFriendlyCategory = firstValue.userFriendlyCategory;
-    sliceCostInfo.traceURLs = [firstValue.traceURL];
+    sliceCostInfo.traceURLs = {};
+    if (firstValue.traceURL !== undefined) {
+      sliceCostInfo.traceURLs[firstValue.traceURL] = true;
+    }
     sliceCostInfo.jsTime = firstValue.jsTime || 0;
 
     var JSSourceState = tr.model.source_info.JSSourceState;
