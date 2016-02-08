@@ -4,6 +4,7 @@
 import argparse
 import json
 import os
+import sys
 
 from perf_insights import corpus_driver_cmdline
 from perf_insights import corpus_query
@@ -63,7 +64,7 @@ def Main(argv):
       map_results_list = []
       # HACK: Maybe try to just pass in the trace handles instead
       for trace_handle in trace_handles:
-        name = trace_handle._working_url.split('file://')[-1]
+        name = trace_handle._canonical_url.split('file://')[-1]
         with open(name, 'r') as f:
           try:
             map_dict = json.loads(f.read())
