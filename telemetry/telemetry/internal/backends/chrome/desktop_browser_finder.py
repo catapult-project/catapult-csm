@@ -170,8 +170,7 @@ def FindAllAvailableBrowsers(finder_options, device):
         finder_options.browser_executable.endswith(x)]) != 0
 
     # It is okay if the executable name doesn't match any of known chrome
-    # browser executables, since it may be of a different browser (say,
-    # mandoline).
+    # browser executables, since it may be of a different browser.
     if is_chrome_or_chromium or is_content_shell:
       normalized_executable = os.path.expanduser(
           finder_options.browser_executable)
@@ -187,25 +186,22 @@ def FindAllAvailableBrowsers(finder_options, device):
             'executable' %
             normalized_executable)
 
-  def AddIfFound(browser_type, build_dir, type_dir, app_name, content_shell):
-    if not finder_options.chrome_root:
-      return False
-    browser_directory = os.path.join(finder_options.chrome_root,
-                                     build_dir, type_dir)
-    app = os.path.join(browser_directory, app_name)
+  def AddIfFound(browser_type, build_path, app_name, content_shell):
+    app = os.path.join(build_path, app_name)
     if path_module.IsExecutable(app):
       browsers.append(PossibleDesktopBrowser(
           browser_type, finder_options, app, flash_path,
-          content_shell, browser_directory, is_local_build=True))
+          content_shell, build_path, is_local_build=True))
       return True
     return False
 
   # Add local builds
-  for build_dir, build_type in path_module.GetBuildDirectories():
+  for build_path in path_module.GetBuildDirectories(finder_options.chrome_root):
+    # TODO(agrieve): Extract browser_type from args.gn's is_debug.
+    browser_type = os.path.basename(build_path).lower()
     for chromium_app_name in chromium_app_names:
-      AddIfFound(build_type.lower(), build_dir, build_type, chromium_app_name,
-                 False)
-    AddIfFound('content-shell-' + build_type.lower(), build_dir, build_type,
+      AddIfFound(browser_type, build_path, chromium_app_name, False)
+    AddIfFound('content-shell-' + browser_type, build_path,
                content_shell_app_name, True)
 
   reference_build = None
