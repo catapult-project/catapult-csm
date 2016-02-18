@@ -8,27 +8,27 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/core/test_utils.html">
 <link rel="import" href="/tracing/model/model.html">
 <link rel="import" href="/tracing/model/user_model/stub_expectation.html">
-<link rel="import" href="/tracing/ui/extras/side_panel/system_health_side_panel.html">
+<link rel="import" href="/tracing/metrics/ui/system_health/system_health_side_panel.html">
 
 <script>
 'use strict';
 
 tr.b.unittest.testSuite(function() {
-  var test_utils = tr.c.TestUtils;
+  var TestUtils = tr.c.TestUtils;
   var CompoundEventSelectionState = tr.model.CompoundEventSelectionState;
 
   function createModel(opt_customizeModelCallback) {
-    return test_utils.newModel(function(model) {
+    return TestUtils.newModel(function(model) {
       model.p1 = model.getOrCreateProcess(1);
       model.t2 = model.p1.getOrCreateThread(2);
 
-      model.s1 = model.t2.sliceGroup.pushSlice(test_utils.newSliceEx({
+      model.s1 = model.t2.sliceGroup.pushSlice(TestUtils.newSliceEx({
         title: 'a', start: 10, end: 20
       }));
-      model.s2 = model.t2.sliceGroup.pushSlice(test_utils.newSliceEx({
+      model.s2 = model.t2.sliceGroup.pushSlice(TestUtils.newSliceEx({
         title: 'b', start: 20, end: 30
       }));
-      model.s3 = model.t2.sliceGroup.pushSlice(test_utils.newSliceEx({
+      model.s3 = model.t2.sliceGroup.pushSlice(TestUtils.newSliceEx({
         title: 'c', start: 30, end: 40
       }));
 
@@ -46,7 +46,7 @@ tr.b.unittest.testSuite(function() {
           }
         ]
       });
-      model.addInteractionRecord(model.ir1);
+      model.userModel.expectations.push(model.ir1);
       model.ir1.associatedEvents.push(model.s1);
 
       model.ir2 = new tr.model.um.StubExpectation({
@@ -63,7 +63,7 @@ tr.b.unittest.testSuite(function() {
           }
         ]
       });
-      model.addInteractionRecord(model.ir2);
+      model.userModel.expectations.push(model.ir2);
 
       model.ir2.associatedEvents.push(model.s2);
       model.ir2.associatedEvents.push(model.s3);

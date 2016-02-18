@@ -11,9 +11,9 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('pie', function() {
-
-  function mapProcessCount(results, canonicalUrl, model) {
-    results.addResult('load_info', {
+  function mapProcessCount(result, model) {
+    result.addPair(
+        'load_info', {
           numProcesses: model.getAllProcesses().length
         });
   }

@@ -13,6 +13,7 @@ from telemetry.core import exceptions
 from telemetry.core import platform
 from telemetry.core import util
 from telemetry import decorators
+from telemetry.internal import forwarders
 from telemetry.internal.forwarders import android_forwarder
 from telemetry.internal.image_processing import video
 from telemetry.internal.platform import android_device
@@ -145,6 +146,18 @@ class AndroidPlatformBackend(
   def use_rndis_forwarder(self):
     return self._use_rndis_forwarder
 
+  def GetWprPortPairs(self, has_netsim):
+    """Return suitable port pairs to be used for web page replay."""
+    if has_netsim:
+      assert self.use_rndis_forwarder, 'Netsim requires RNDIS forwarding.'
+      return forwarders.PortPairs(
+          http=forwarders.PortPair(0, 80),
+          https=forwarders.PortPair(0, 443),
+          dns=forwarders.PortPair(0, 53))
+    else:
+      # Fall back to default port pairs.
+      return super(AndroidPlatformBackend, self).GetWprPortPairs(has_netsim)
+
   @property
   def device(self):
     return self._device
@@ -155,11 +168,10 @@ class AndroidPlatformBackend(
     return self._system_ui
 
   def IsSvelte(self):
-    try:
-      self._device.RunShellCommand(
-          'getprop ro.build.description | grep svelte', check_return=True)
-      return True
-    except device_errors.AdbCommandFailedError:
+    description = self._device.GetProp('ro.build.description', cache=True)
+    if description is not None:
+      return 'svelte' in description
+    else:
       return False
 
   def IsDisplayTracingSupported(self):
@@ -518,10 +530,6 @@ class AndroidPlatformBackend(
   def supports_test_ca(self):
     return True
 
-  @property
-  def is_test_ca_installed(self):
-    return self._device_cert_util is not None
-
   def InstallTestCa(self, ca_cert_path):
     """Install a randomly generated root CA on the android device.
 
@@ -531,7 +539,7 @@ class AndroidPlatformBackend(
     Note: If this method fails with any exception, then RemoveTestCa will be
     automatically called by the network_controller_backend.
     """
-    if self.is_test_ca_installed:
+    if self._device_cert_util is not None:
       logging.warning('Test certificate authority is already installed.')
       return
     self._device_cert_util = adb_install_cert.AndroidCertInstaller(
@@ -544,7 +552,7 @@ class AndroidPlatformBackend(
     Note: Any exceptions raised by this method will be logged but dismissed by
     the network_controller_backend.
     """
-    if self.is_test_ca_installed:
+    if self._device_cert_util is not None:
       try:
         self._device_cert_util.remove_cert()
       finally:

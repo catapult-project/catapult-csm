@@ -8,7 +8,7 @@ from perf_insights.mre import file_handle
 
 class Failure(object):
 
-  def __init__(self, job, function_handle, trace_handle,
+  def __init__(self, job, function_handle_string, trace_canonical_url,
                failure_type_name, description, stack):
     assert isinstance(job, job_module.Job)
     assert isinstance(function_handle, function_handle_module.FunctionHandle)
@@ -16,8 +16,8 @@ class Failure(object):
         isinstance(trace_handle, file_handle.FileHandle))
 
     self.job = job
-    self.function_handle = function_handle
-    self.trace_handle = trace_handle
+    self.function_handle_string = function_handle_string
+    self.trace_canonical_url = trace_canonical_url
     self.failure_type_name = failure_type_name
     self.description = description
     self.stack = stack
@@ -32,16 +32,25 @@ class Failure(object):
   def AsDict(self):
     return {
         'job_guid': self.job.guid,
-        'function_handle_guid': self.function_handle.guid,
-        'trace_handle_guid': self.trace_handle.guid,
-        'failure_type_name': self.failure_type_name,
+        'function_handle_string': self.function_handle_string,
+        'trace_canonical_url': self.trace_canonical_url,
+        'type': self.failure_type_name,
         'description': self.description,
         'stack': self.stack
     }
 
-  # TODO(eakuefner): extend this to take some dicts instead?
   @staticmethod
-  def FromDict(failure_dict, job, function_handle, trace_handle):
-    return Failure(job, function_handle, trace_handle,
-                   failure_dict['failure_type_name'],
-                   failure_dict['description'], failure_dict['stack'])
+  def FromDict(failure_dict, failure_names_to_constructors=None):
+    if failure_names_to_constructors is None:
+      failure_names_to_constructors = {}
+    failure_type_name = failure_dict['type']
+    if failure_type_name in failure_names_to_constructors:
+      cls = failure_names_to_constructors[failure_type_name]
+    else:
+      cls = Failure
+
+    return cls(failure_dict['job_guid'],
+               failure_dict['function_handle_string'],
+               failure_dict['trace_canonical_url'],
+               failure_type_name, failure_dict['description'],
+               failure_dict['stack'])

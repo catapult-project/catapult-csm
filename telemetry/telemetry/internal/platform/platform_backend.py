@@ -4,6 +4,7 @@
 
 import weakref
 
+from telemetry.internal import forwarders
 from telemetry.internal.forwarders import do_nothing_forwarder
 from telemetry.internal.platform import network_controller_backend
 from telemetry.internal.platform import tracing_controller_backend
@@ -90,34 +91,29 @@ class PlatformBackend(object):
     browser_options = browser_backend.browser_options
     self.SetFullPerformanceModeEnabled(browser_options.full_performance_mode)
 
-    # TODO(perezju): Remove these calls when replay's life cycle is no longer
-    # tied to the browser.
-    self._network_controller_backend.InstallTestCa()
-    self._network_controller_backend.UpdateReplay(browser_backend)
-
   def DidStartBrowser(self, browser, browser_backend):
     assert browser not in self._running_browser_backends
     self._running_browser_backends.add(browser_backend)
 
   def WillCloseBrowser(self, browser, browser_backend):
-    # TODO(perezju): Remove these calls when replay's life cycle is no longer
-    # tied to the browser.
-    self._network_controller_backend.StopReplay()
-    self._network_controller_backend.RemoveTestCa()
-
     is_last_browser = len(self._running_browser_backends) <= 1
     if is_last_browser:
       self.SetFullPerformanceModeEnabled(False)
 
     self._running_browser_backends.discard(browser_backend)
 
-  @property
-  def wpr_http_device_port(self):
-    return self._network_controller_backend.wpr_http_device_port
-
-  @property
-  def wpr_https_device_port(self):
-    return self._network_controller_backend.wpr_https_device_port
+  def GetWprPortPairs(self, has_netsim):
+    """Return suitable port pairs to be used for web page replay."""
+    if has_netsim:
+      return forwarders.PortPairs(
+          http=forwarders.PortPair(80, 80),
+          https=forwarders.PortPair(443, 443),
+          dns=forwarders.PortPair(53, 53))
+    else:
+      return forwarders.PortPairs(
+          http=forwarders.PortPair(0, 0),
+          https=forwarders.PortPair(0, 0),
+          dns=None)
 
   def IsDisplayTracingSupported(self):
     return False
@@ -256,11 +252,6 @@ class PlatformBackend(object):
   @property
   def supports_test_ca(self):
     """Indicates whether the platform supports installing test CA."""
-    return False
-
-  @property
-  def is_test_ca_installed(self):
-    """Indicates whether a test CA is currently installed."""
     return False
 
   def InstallTestCa(self, ca_cert_path):

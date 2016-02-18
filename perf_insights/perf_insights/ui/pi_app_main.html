@@ -8,12 +8,16 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/dom_helpers.html">
 <link rel="import" href="/tracing/ui/base/info_bar_group.html">
 <link rel="import" href="/tracing/ui/base/polymer_utils.html">
-<link rel="import" href="/perf_insights/ui/reports/pi_report.html">
 <link rel="import" href="/perf_insights/function_handle.html">
+<<<<<<< HEAD
 <link rel="import" href="/perf_insights/mre/job.html">
 <link rel="import" href="/perf_insights/mre/job_results.html">
 <link rel="import" href="/perf_insights/mre/map_results.html">
 <link rel="import" href="/perf_insights/ui/generic_results_view.html">
+=======
+<link rel="import" href="/perf_insights/mre/mre_result.html">
+<link rel="import" href="/perf_insights/ui/reports/pi_report.html">
+>>>>>>> origin/master
 
 <polymer-element name="pi-ui-pi-app-main">
   <template>
@@ -159,6 +163,7 @@ tr.exportTo('pi.ui', function() {
           piReportElementOptions[0].value,
           piReportElementOptions);
       topLeftControls.appendChild(reportSelector);
+<<<<<<< HEAD
 
       var self = this;
       function onProcessButton() {
@@ -176,6 +181,8 @@ tr.exportTo('pi.ui', function() {
           'pi.app_main.showRawResults', false,
           'Show raw results');
       topRightControls.appendChild(showRawResultsCheckbox);
+=======
+>>>>>>> origin/master
     },
 
     get mapTracesDrivers() {
@@ -262,30 +269,12 @@ tr.exportTo('pi.ui', function() {
           infobars.addMessage('Cannot map');
           return mapResults;
         }
-        if (!mapResults.hadFailures)
+        if (!mapResults.some(function(r) { return r.hadFailures(); }))
           return mapResults;
 
-        function onTellMeMore() {
-          var dlg = new tr.ui.b.Overlay();
-          dlg.dlg = 'Results summary';
-
-          var grv = document.createElement('pi-ui-generic-results-view');
-
-          grv.mapResults = mapResults;
-          grv.style.minHeight = '500px';
-          dlg.appendChild(grv);
-          dlg.visible = true;
-        }
-
-        var numFailedRuns = mapResults.failedCanonicalUrls.length;
         infobars.addMessage(
-            'There were ' + numFailedRuns + ' traces that did not process.',
-            [
-              {
-                buttonText: 'Tell me more...',
-                onClick: onTellMeMore
-              }
-            ]);
+            'Some traces that did not process.'
+            );
 
         return mapResults;
       }
@@ -328,7 +317,15 @@ tr.exportTo('pi.ui', function() {
           return undefined;
 
         var data = JSON.parse(responseText);
+<<<<<<< HEAD
         return new pi.mre.JobResults(undefined, data);
+=======
+        if (!data) {
+          return [];
+        } else {
+          return data.map(pi.mre.MreResult.fromDict);
+        }
+>>>>>>> origin/master
       });
 
       p = p.then(clearInfobarsOrUpdateWithErrors);
@@ -338,12 +335,7 @@ tr.exportTo('pi.ui', function() {
         if (mapResults === undefined)
           return;
 
-        var reportEl;
-        if (mappingState.showRawResults) {
-          reportEl = document.createElement('pi-ui-generic-results-view');
-        } else {
-          reportEl = document.createElement(mappingState.piReportElementName);
-        }
+        var reportEl = document.createElement(mappingState.piReportElementName);
         reportEl.mapResults = mapResults;
         reportContainer.appendChild(reportEl);
       });

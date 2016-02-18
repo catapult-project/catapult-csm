@@ -8,10 +8,7 @@ import multiprocessing
 import sys
 import tempfile
 
-from perf_insights.mre import job_results as job_results_module
-from perf_insights.mre import map_single_trace
-from perf_insights.mre import map_results
-from perf_insights.mre import reduce_map_results
+from perf_insights import map_single_trace
 from perf_insights.mre import threaded_work_queue
 from perf_insights.results import gtest_progress_reporter
 
@@ -51,28 +48,25 @@ class MapRunner(object):
 
   def _ProcessOneTrace(self, trace_handle):
     canonical_url = trace_handle.canonical_url
-    subresults = map_results.MapResults()
-    print 'Will run ' + canonical_url
-
-    map_single_trace.MapSingleTrace(
-        subresults,
+    run_reporter = self._progress_reporter.WillRun(canonical_url)
+    result = map_single_trace.MapSingleTrace(
         trace_handle,
         self._job)
 
-    had_failure = len(subresults.failures) > 0
+    had_failure = len(result.failures) > 0
 
-    if had_failure:
-      print "Failure while mapping " + canonical_url
-      for failure in subresults.failures:
-        print failure
+    for f in result.failures:
+      run_reporter.DidAddFailure(f)
+    run_reporter.DidRun(had_failure)
 
-    self._wq.PostMainThreadTask(self._MergeResultsToIntoMaster,
-                                trace_handle, subresults)
+    self._wq.PostMainThreadTask(self._MergeResultIntoMaster,
+                                trace_handle, result)
 
-  def _MergeResultsToIntoMaster(self, trace_handle, subresults):
-    self._map_results.AddResults(subresults.results)
+  def _MergeResultIntoMaster(self, trace_handle, result):
+    self._results.append(result)
 
-    had_failure = len(subresults.failures) > 0
+    canonical_url = trace_handle.canonical_url
+    had_failure = len(result.failures) > 0
     if self._stop_on_error and had_failure:
       err = MapError("Mapping error")
       self._AbortMappingDueStopOnError(err)

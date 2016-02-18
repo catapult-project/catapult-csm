@@ -8,12 +8,11 @@ import sys
 import tempfile
 import traceback
 
-
-from perf_insights.mre import map_results
-from perf_insights.mre import failure
 import perf_insights_project
 import vinn
 
+from perf_insights.mre import failure
+from perf_insights.mre import mre_result
 
 _MAP_SINGLE_TRACE_CMDLINE_PATH = os.path.join(
     perf_insights_project.PerfInsightsProject.perf_insights_src_path,
@@ -42,37 +41,44 @@ class TemporaryMapScript(object):
       return self.file.name
 
 
-class FunctionLoadingErrorValue(failure.Failure):
+class FunctionLoadingFailure(failure.Failure):
   pass
 
-class FunctionNotDefinedErrorValue(failure.Failure):
+class FunctionNotDefinedFailure(failure.Failure):
   pass
 
-class MapFunctionErrorValue(failure.Failure):
+class MapFunctionFailure(failure.Failure):
   pass
 
-class TraceImportErrorValue(failure.Failure):
+class FileLoadingFailure(failure.Failure):
   pass
 
-class NoResultsAddedErrorValue(failure.Failure):
+class TraceImportFailure(failure.Failure):
+  pass
+
+class NoResultsAddedFailure(failure.Failure):
   pass
 
 class InternalMapError(Exception):
   pass
 
-_FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR = {
-  'FunctionLoadingError': FunctionLoadingErrorValue,
-  'FunctionNotDefinedError': FunctionNotDefinedErrorValue,
-  'TraceImportError': TraceImportErrorValue,
-  'MapFunctionError': MapFunctionErrorValue,
-  'NoResultsAddedError': NoResultsAddedErrorValue
+_FAILURE_NAME_TO_FAILURE_CONSTRUCTOR = {
+  'FileLoadingError': FileLoadingFailure,
+  'FunctionLoadingError': FunctionLoadingFailure,
+  'FunctionNotDefinedError': FunctionNotDefinedFailure,
+  'TraceImportError': TraceImportFailure,
+  'MapFunctionError': MapFunctionFailure,
+  'NoResultsAddedError': NoResultsAddedFailure
 }
 
-def MapSingleTrace(results, trace_handle, job):
+
+def MapSingleTrace(trace_handle, map_function_handle, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
   all_source_paths.append(project.perf_insights_root_path)
+
+  result = mre_result.MreResult()
 
   with trace_handle.PrepareFileForProcessing() as prepared_trace_handle:
     js_args = [
@@ -89,29 +95,32 @@ def MapSingleTrace(results, trace_handle, job):
       sys.stderr.write(res.stdout)
     except Exception:
       pass
-    results.addFailure(failure.Failure(
-        job, job.map_function_handle, trace_handle, 'Error',
+    result.AddFailure(failure.Failure(
+        map_function_handle.AsUserFriendlyString(), trace_handle.canonical_url,
+        'Error', 'vinn runtime error while mapping trace.',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
     return result
 
   for line in res.stdout.split('\n'):
-    m = re.match('^MAP_(RESULTS|FAILURE): (.+)', line, re.DOTALL)
+    m = re.match('^MRE_RESULT: (.+)', line, re.DOTALL)
     if m:
-      found_type = m.group(1)
-      found_dict = json.loads(m.group(2))
-      if found_type == 'FAILURE':
-        cls = _FAILURE_TYPE_NAME_TO_FAILURE_CONSTRUCTOR.get(
-            found_dict['failure_type_name'])
-        if not cls:
-          cls = failure.Failure
-        results.AddFailure(cls.FromDict(
-            found_dict, job, job.map_function_handle, trace_handle))
-      elif found_type == 'RESULTS':
-        results.AddResults(found_dict)
+      found_dict = json.loads(m.group(1))
+      failures = [failure.Failure.FromDict(
+                    f, _FAILURE_NAME_TO_FAILURE_CONSTRUCTOR)
+                  for f in found_dict['failures']]
+
+      for f in failures:
+        result.AddFailure(f)
+
+      for k, v in found_dict['pairs'].iteritems():
+        result.AddPair(k, v)
+
     else:
       if len(line) > 0:
         sys.stderr.write(line)
         sys.stderr.write('\n')
 
-  if len(results.results) == 0 and len(results.failures) == 0:
+  if not (len(result.pairs) or len(result.failures)):
     raise InternalMapError('Internal error: No results were produced!')
+
+  return result

@@ -29,9 +29,9 @@ class FailureTests(unittest.TestCase):
 
     self.assertEquals(failure.AsDict(), {
       'job_guid': '1',
-      'function_handle_guid': '2',
-      'trace_handle_guid': '4',
-      'failure_type_name': 'err',
+      'function_handle_string': 'foo.html:Foo',
+      'trace_canonical_url': 'file://foo.html',
+      'type': 'err',
       'description': 'desc',
       'stack': 'stack'
     })
@@ -44,9 +44,9 @@ class FailureTests(unittest.TestCase):
 
     failure_dict = {
         'job_guid': '1',
-        'function_handle_guid': '2',
-        'trace_handle_guid': '4',
-        'failure_type_name': 'err',
+        'function_handle_string': 'foo.html:Foo',
+        'trace_canonical_url': 'file://foo.html',
+        'type': 'err',
         'description': 'desc',
         'stack': 'stack'
     }
@@ -55,8 +55,8 @@ class FailureTests(unittest.TestCase):
                                               map_function_handle, trace_handle)
 
     self.assertEquals(failure.job.guid, '1')
-    self.assertEquals(failure.function_handle.guid, '2')
-    self.assertEquals(failure.trace_handle.guid, '4')
+    self.assertEquals(failure.function_handle_string, 'foo.html:Foo')
+    self.assertEquals(failure.trace_canonical_url, 'file://foo.html')
     self.assertEquals(failure.failure_type_name, 'err')
     self.assertEquals(failure.description, 'desc')
     self.assertEquals(failure.stack, 'stack')

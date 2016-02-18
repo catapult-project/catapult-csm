@@ -68,9 +68,8 @@ tr.exportTo('tr.ui.b', function() {
       this.xScale_.domain([domain[0], domain[1] + this.xCushion_]);
 
       // Y.
-      this.yScale_.range([this.chartAreaSize.height, this.getYScaleMin_()]);
-      this.yScale_.domain(
-          [Math.max(yRange.min, this.getYScaleMin_()), yRange.max]);
+      this.yScale_.range([this.chartAreaSize.height, 0]);
+      this.yScale_.domain(this.getYScaleDomain_(yRange.min, yRange.max));
     },
 
     updateDataContents_: function(dataSel) {

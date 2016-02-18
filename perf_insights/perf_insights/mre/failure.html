@@ -4,15 +4,17 @@ Copyright 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
+<link rel="import" href="/tracing/base/base.html">
+
 <script>
 'use strict';
 
 tr.exportTo('pi.mre', function() {
-  function Failure(job, functionHandle, traceHandle, failureTypeName,
-                   description, stack) {
+  function Failure(job, functionHandleString, traceCanonicalUrl,
+                   failureTypeName, description, stack) {
     this.job = job;
-    this.functionHandle = functionHandle;
-    this.traceHandle = traceHandle;
+    this.functionHandleString = functionHandleString;
+    this.traceCanonicalUrl = traceCanonicalUrl;
     this.failureTypeName = failureTypeName;
     this.description = description;
     this.stack = stack;
@@ -20,15 +22,11 @@ tr.exportTo('pi.mre', function() {
 
   Failure.prototype = {
     asDict: function() {
-      if (!this.traceHandle)
-        var sourceURL = '';
-      else
-        var sourceURL = this.traceHandle.sourceURL;
       return {
         job: this.job.guid,
-        function_handle: this.functionHandle.guid,
-        trace_source_url: sourceURL,
-        failure_type_name: this.failureTypeName,
+        function_handle_string: this.functionHandleString,
+        trace_canonical_url: this.traceCanonicalUrl,
+        type: this.failureTypeName,
         description: this.description,
         stack: this.stack
       };
@@ -36,8 +34,8 @@ tr.exportTo('pi.mre', function() {
   };
 
   Failure.fromDict = function(failureDict) {
-    return new Failure(failureDict.job_guid, failureDict.function_handle_guid,
-                       failureDict.trace_guid, failureDict.failure_type_name,
+    return new Failure(undefined, failureDict.function_handle_string,
+                       failureDict.trace_canonical_url, failureDict.type,
                        failureDict.description, failureDict.stack);
   };
 

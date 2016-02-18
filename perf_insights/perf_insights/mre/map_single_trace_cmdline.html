@@ -6,18 +6,17 @@ found in the LICENSE file.
 -->
 <link rel="import" href="/perf_insights/mre/file_handle.html">
 <link rel="import" href="/perf_insights/function_handle.html">
-<link rel="import" href="/perf_insights/mre/job.html">
-<link rel="import" href="/perf_insights/mre/map_results.html">
-<link rel="import" href="/perf_insights/mre/map_single_trace.html">
-<link rel="import"
-      href="/perf_insights/mre/run_and_convert_errors_to_failures.html">
+<link rel="import" href="/perf_insights/map_single_trace.html">
+<link rel="import" href="/perf_insights/mre/failure.html">
+<link rel="import" href="/perf_insights/mre/file_handle.html">
+<link rel="import" href="/perf_insights/mre/mre_result.html">
 
 <script>
 'use strict';
 
 tr.exportTo('pi', function() {
 
-  //var FailureValue = tr.v.FailureValue;
+  var Failure = pi.mre.Failure;
 
   function createModelFromTraceData(traceData, canonicalUrl) {
     var model = new tr.Model();
@@ -47,27 +46,23 @@ tr.exportTo('pi', function() {
       job: pi.mre.Job.fromDict(JSON.parse(args[1]))
     };
 
-    var results = new pi.mre.MapResults();
+    var result = new pi.mre.MreResult();
 
-    pi.mre.runAndConvertErrorsToFailures(
-        results, options.job, options.job.mapFunctionHandle,
-        options.traceHandle,
+    var canonicalUrl = options.traceHandle.canonicalUrl;
+
+    pi.runAndConvertErrorsToFailures(
+        result, options.job, options.mapFunctionHandle, options.traceHandle,
         function() {
           var mapFunction = options.job.mapFunctionHandle.load();
           var traceData = options.traceHandle.load();
           var model = createModelFromTraceData(
               traceData, options.traceHandle.canonicalUrl);
 
-          pi.mre.mapSingleTrace(
-              results, model, mapFunction, options.traceHandle.sourceURL_);
+          var model = createModelFromTraceData(traceData, canonicalUrl);
+          pi.mapSingleTrace(result, model, mapFunction);
         });
 
-    if (Object.keys(results.results).length !== 0)
-      console.log('MAP_RESULTS: ' + JSON.stringify(results.results));
-    results.failures.forEach(function(failure) {
-      console.log('MAP_FAILURE: ' + JSON.stringify(failure.asDict()));
-    });
-
+    console.log('MRE_RESULT: ' + JSON.stringify(result.asDict()));
     return 0;
   }
 

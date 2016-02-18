@@ -143,8 +143,8 @@ found in the LICENSE file.
       this.updateContents_();
     },
 
-    setLogScale: function(isLogScale) {
-      this.chart_.setLogScale(isLogScale);
+    set isYLogScale(logScale) {
+      this.chart_.isYLogScale = logScale;
     },
 
     updateContents_: function() {

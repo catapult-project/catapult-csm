@@ -22,6 +22,19 @@ class FakePlatformBackend(object):
     self.supports_test_ca = True
     self.is_test_ca_installed = False
     self.faulty_cert_installer = False
+    self.wpr_port_pairs = None
+    # Normally test using all default ports.
+    self.SetWprPortPairs(http=(0, 0), https=(0, 0), dns=(0, 0))
+
+  def SetWprPortPairs(self, http, https, dns):
+    self.wpr_port_pairs = forwarders.PortPairs(
+        forwarders.PortPair(*http),
+        forwarders.PortPair(*https),
+        forwarders.PortPair(*dns) if dns is not None else None)
+
+  def GetWprPortPairs(self, has_netsim):
+    del has_netsim  # Unused.
+    return self.wpr_port_pairs
 
   def InstallTestCa(self, ca_cert_path):
     del ca_cert_path  # Unused argument.
@@ -71,12 +84,6 @@ class TestNetworkControllerBackend(
     network_controller_backend.NetworkControllerBackend):
   """Expose some private properties for testing purposes."""
 
-  def SetWprPortPairs(self, http, https, dns):
-    self._wpr_port_pairs = forwarders.PortPairs(
-        forwarders.PortPair(*http),
-        forwarders.PortPair(*https),
-        forwarders.PortPair(*dns) if dns is not None else None)
-
   @property
   def wpr_ca_cert_path(self):
     return self._wpr_ca_cert_path
@@ -92,17 +99,6 @@ class TestNetworkControllerBackend(
   @property
   def platform_backend(self):
     return self._platform_backend
-
-
-# TODO(perezju): Remove once network_controller_backend is no longer tied to
-# the browser_backend.
-class FakeBrowserBackend(object):
-  def __init__(self):
-    # Config to use default ports and no DNS traffic.
-    self.wpr_port_pairs = forwarders.PortPairs(
-        http=forwarders.PortPair(0, 0),
-        https=forwarders.PortPair(0, 0),
-        dns=None)
 
 
 class NetworkControllerBackendTest(unittest.TestCase):
@@ -149,10 +145,14 @@ class NetworkControllerBackendTest(unittest.TestCase):
   def testOpenCloseController(self):
     b = self.network_controller_backend
     self.assertFalse(b.is_open)
-    b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
+    b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg']) # Also installs test CA.
     self.assertTrue(b.is_open)
-    b.Close()
+    self.assertTrue(b.is_test_ca_installed)
+    self.assertTrue(b.platform_backend.is_test_ca_installed)
+    b.Close() # Also removes test CA.
     self.assertFalse(b.is_open)
+    self.assertFalse(b.is_test_ca_installed)
+    self.assertFalse(b.platform_backend.is_test_ca_installed)
     b.Close()  # It's fine to close a closed controller.
     self.assertFalse(b.is_open)
 
@@ -162,35 +162,38 @@ class NetworkControllerBackendTest(unittest.TestCase):
     with self.assertRaises(AssertionError):
       b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
 
-  def testInstallTestCaSuccess(self):
-    b = self.network_controller_backend
-    b.InstallTestCa()
-    self.assertTrue(b.platform_backend.is_test_ca_installed)
-    self.assertEqual(b.wpr_ca_cert_path, EXPECTED_WPR_CA_CERT_PATH)
-    b.RemoveTestCa()
-    self.assertFalse(b.platform_backend.is_test_ca_installed)
-    self.assertIsNone(b.wpr_ca_cert_path)
-
   def testInstallTestCaFailure(self):
     b = self.network_controller_backend
     b.platform_backend.faulty_cert_installer = True
-    b.InstallTestCa()  # Fails with warning but execution continues.
+    b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg']) # Try to install test CA.
+
+    # Test CA is not installed, but the controller is otherwise open and safe
+    # to use.
+    self.assertTrue(b.is_open)
+    self.assertFalse(b.is_test_ca_installed)
     self.assertFalse(b.platform_backend.is_test_ca_installed)
-    self.assertIsNone(b.wpr_ca_cert_path)
-    b.RemoveTestCa()
+    b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
+
+    b.Close() # No test CA to remove.
+    self.assertFalse(b.is_open)
+    self.assertFalse(b.is_test_ca_installed)
     self.assertFalse(b.platform_backend.is_test_ca_installed)
-    self.assertIsNone(b.wpr_ca_cert_path)
 
   def testStartStopReplay(self):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
+    self.assertFalse(b.is_replay_active)
+
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertTrue(b.replay_server.is_running)
     self.assertIsNotNone(b.forwarder.port_pairs)
 
     old_replay_server = b.replay_server
     old_forwarder = b.forwarder
     b.StopReplay()
+    self.assertFalse(b.is_replay_active)
     self.assertFalse(old_replay_server.is_running)
     self.assertIsNone(old_forwarder.port_pairs)
     self.assertTrue(b.is_open)  # Controller is still open.
@@ -202,12 +205,14 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertTrue(b.replay_server.is_running)
     self.assertIsNotNone(b.forwarder.port_pairs)
 
     old_replay_server = b.replay_server
     old_forwarder = b.forwarder
     b.Close()
+    self.assertFalse(b.is_replay_active)
     self.assertFalse(old_replay_server.is_running)
     self.assertIsNone(old_forwarder.port_pairs)
     self.assertFalse(b.is_open)
@@ -223,10 +228,12 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
 
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertTrue(b.replay_server.is_running)
 
     old_replay_server = b.replay_server
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertIs(b.replay_server, old_replay_server)
     self.assertTrue(b.replay_server.is_running)
 
@@ -235,10 +242,12 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
 
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertTrue(b.replay_server.is_running)
 
     old_replay_server = b.replay_server
     b.StartReplay('another-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertIsNot(b.replay_server, old_replay_server)
     self.assertTrue(b.replay_server.is_running)
     self.assertFalse(old_replay_server.is_running)
@@ -248,10 +257,12 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
 
     b.StartReplay('some-archive.wpr')
+    self.assertTrue(b.is_replay_active)
     self.assertTrue(b.replay_server.is_running)
     old_replay_server = b.replay_server
 
     b.StartReplay(None)
+    self.assertTrue(b.is_replay_active)
     self.assertIs(b.replay_server, old_replay_server)
     self.assertTrue(b.replay_server.is_running)
     self.assertEqual(b.replay_server.archive_path, 'some-archive.wpr')
@@ -260,6 +271,7 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_OFF, '3g', ['--some-arg'])
     b.StartReplay('may-or-may-not-exist.wpr')
+    self.assertFalse(b.is_replay_active)
     self.assertIsNone(b.replay_server)
     self.assertIsNone(b.forwarder)
 
@@ -273,16 +285,16 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_RECORD, '3g', ['--some-arg'])
     b.StartReplay('does-not-exist-yet.wpr')  # Does not raise.
+    self.assertTrue(b.is_replay_active)
 
   def testReplayServerSettings(self):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_RECORD, '3g', ['--some-arg'])
-    b.InstallTestCa()
     b.StartReplay('some-archive.wpr')
 
     # Externally visible properties
+    self.assertTrue(b.is_replay_active)
     self.assertEqual(b.host_ip, FORWARDER_HOST_IP)
-    self.assertEqual(b.wpr_mode, wpr_modes.WPR_RECORD)
     self.assertEqual(b.wpr_device_ports, DEFAULT_PORTS)
 
     # Private replay server settings.
@@ -300,15 +312,14 @@ class NetworkControllerBackendTest(unittest.TestCase):
     b.Open(wpr_modes.WPR_OFF, '3g', ['--some-arg'])
     b.StartReplay('some-archive.wpr')
 
+    self.assertFalse(b.is_replay_active)
     self.assertEqual(b.host_ip, FORWARDER_HOST_IP)
-    self.assertEqual(b.wpr_mode, wpr_modes.WPR_OFF)
     self.assertEqual(b.wpr_device_ports, None)
     self.assertIsNone(b.replay_server)
 
   def testUseDefaultPorts(self):
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
-    b.SetWprPortPairs(http=(0, 0), https=(0, 0), dns=(0, 0))
     b.StartReplay('some-archive.wpr')
     self.assertEqual(b.replay_server.ports, DEFAULT_PORTS)
     self.assertEqual(b.wpr_device_ports, DEFAULT_PORTS)
@@ -319,8 +330,9 @@ class NetworkControllerBackendTest(unittest.TestCase):
 
   def testUseDefaultLocalPorts(self):
     b = self.network_controller_backend
+    b.platform_backend.SetWprPortPairs(
+        http=(0, 8888), https=(0, 4444), dns=(0, 2222))
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
-    b.SetWprPortPairs(http=(0, 8888), https=(0, 4444), dns=(0, 2222))
     b.StartReplay('some-archive.wpr')
     self.assertEqual(b.replay_server.ports, DEFAULT_PORTS)
     self.assertEqual(b.wpr_device_ports, forwarders.PortSet(8888, 4444, 2222))
@@ -331,8 +343,9 @@ class NetworkControllerBackendTest(unittest.TestCase):
 
   def testUseSpecificPorts(self):
     b = self.network_controller_backend
+    b.platform_backend.SetWprPortPairs(
+        http=(88, 8888), https=(44, 4444), dns=None)
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
-    b.SetWprPortPairs(http=(88, 8888), https=(44, 4444), dns=None)
     b.StartReplay('some-archive.wpr')
     self.assertEqual(b.replay_server.ports, forwarders.PortSet(88, 44, None))
     self.assertEqual(b.wpr_device_ports, forwarders.PortSet(8888, 4444, None))
@@ -341,42 +354,34 @@ class NetworkControllerBackendTest(unittest.TestCase):
     self.assertEqual(b.forwarder.port_pairs.local_ports, b.replay_server.ports)
     self.assertEqual(b.forwarder.port_pairs.remote_ports, b.wpr_device_ports)
 
-  def testDefaultPortsMayChange(self):
+  def testRestartReplayShouldReusePorts(self):
     FakeReplayServer.DEFAULT_PORTS = forwarders.PortSet(123, 456, 789)
     b = self.network_controller_backend
     b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
-    b.SetWprPortPairs(http=(0, 0), https=(0, 0), dns=(0, 0))
     b.StartReplay('some-archive.wpr')
     self.assertEqual(b.wpr_device_ports, forwarders.PortSet(123, 456, 789))
 
-    # If replay restarts, use a different set of default ports.
+    # If replay restarts, the factory may use a different set of default ports.
     FakeReplayServer.DEFAULT_PORTS = forwarders.PortSet(987, 654, 321)
     b.StartReplay('another-archive.wpr')
-    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(987, 654, 321))
 
-  # TODO(perezju): Remove when old API is gone.
-  def testUpdateReplayWithoutArgsIsOkay(self):
+    # However same ports must be used, because apps/browsers may already be
+    # configured to use the old set of ports.
+    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(123, 456, 789))
+
+  def testNewControllerSessionMayUseDifferentPorts(self):
+    FakeReplayServer.DEFAULT_PORTS = forwarders.PortSet(123, 456, 789)
     b = self.network_controller_backend
-    b.UpdateReplay(FakeBrowserBackend())  # Does not raise.
+    b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
+    b.StartReplay('some-archive.wpr')
+    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(123, 456, 789))
+    b.Close()
 
-  # TODO(perezju): Remove when old API is gone.
-  def testSameBrowserUsesSamePorts(self):
-    FakeReplayServer.DEFAULT_PORTS = forwarders.PortSet(222, 444, 555)
-    b = self.network_controller_backend
-    b.SetReplayArgs('some-archive.wpr', wpr_modes.WPR_REPLAY, '3g', [])
-    b.UpdateReplay(FakeBrowserBackend())
-    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(222, 444, None))
-
-    # If replay restarts, use a different set of default ports.
+    # If replay restarts, the factory may use a different set of default ports.
     FakeReplayServer.DEFAULT_PORTS = forwarders.PortSet(987, 654, 321)
+    b.Open(wpr_modes.WPR_REPLAY, '3g', ['--some-arg'])
+    b.StartReplay('some-archive.wpr')
 
-    old_replay_server = b.replay_server
-    b.SetReplayArgs('another-archive.wpr', wpr_modes.WPR_REPLAY, None, [])
-    b.UpdateReplay()  # No browser backend means use the previous one.
-
-    # Even though WPR is restarted, it uses the same ports because
-    # the browser was configured to a particular port set.
-    self.assertIsNot(b.replay_server, old_replay_server)
-    self.assertTrue(b.replay_server.is_running)
-    self.assertFalse(old_replay_server.is_running)
-    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(222, 444, None))
+    # This time the network controller session was closed between replay's,
+    # so it's fine to use a different set of ports.
+    self.assertEqual(b.wpr_device_ports, forwarders.PortSet(987, 654, 321))
