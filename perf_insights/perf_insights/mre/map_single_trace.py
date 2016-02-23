@@ -73,7 +73,7 @@ _FAILURE_NAME_TO_FAILURE_CONSTRUCTOR = {
 }
 
 
-def MapSingleTrace(trace_handle, map_function_handle, job):
+def MapSingleTrace(trace_handle, job):
   project = perf_insights_project.PerfInsightsProject()
 
   all_source_paths = list(project.source_paths)
@@ -97,7 +97,8 @@ def MapSingleTrace(trace_handle, map_function_handle, job):
     except Exception:
       pass
     result.AddFailure(failure.Failure(
-        map_function_handle.AsUserFriendlyString(), trace_handle.canonical_url,
+        job.map_function_handle.AsUserFriendlyString(),
+        trace_handle.canonical_url,
         'Error', 'vinn runtime error while mapping trace.',
         'vinn runtime error while mapping trace.', 'Unknown stack'))
     return result
