@@ -64,7 +64,7 @@ class MapRunner(object):
                                 trace_handle, result)
 
   def _MergeResultIntoMaster(self, trace_handle, result):
-    self._results.append(result)
+    self._map_results.append(result)
 
     canonical_url = trace_handle.canonical_url
     had_failure = len(result.failures) > 0
@@ -84,11 +84,11 @@ class MapRunner(object):
     self._wq.Stop()
 
   def RunMapper(self):
-    self._map_results = mre_result.MreResult()
+    self._map_results = []
 
     if not self._trace_handles:
-      self._map_results.AddFailure("No trace handles specified.")
-      return self._map_results
+      err = MapError("No trace handles specified.")
+      return []
 
     if self._job.map_function_handle:
       for trace_handle in self._trace_handles:
@@ -134,7 +134,7 @@ class MapRunner(object):
 
   def Run(self):
     mapper_results = self.RunMapper()
-    reducer_results = self.RunReducer([mapper_results.results])
+    reducer_results = self.RunReducer(mapper_results)
 
     if reducer_results:
       results = reducer_results
