@@ -107,7 +107,7 @@ class MapRunner(object):
       self._wq.Reset()
       self.map_result_files = []
 
-      job_results = job_results_module.JobResults()
+      job_results = mre_result.MreResult()
 
       for current_result in results_list:
         # Maybe these should be trace_handles?

@@ -13,7 +13,7 @@ tr.exportTo('pi.m', function() {
 
   function testMapFunction(results, model) {
     var someValue = 4; // Chosen by fair roll of the dice.
-    results.addResult('simon', {value: someValue});
+    results.addPair('simon', {value: someValue});
   }
   pi.FunctionRegistry.register(testMapFunction);
 
