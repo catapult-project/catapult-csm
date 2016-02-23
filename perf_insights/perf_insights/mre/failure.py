@@ -11,9 +11,6 @@ class Failure(object):
   def __init__(self, job, function_handle_string, trace_canonical_url,
                failure_type_name, description, stack):
     assert isinstance(job, job_module.Job)
-    assert isinstance(function_handle, function_handle_module.FunctionHandle)
-    assert trace_handle is None or (
-        isinstance(trace_handle, file_handle.FileHandle))
 
     self.job = job
     self.function_handle_string = function_handle_string
@@ -40,7 +37,7 @@ class Failure(object):
     }
 
   @staticmethod
-  def FromDict(failure_dict, failure_names_to_constructors=None):
+  def FromDict(failure_dict, job, failure_names_to_constructors=None):
     if failure_names_to_constructors is None:
       failure_names_to_constructors = {}
     failure_type_name = failure_dict['type']
@@ -49,7 +46,7 @@ class Failure(object):
     else:
       cls = Failure
 
-    return cls(failure_dict['job_guid'],
+    return cls(job,
                failure_dict['function_handle_string'],
                failure_dict['trace_canonical_url'],
                failure_type_name, failure_dict['description'],

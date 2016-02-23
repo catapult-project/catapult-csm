@@ -23,7 +23,7 @@ tr.exportTo('pi.mre', function() {
   Failure.prototype = {
     asDict: function() {
       return {
-        job: this.job.guid,
+        job_guid: this.job.guid,
         function_handle_string: this.functionHandleString,
         trace_canonical_url: this.traceCanonicalUrl,
         type: this.failureTypeName,

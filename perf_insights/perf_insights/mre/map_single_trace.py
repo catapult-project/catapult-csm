@@ -108,7 +108,7 @@ def MapSingleTrace(trace_handle, job):
     if m:
       found_dict = json.loads(m.group(1))
       failures = [failure.Failure.FromDict(
-                    f, _FAILURE_NAME_TO_FAILURE_CONSTRUCTOR)
+                    f, job, _FAILURE_NAME_TO_FAILURE_CONSTRUCTOR)
                   for f in found_dict['failures']]
 
       for f in failures:
