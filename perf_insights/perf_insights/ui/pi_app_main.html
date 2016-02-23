@@ -163,7 +163,6 @@ tr.exportTo('pi.ui', function() {
           piReportElementOptions[0].value,
           piReportElementOptions);
       topLeftControls.appendChild(reportSelector);
-<<<<<<< HEAD
 
       var self = this;
       function onProcessButton() {
@@ -181,8 +180,6 @@ tr.exportTo('pi.ui', function() {
           'pi.app_main.showRawResults', false,
           'Show raw results');
       topRightControls.appendChild(showRawResultsCheckbox);
-=======
->>>>>>> origin/master
     },
 
     get mapTracesDrivers() {
@@ -317,15 +314,7 @@ tr.exportTo('pi.ui', function() {
           return undefined;
 
         var data = JSON.parse(responseText);
-<<<<<<< HEAD
         return new pi.mre.JobResults(undefined, data);
-=======
-        if (!data) {
-          return [];
-        } else {
-          return data.map(pi.mre.MreResult.fromDict);
-        }
->>>>>>> origin/master
       });
 
       p = p.then(clearInfobarsOrUpdateWithErrors);
