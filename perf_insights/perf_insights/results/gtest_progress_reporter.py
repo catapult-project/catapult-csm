@@ -8,8 +8,9 @@ from perf_insights import progress_reporter
 
 
 class GTestRunReporter(progress_reporter.RunReporter):
-  def __init__(self, output_stream, timestamp):
-    super(GTestRunReporter, self).__init__()
+
+  def __init__(self, canonical_url, output_stream, timestamp):
+    super(GTestRunReporter, self).__init__(canonical_url)
     self._output_stream = output_stream
     self._timestamp = timestamp
 

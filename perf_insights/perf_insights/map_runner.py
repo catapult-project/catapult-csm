@@ -9,6 +9,7 @@ import sys
 import tempfile
 
 from perf_insights import map_single_trace
+from perf_insights.mre import mre_result
 from perf_insights.mre import threaded_work_queue
 from perf_insights.results import gtest_progress_reporter
 
@@ -83,7 +84,7 @@ class MapRunner(object):
     self._wq.Stop()
 
   def RunMapper(self):
-    self._map_results = map_results.MapResults()
+    self._map_results = mre_result.MreResult()
 
     if not self._trace_handles:
       self._map_results.AddFailure("No trace handles specified.")
