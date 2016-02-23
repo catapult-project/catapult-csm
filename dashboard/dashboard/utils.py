@@ -13,14 +13,17 @@ import re
 import time
 
 from apiclient import discovery
+from apiclient import errors
+from google.appengine.api import memcache
 from google.appengine.api import urlfetch
+from google.appengine.api import urlfetch_errors
 from google.appengine.api import users
 from google.appengine.ext import ndb
-from oauth2client.client import GoogleCredentials
+from oauth2client import client
 
+from dashboard import rietveld_service
 from dashboard import stored_object
 
-INTERNAL_DOMAIN_KEY = 'internal_domain_key'
 SHERIFF_DOMAINS_KEY = 'sheriff_domains_key'
 IP_WHITELIST_KEY = 'ip_whitelist'
 _PROJECT_ID_KEY = 'project_id'
@@ -42,7 +45,7 @@ def TickMonitoringCustomMetric(metric_name):
   Args:
     metric_name: The name of the metric being monitored.
   """
-  credentials = GoogleCredentials.get_application_default()
+  credentials = client.GoogleCredentials.get_application_default()
   monitoring = discovery.build(
       'cloudmonitoring', 'v2beta2', credentials=credentials)
   now = _GetNowRfc3339()
@@ -223,9 +226,63 @@ def MinimumRange(ranges):
 
 def IsInternalUser():
   """Checks whether the user should be able to see internal-only data."""
-  user = users.get_current_user()
-  domain = stored_object.Get(INTERNAL_DOMAIN_KEY)
-  return user and domain and user.email().endswith('@' + domain)
+  username = users.get_current_user()
+  if not username:
+    return False
+  cached = GetCachedIsInternalUser(username)
+  if cached is not None:
+    return cached
+  is_internal_user = IsGroupMember(identity=username, group='googlers')
+  SetCachedIsInternalUser(username, is_internal_user)
+  return is_internal_user
+
+
+def GetCachedIsInternalUser(username):
+  return memcache.get(_IsInternalUserCacheKey(username))
+
+
+def SetCachedIsInternalUser(username, value):
+  memcache.add(_IsInternalUserCacheKey(username), value, time=60*60*24)
+
+
+def _IsInternalUserCacheKey(username):
+  return 'is_internal_user_%s' % username
+
+
+def IsGroupMember(identity, group):
+  """Checks if a user is a group member of using chrome-infra-auth.appspot.com.
+
+  Args:
+    identity: User email address.
+    group: Group name.
+
+  Returns:
+    True if confirmed to be a member, False otherwise.
+  """
+  try:
+    discovery_url = ('https://chrome-infra-auth.appspot.com'
+                     '/_ah/api/discovery/v1/apis/{api}/{apiVersion}/rest')
+    service = discovery.build(
+        'auth', 'v1', discoveryServiceUrl=discovery_url,
+        credentials=ServiceAccountCredentials())
+    request = service.membership(identity=identity, group=group)
+    response = request.execute()
+    return response['is_member']
+  except (errors.HttpError, KeyError, AttributeError) as e:
+    logging.error('Failed to check membership of %s: %s', identity, e)
+    return False
+
+
+def ServiceAccountCredentials():
+  """Returns the service account credentials if available."""
+  # TODO(qyearsley): Refactor to keep credentials somewhere else besides
+  # rietveld_service.RietveldConfig.
+  config = rietveld_service.GetDefaultRietveldConfig()
+  if not config:
+    return None
+  return client.SignedJwtAssertionCredentials(
+      config.client_email, config.service_account_key,
+      rietveld_service.EMAIL_SCOPE)
 
 
 def IsValidSheriffUser():
@@ -338,3 +395,33 @@ def Validate(expected, actual):
   elif not IsValidType(expected, actual):
     raise ValueError('Invalid type. Expected: %s. Actual: %s.' %
                      (expected, actual_type))
+
+
+def FetchURL(request_url, skip_status_code=False):
+  """Wrapper around URL fetch service to make request.
+
+  Args:
+    request_url: URL of request.
+    skip_status_code: Skips return code check when True, default is False.
+
+  Returns:
+    Response object return by URL fetch, otherwise None when there's an error.
+  """
+  logging.info('URL being fetched: ' + request_url)
+  try:
+    response = urlfetch.fetch(request_url)
+  except urlfetch_errors.DeadlineExceededError:
+    logging.error('Deadline exceeded error checking %s', request_url)
+    return None
+  except urlfetch_errors.DownloadError as err:
+    # DownloadError is raised to indicate a non-specific failure when there
+    # was not a 4xx or 5xx status code.
+    logging.error(err)
+    return None
+  if skip_status_code:
+    return response
+  elif response.status_code != 200:
+    logging.error(
+        'ERROR %s checking %s', response.status_code, request_url)
+    return None
+  return response

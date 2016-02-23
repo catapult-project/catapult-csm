@@ -5,19 +5,20 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
-<link rel="import" href="/tracing/base/units/scalar.html">
-<link rel="import" href="/tracing/base/units/unit.html">
 <link rel="import" href="/tracing/ui/units/scalar_span.html">
+<link rel="import" href="/tracing/value/numeric.html">
+<link rel="import" href="/tracing/value/unit.html">
 
 <script>
 'use strict';
 
 tr.b.unittest.testSuite(function() {
-  var Unit = tr.b.u.Unit;
+  var Unit = tr.v.Unit;
 
   function checkScalarSpan(
       test, value, unit, expectedTextContent, opt_expectedColor) {
-    var span = tr.ui.units.createScalarSpan(new tr.b.u.Scalar(value, unit));
+    var span = tr.ui.units.createScalarSpan(
+        new tr.v.ScalarNumeric(unit, value));
     assert.strictEqual(span.$.content.textContent, expectedTextContent);
     assert.strictEqual(span.$.content.style.color, opt_expectedColor || '');
     test.addHTMLOutput(span);
