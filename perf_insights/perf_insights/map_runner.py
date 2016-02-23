@@ -10,6 +10,7 @@ import tempfile
 
 from perf_insights import map_single_trace
 from perf_insights.mre import mre_result
+from perf_insights.mre import reduce_map_results
 from perf_insights.mre import threaded_work_queue
 from perf_insights.results import gtest_progress_reporter
 
@@ -112,12 +113,12 @@ class MapRunner(object):
       for current_result in results_list:
         # Maybe these should be trace_handles?
         results_file = tempfile.NamedTemporaryFile()
-        json.dump(current_result, results_file)
+        json.dump(current_result.__dict__, results_file)
         results_file.flush()
 
         self.map_result_files.append(results_file)
 
-        for key in current_result:
+        for key in current_result.pairs:
           self._wq.PostAnyThreadTask(
               self._Reduce, job_results, key, results_file.name)
 
@@ -137,7 +138,7 @@ class MapRunner(object):
     reducer_results = self.RunReducer(mapper_results)
 
     if reducer_results:
-      results = reducer_results
+      results = [reducer_results]
     else:
       results = mapper_results
 
