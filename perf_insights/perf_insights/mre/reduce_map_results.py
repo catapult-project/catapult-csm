@@ -6,7 +6,7 @@ import os
 import sys
 import re
 
-from perf_insights.mre import job_results as job_results_module
+from perf_insights.mre import mre_result
 from perf_insights.mre import failure
 import perf_insights_project
 import vinn
@@ -56,11 +56,11 @@ def ReduceMapResults(job_results, key, map_results_file_name, job):
             'vinn runtime error while reducing results.', 'Unknown stack'))
 
       elif found_type == 'RESULTS':
-        job_results.AddResult(key, found_dict[key])
+        job_results.AddPair(key, found_dict[key])
     else:
       if len(line) > 0:
         sys.stderr.write(line)
         sys.stderr.write('\n')
 
-  if len(job_results.reduce_results) == 0 and len(job_results.failures) == 0:
+  if len(job_results.pairs) == 0 and len(job_results.failures) == 0:
     raise InternalMapError('Internal error: No results were produced!')

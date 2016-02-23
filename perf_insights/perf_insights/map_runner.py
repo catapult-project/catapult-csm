@@ -113,7 +113,7 @@ class MapRunner(object):
       for current_result in results_list:
         # Maybe these should be trace_handles?
         results_file = tempfile.NamedTemporaryFile()
-        json.dump(current_result.__dict__, results_file)
+        json.dump(current_result.AsDict(), results_file)
         results_file.flush()
 
         self.map_result_files.append(results_file)

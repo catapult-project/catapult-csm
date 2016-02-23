@@ -48,9 +48,12 @@ found in the LICENSE file.
 
       var results = this.mapResults_;
       if (!results)
-        results = new pi.mre.MapResults();
+        results = [];
 
-      this.$.table.innerHTML = JSON.stringify(results.asDict(), undefined, 2);
+      var table = this.$.table;
+      results.forEach(function(result) {
+        table.innerHTML += JSON.stringify(result.asDict(), undefined, 2);
+      });
     }
   });
   </script>

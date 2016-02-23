@@ -9,7 +9,6 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/xhr.html">
 
 <link rel="import" href="/perf_insights/mre/job.html">
-<link rel="import" href="/perf_insights/mre/job_results.html">
 <link rel="import" href="/perf_insights/mre/mre_result.html">
 <link rel="import" href="/perf_insights/mre/reduce_map_results.html">
 <link rel="import"
@@ -21,7 +20,7 @@ found in the LICENSE file.
 tr.exportTo('pi.mre', function() {
 
   function jsonReplacer(key, value) {
-    if (value instanceof tr.b.u.Histogram) {
+    if (value instanceof tr.v.Histogram) {
       return value.asDict();
     }
     return value;
@@ -40,19 +39,19 @@ tr.exportTo('pi.mre', function() {
     var mapResultsLoaded = tr.b.getSync('file://' + options.mapResultsFile);
     var mapResults = JSON.parse(mapResultsLoaded);
 
-    var jobResults = new pi.mre.JobResults();
+    var jobResults = new pi.mre.MreResult();
 
     pi.mre.runAndConvertErrorsToFailures(
         jobResults, options.job, options.job.reduceFunctionHandle,
         undefined,
         function() {
           var reduceFunction = options.job.reduceFunctionHandle.load();
-          pi.mre.reduceMapResults(jobResults, options.key, mapResults,
+          pi.mre.reduceMapResults(jobResults, options.key, mapResults.pairs,
                                   reduceFunction);
         });
 
-    if (Object.keys(jobResults.reduceResults).length !== 0)
-      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.reduceResults,
+    if (Object.keys(jobResults.pairs).length !== 0)
+      console.log('JOB_RESULTS: ' + JSON.stringify(jobResults.pairs,
                   jsonReplacer));
     jobResults.failures.forEach(function(failure) {
       console.log('JOB_FAILURE: ' + JSON.stringify(failure.asDict()));

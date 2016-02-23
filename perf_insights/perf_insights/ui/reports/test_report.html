@@ -69,19 +69,18 @@ found in the LICENSE file.
     updateContents_: function() {
       var results = this.mapResults_;
       var table = this.$.table;
-
       var columns = this.createColumns_();
       table.tableColumns = columns;
       table.sortColumnIndex = 1;
       table.sortDescending = true;
 
       var categoryRows = [];
-      for (var i = 0; i < results.reduceResults["simon"].length; i++) {
-        categoryRows.push({
-          title: "Foo",
-          total: results.reduceResults["simon"][i].value
-        });
-      }
+      results.forEach(function(result) {
+          categoryRows.push({
+            title: "Foo",
+            total: result.pairs["simon"].value
+          });
+      });
 
       table.tableRows = categoryRows;
       table.rebuild();

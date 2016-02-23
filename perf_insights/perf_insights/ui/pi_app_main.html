@@ -324,7 +324,13 @@ tr.exportTo('pi.ui', function() {
         if (mapResults === undefined)
           return;
 
-        var reportEl = document.createElement(mappingState.piReportElementName);
+        var reportEl;
+        if (mappingState.showRawResults) {
+          reportEl = document.createElement('pi-ui-generic-results-view');
+        } else {
+          reportEl = document.createElement(mappingState.piReportElementName);
+        }
+
         reportEl.mapResults = mapResults;
         reportContainer.appendChild(reportEl);
       });

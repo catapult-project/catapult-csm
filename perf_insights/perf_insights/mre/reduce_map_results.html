@@ -15,7 +15,7 @@ tr.exportTo('pi.mre', function() {
   function reduceMapResults(jobResults, key, mapResults, reduceFunction) {
     try {
       var result = reduceFunction(key, mapResults);
-      jobResults.addResult(key, result);
+      jobResults.addPair(key, result);
     } catch (ex) {
       ex.name = 'ReduceFunctionError';
       throw ex;
