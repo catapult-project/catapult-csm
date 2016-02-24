@@ -186,7 +186,7 @@ found in the LICENSE file.
       var urlSet = [];
       bins.forEach(function(bin) {
         bin.sourceInfos.forEach(function(sourceInfo) {
-          urlSet[sourceInfo.file] = 1;
+          urlSet[sourceInfo] = 1;
         });
       });
       urlSet = Object.keys(urlSet);
