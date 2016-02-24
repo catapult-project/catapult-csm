@@ -13,11 +13,7 @@ found in the LICENSE file.
 tr.exportTo('pi.r', function() {
 
   function testReduceFunction(key, mapResults) {
-    var total = 0;
-    for (var i = 0; i < mapResults[key].length; i++) {
-      total += mapResults[key][i].value;
-    }
-    return {value: total};
+    return {value: mapResults[key].value};
   }
 
   pi.FunctionRegistry.register(testReduceFunction);
