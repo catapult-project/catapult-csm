@@ -32,13 +32,13 @@ tr.exportTo('pi.r', function() {
     this.traceURLs = {};
     this.sliceCount = 1;
 
-    this.selfTimeHistogram = tr.b.u.Histogram.createLinear(
-         tr.b.u.Unit.byName.timeDurationInMs,
+    this.selfTimeHistogram = tr.v.Histogram.createLinear(
+         tr.v.Unit.byName.timeDurationInMs,
          tr.b.Range.fromExplicitRange(0, 100),
          100);
 
-    this.cpuSelfTimeHistogram = tr.b.u.Histogram.createLinear(
-         tr.b.u.Unit.byName.timeDurationInMs,
+    this.cpuSelfTimeHistogram = tr.v.Histogram.createLinear(
+         tr.v.Unit.byName.timeDurationInMs,
          tr.b.Range.fromExplicitRange(0, 100),
          100);
   }
@@ -104,15 +104,13 @@ tr.exportTo('pi.r', function() {
 
   function v8ReportReduceFunction(key, mapResults) {
     var reduceResults = {};
-    tr.b.iterItems(mapResults[key], function(jobKey, jobResult) {
-      tr.b.iterItems(jobResult, function(undefined, mapResult) {
-        var reducingTarget = reduceResults[mapResult.key];
-        if (!reducingTarget) {
-          reducingTarget = ScriptCostInfo.asReduceTarget(mapResult.value);
-          reduceResults[mapResult.key] = reducingTarget;
-        }
-        reducingTarget.push(mapResult.value);
-      });
+    mapResults[key].forEach(function(mapResult) {
+      var reducingTarget = reduceResults[mapResult.key];
+      if (!reducingTarget) {
+        reducingTarget = ScriptCostInfo.asReduceTarget(mapResult.value);
+        reduceResults[mapResult.key] = reducingTarget;
+      }
+      reducingTarget.push(mapResult.value);
     });
 
     //console.log(JSON.stringify(reduceResults, undefined, 2));

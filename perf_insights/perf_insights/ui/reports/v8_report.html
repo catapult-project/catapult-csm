@@ -262,14 +262,13 @@ found in the LICENSE file.
 
       var allSliceCosts = [];
       var allTraceUrls = {};
-      tr.b.iterItems(results.reduceResults, function(name, result) {
-        if (name != 'wr')
-          return;
+      results.forEach(function(result) {
+        tr.b.iterItems(result.pairs, function(name, sliceCosts) {
+          if (name != 'wr')
+            return;
 
-        result.forEach(function(currentResult) {
-          tr.b.iterItems(currentResult, function(item_key, item) {
+          tr.b.iterItems(sliceCosts, function(item_key, item) {
             allSliceCosts.push({
-              runInfo: currentResult,
               sliceCostInfo: item
             });
             var keys = Object.keys(item.traceURLs);
