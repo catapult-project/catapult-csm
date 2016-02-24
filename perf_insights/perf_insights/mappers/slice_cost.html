@@ -116,7 +116,8 @@ tr.exportTo('pi.m', function() {
             tr.e.ads.DomainCategory.fromDomain(sliceCostInfo.domain);
         sliceCostInfo.selfTime = sample.weight;
         sliceCostInfo.cpuSelfTime = sample.weight;
-        sliceCostInfo.data = dataCB(slice);
+        if (dataCB !== undefined)
+          sliceCostInfo.data = dataCB(slice);
         // Let's use the state of the leaf frame. TODO(chiniforooshan):
         // understand what it means if frames of a sample stack are in different
         // states (BUG #1542).
@@ -158,7 +159,8 @@ tr.exportTo('pi.m', function() {
       // For all other events, just generate one sliceCostInfo.
       sliceCostInfo.selfTime = threadSlice.selfTime;
       sliceCostInfo.cpuSelfTime = threadSlice.cpuSelfTime;
-      sliceCostInfo.data = dataCB(event);
+      if (dataCB !== undefined)
+        sliceCostInfo.data = dataCB(event);
 
       var key = sliceCostInfo.threadGroup + '/' +
                 sliceCostInfo.railTypeName + '/' +
