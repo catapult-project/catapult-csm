@@ -415,17 +415,17 @@ found in the LICENSE file.
           '#costs-histogram-cost-type');
       var func = selector.selectedItem.func;
 
-      var histogram = tr.b.u.Histogram.createLinear(
-          tr.b.u.Unit.byName.timeDurationInMs,
+      var histogram = tr.v.Histogram.createLinear(
+          tr.v.Unit.byName.timeDurationInMs,
           tr.b.Range.fromExplicitRange(0, 100),
           100);
       this.$.table.selectedTableRow.data.forEach(function(datum) {
         var value = func(datum);
-        histogram.addHistogram(tr.b.u.Histogram.fromDict(value));
+        histogram.addHistogram(tr.v.Histogram.fromDict(value));
       });
 
       var histogramSpan = this.shadowRoot.querySelector('#costs-histogram');
-      histogramSpan.setLogScale(true);
+      histogramSpan.isYLogScale = true;
       histogramSpan.histogram = histogram;
       this.onBrushedBinsChanged_();
     },
