@@ -14,7 +14,7 @@ tr.exportTo('pi.r', function() {
 
   // TODO(eakuefner): Split weather report into discrete mappers.
   function weatherReportReduceFunction(key, mapResults) {
-    return mapResults[key][0];
+    return mapResults[key];
   }
 
   pi.FunctionRegistry.register(weatherReportReduceFunction);
