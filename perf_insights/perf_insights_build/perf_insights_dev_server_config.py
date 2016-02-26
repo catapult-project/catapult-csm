@@ -51,7 +51,8 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
 
     job_with_filenames = job_module.Job(
         job.map_function_handle.ConvertHrefsToAbsFilenames(self.app),
-        job.reduce_function_handle.ConvertHrefsToAbsFilenames(self.app))
+        job.reduce_function_handle.ConvertHrefsToAbsFilenames(self.app)
+            if job.reduce_function_handle else None)
 
     corpus_driver = local_directory_corpus_driver.LocalDirectoryCorpusDriver(
         trace_directory=kwargs.pop('_pi_data_dir'),

@@ -284,9 +284,12 @@ tr.exportTo('pi.ui', function() {
 
         var reduceFunctionName = pe.getAttribute('reduce-function-name');
         var reduceFunctionHref = pe.getAttribute('reduce-function-href');
-        var reduceModuleToLoad = new pi.ModuleToLoad(reduceFunctionHref);
-        var reduceFunctionHandle = new pi.FunctionHandle(
-            [reduceModuleToLoad], reduceFunctionName);
+        var reduceFunctionHandle
+        if (reduceFunctionName && reduceFunctionHref) {
+          var reduceModuleToLoad = new pi.ModuleToLoad(reduceFunctionHref);
+          reduceFunctionHandle = new pi.FunctionHandle(
+              [reduceModuleToLoad], reduceFunctionName);
+        }
 
         var job = new pi.mre.Job(mapFunctionHandle, reduceFunctionHandle);
 

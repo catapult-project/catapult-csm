@@ -30,7 +30,8 @@ tr.exportTo('pi.mre', function() {
     asDict: function() {
       return {
         map_function_handle: this.mapFunctionHandle_.asDict(),
-        reduce_function_handle: this.reduceFunctionHandle_.asDict(),
+        reduce_function_handle: this.reduceFunctionHandle_ ?
+            this.reduceFunctionHandle_.asDict() : undefined,
         guid: this.guid_.toString()
       };
     }
