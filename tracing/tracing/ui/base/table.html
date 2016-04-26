@@ -52,7 +52,7 @@ tr.exportTo('tr.ui.b', function() {
 });
 </script>
 
-<dom-module id="tr-ui-b-table">
+<dom-module id='tr-ui-b-table'>
   <template>
     <style>
       :host {
@@ -198,8 +198,7 @@ tr.exportTo('tr.ui.b', function() {
     var HighlightStyle = tr.ui.b.TableFormat.HighlightStyle;
 
     Polymer({
-
-      is: "tr-ui-b-table",
+      is: 'tr-ui-b-table',
 
       created: function() {
         this.selectionMode_ = SelectionMode.NONE;
@@ -1353,7 +1352,7 @@ tr.exportTo('tr.ui.b', function() {
   })();
   </script>
 
-<dom-module id="tr-ui-b-table-header-cell">
+<dom-module id='tr-ui-b-table-header-cell'>
   <template>
   <style>
     :host {
@@ -1381,60 +1380,59 @@ tr.exportTo('tr.ui.b', function() {
   </template>
 </dom-module>
 
-  <script>
-  'use strict';
+<script>
+'use strict';
 
-  Polymer({
+Polymer({
+  is: 'tr-ui-b-table-header-cell',
 
-    is: "tr-ui-b-table-header-cell",
+  listeners: {
+    'tap': 'onTap_'
+  },
 
-    listeners: {
-      'tap': 'onTap_'
-    },
+  created: function() {
+    this.tapCallback_ = undefined;
+    this.cellTitle_ = '';
+  },
 
-    created: function() {
-      this.tapCallback_ = undefined;
-      this.cellTitle_ = '';
-    },
+  set cellTitle(value) {
+    this.cellTitle_ = value;
 
-    set cellTitle(value) {
-      this.cellTitle_ = value;
+    var titleNode = tr.ui.b.asHTMLOrTextNode(
+        this.cellTitle_, this.ownerDocument);
 
-      var titleNode = tr.ui.b.asHTMLOrTextNode(
-          this.cellTitle_, this.ownerDocument);
+    this.$.title.innerText = '';
+    this.$.title.appendChild(titleNode);
+  },
 
-      this.$.title.innerText = '';
-      this.$.title.appendChild(titleNode);
-    },
+  get cellTitle() {
+    return this.cellTitle_;
+  },
 
-    get cellTitle() {
-      return this.cellTitle_;
-    },
+  clearSideContent: function() {
+    this.$.side.textContent = '';
+  },
 
-    clearSideContent: function() {
-      this.$.side.textContent = '';
-    },
+  set sideContent(content) {
+    this.$.side.textContent = content;
+  },
 
-    set sideContent(content) {
-      this.$.side.textContent = content;
-    },
+  get sideContent() {
+    return this.$.side.textContent;
+  },
 
-    get sideContent() {
-      return this.$.side.textContent;
-    },
+  set tapCallback(callback) {
+    this.style.cursor = 'pointer';
+    this.tapCallback_ = callback;
+  },
 
-    set tapCallback(callback) {
-      this.style.cursor = 'pointer';
-      this.tapCallback_ = callback;
-    },
+  get tapCallback() {
+    return this.tapCallback_;
+  },
 
-    get tapCallback() {
-      return this.tapCallback_;
-    },
-
-    onTap_: function() {
-      if (this.tapCallback_)
-        this.tapCallback_();
-    }
-  });
+  onTap_: function() {
+    if (this.tapCallback_)
+      this.tapCallback_();
+  }
+});
 </script>

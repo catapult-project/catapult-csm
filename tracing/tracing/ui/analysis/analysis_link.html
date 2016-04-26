@@ -9,7 +9,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/ui.html">
 <link rel="import" href="/tracing/ui/brushing_state_controller.html">
 
-<dom-module id="tr-ui-a-analysis-link">
+<dom-module id='tr-ui-a-analysis-link'>
   <template>
     <style>
     :host {
@@ -24,88 +24,89 @@ found in the LICENSE file.
 
   </template>
 </dom-module>
-  <script>
-  'use strict';
+<script>
+'use strict';
 
-  Polymer({
-    is: 'tr-ui-a-analysis-link',
+Polymer({
+  is: 'tr-ui-a-analysis-link',
 
-    properties: {
-      href: {
-        type: String
-      }
-    },
-
-    listeners: {
-      'click': 'onClicked_',
-      'mouseenter': 'onMouseEnter_',
-      'mouseleave': 'onMouseLeave_'
-    },
-
-    ready: function() {
-      this.selection_ = undefined;
-    },
-
-    attached: function() {
-      // Save an instance of the controller since it's going to be used in
-      // detached() where it can no longer be obtained.
-      this.controller_ =
-          tr.c.BrushingStateController.getControllerForElement(this);
-    },
-
-    detached: function() {
-      // Reset highlights.
-      this.clearHighlight_();
-      this.controller_ = undefined;
-    },
-
-    get selection() {
-      return this.selection_;
-    },
-
-    set selection(selection) {
-      // Selection can be either an EventSet or a function.
-      this.selection_ = selection;
-      this.textContent = selection.userFriendlyName;
-    },
-
-    setSelectionAndContent: function(selection, opt_textContent) {
-      this.selection_ = selection;
-      if (opt_textContent)
-        this.textContent = opt_textContent;
-    },
-
-    getCurrentSelection_: function() {
-      // Gets the current selection, invoking the selection function if needed.
-      if (typeof this.selection_ === 'function')
-        return this.selection_();
-      return this.selection_;
-    },
-
-    setHighlight_: function(opt_eventSet) {
-      if (this.controller_)
-        this.controller_.changeAnalysisLinkHoveredEvents(opt_eventSet);
-    },
-
-    clearHighlight_: function(opt_eventSet) {
-      this.setHighlight_();
-    },
-
-    onClicked_: function() {
-      if (!this.selection_)
-        return;
-
-      var event = new tr.model.RequestSelectionChangeEvent();
-      event.selection = this.getCurrentSelection_();
-      this.dispatchEvent(event);
-    },
-
-    onMouseEnter_: function() {
-      this.setHighlight_(this.getCurrentSelection_());
-    },
-
-    onMouseLeave_: function() {
-      this.clearHighlight_();
+  properties: {
+    href: {
+      type: String
     }
-  });
-  </script>
+  },
+
+  listeners: {
+    'click': 'onClicked_',
+    'mouseenter': 'onMouseEnter_',
+    'mouseleave': 'onMouseLeave_'
+  },
+
+  ready: function() {
+    this.selection_ = undefined;
+  },
+
+  attached: function() {
+    // Save an instance of the controller since it's going to be used in
+    // detached() where it can no longer be obtained.
+    this.controller_ =
+        tr.c.BrushingStateController.getControllerForElement(this);
+  },
+
+  detached: function() {
+    // Reset highlights.
+    this.clearHighlight_();
+    this.controller_ = undefined;
+  },
+
+  // TODO(polymer): Convert to Polymer property.
+  get selection() {
+    return this.selection_;
+  },
+
+  set selection(selection) {
+    // Selection can be either an EventSet or a function.
+    this.selection_ = selection;
+    this.textContent = selection.userFriendlyName;
+  },
+
+  setSelectionAndContent: function(selection, opt_textContent) {
+    this.selection_ = selection;
+    if (opt_textContent)
+      this.textContent = opt_textContent;
+  },
+
+  getCurrentSelection_: function() {
+    // Gets the current selection, invoking the selection function if needed.
+    if (typeof this.selection_ === 'function')
+      return this.selection_();
+    return this.selection_;
+  },
+
+  setHighlight_: function(opt_eventSet) {
+    if (this.controller_)
+      this.controller_.changeAnalysisLinkHoveredEvents(opt_eventSet);
+  },
+
+  clearHighlight_: function(opt_eventSet) {
+    this.setHighlight_();
+  },
+
+  onClicked_: function() {
+    if (!this.selection_)
+      return;
+
+    var event = new tr.model.RequestSelectionChangeEvent();
+    event.selection = this.getCurrentSelection_();
+    this.dispatchEvent(event);
+  },
+
+  onMouseEnter_: function() {
+    this.setHighlight_(this.getCurrentSelection_());
+  },
+
+  onMouseLeave_: function() {
+    this.clearHighlight_();
+  }
+});
+</script>

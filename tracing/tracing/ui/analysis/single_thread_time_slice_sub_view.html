@@ -16,7 +16,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/value/ui/scalar_span.html">
 <link rel="import" href="/tracing/value/unit.html">
 
-<dom-module id="tr-ui-a-single-thread-time-slice-sub-view">
+<dom-module id='tr-ui-a-single-thread-time-slice-sub-view'>
   <template>
     <style>
     table {
@@ -88,90 +88,89 @@ found in the LICENSE file.
     </table>
   </template>
 </dom-module>
-  <script>
-  'use strict';
+<script>
+'use strict';
 
-  Polymer({
+Polymer({
+  is: 'tr-ui-a-single-thread-time-slice-sub-view',
+  behaviors: [Catapult.tr_ui_a_sub_view_behavior],
 
-    is: "tr-ui-a-single-thread-time-slice-sub-view",
+  created: function() {
+    this.currentSelection_ = undefined;
+  },
 
-    behaviors: [Catapult.tr_ui_a_sub_view_behavior],
+  // TODO(polymer): Convert to Polymer property.
+  get selection() {
+    return this.currentSelection_;
+  },
 
-    created: function() {
-      this.currentSelection_ = undefined;
-    },
+  set selection(selection) {
+    if (selection.length !== 1)
+      throw new Error('Only supports single slices');
+    if (!(selection[0] instanceof tr.model.ThreadTimeSlice))
+      throw new Error('Only supports thread time slices');
 
-    get selection() {
-      return this.currentSelection_;
-    },
+    this.currentSelection_ = selection;
 
-    set selection(selection) {
-      if (selection.length !== 1)
-        throw new Error('Only supports single slices');
-      if (!(selection[0] instanceof tr.model.ThreadTimeSlice))
-        throw new Error('Only supports thread time slices');
+    var timeSlice = selection[0];
+    var thread = timeSlice.thread;
 
-      this.currentSelection_ = selection;
+    var shadowRoot = this.shadowRoot;
+    shadowRoot.querySelector('#state').textContent = timeSlice.title;
+    var stateColor = tr.b.ColorScheme.colorsAsStrings[timeSlice.colorId];
+    shadowRoot.querySelector('#state').style.backgroundColor = stateColor;
 
-      var timeSlice = selection[0];
-      var thread = timeSlice.thread;
+    shadowRoot.querySelector('#process-name').textContent =
+        thread.parent.userFriendlyName;
+    shadowRoot.querySelector('#thread-name').textContent =
+        thread.userFriendlyName;
 
-      var shadowRoot = this.shadowRoot;
-      shadowRoot.querySelector('#state').textContent = timeSlice.title;
-      var stateColor = tr.b.ColorScheme.colorsAsStrings[timeSlice.colorId];
-      shadowRoot.querySelector('#state').style.backgroundColor = stateColor;
+    shadowRoot.querySelector('#start').setValueAndUnit(
+        timeSlice.start, tr.v.Unit.byName.timeStampInMs);
+    shadowRoot.querySelector('#duration').setValueAndUnit(
+        timeSlice.duration, tr.v.Unit.byName.timeDurationInMs);
 
-      shadowRoot.querySelector('#process-name').textContent =
-          thread.parent.userFriendlyName;
-      shadowRoot.querySelector('#thread-name').textContent =
-          thread.userFriendlyName;
+    var onCpuEl = shadowRoot.querySelector('#on-cpu');
+    onCpuEl.textContent = '';
+    var runningInsteadEl = shadowRoot.querySelector('#running-instead');
+    if (timeSlice.cpuOnWhichThreadWasRunning) {
+      runningInsteadEl.parentElement.removeChild(runningInsteadEl);
 
-      shadowRoot.querySelector('#start').setValueAndUnit(
-          timeSlice.start, tr.v.Unit.byName.timeStampInMs);
-      shadowRoot.querySelector('#duration').setValueAndUnit(
-          timeSlice.duration, tr.v.Unit.byName.timeDurationInMs);
+      var cpuLink = document.createElement('tr-ui-a-analysis-link');
+      cpuLink.selection = new tr.model.EventSet(
+          timeSlice.getAssociatedCpuSlice());
+      cpuLink.textContent =
+          timeSlice.cpuOnWhichThreadWasRunning.userFriendlyName;
+      onCpuEl.appendChild(cpuLink);
+    } else {
+      onCpuEl.parentElement.removeChild(onCpuEl);
 
-      var onCpuEl = shadowRoot.querySelector('#on-cpu');
-      onCpuEl.textContent = '';
-      var runningInsteadEl = shadowRoot.querySelector('#running-instead');
-      if (timeSlice.cpuOnWhichThreadWasRunning) {
-        runningInsteadEl.parentElement.removeChild(runningInsteadEl);
-
+      var cpuSliceThatTookCpu = timeSlice.getCpuSliceThatTookCpu();
+      if (cpuSliceThatTookCpu) {
         var cpuLink = document.createElement('tr-ui-a-analysis-link');
-        cpuLink.selection = new tr.model.EventSet(
-            timeSlice.getAssociatedCpuSlice());
-        cpuLink.textContent =
-            timeSlice.cpuOnWhichThreadWasRunning.userFriendlyName;
-        onCpuEl.appendChild(cpuLink);
+        cpuLink.selection = new tr.model.EventSet(cpuSliceThatTookCpu);
+        if (cpuSliceThatTookCpu.thread)
+          cpuLink.textContent = cpuSliceThatTookCpu.thread.userFriendlyName;
+        else
+          cpuLink.textContent = cpuSliceThatTookCpu.title;
+        runningInsteadEl.appendChild(cpuLink);
       } else {
-        onCpuEl.parentElement.removeChild(onCpuEl);
-
-        var cpuSliceThatTookCpu = timeSlice.getCpuSliceThatTookCpu();
-        if (cpuSliceThatTookCpu) {
-          var cpuLink = document.createElement('tr-ui-a-analysis-link');
-          cpuLink.selection = new tr.model.EventSet(cpuSliceThatTookCpu);
-          if (cpuSliceThatTookCpu.thread)
-            cpuLink.textContent = cpuSliceThatTookCpu.thread.userFriendlyName;
-          else
-            cpuLink.textContent = cpuSliceThatTookCpu.title;
-          runningInsteadEl.appendChild(cpuLink);
-        } else {
-          runningInsteadEl.parentElement.removeChild(runningInsteadEl);
-        }
-      }
-
-      var argsEl = shadowRoot.querySelector('#args');
-      if (tr.b.dictionaryKeys(timeSlice.args).length > 0) {
-        var argsView =
-            document.createElement('tr-ui-a-generic-object-view');
-        argsView.object = timeSlice.args;
-
-        argsEl.parentElement.style.display = '';
-        argsEl.textContent = '';
-        argsEl.appendChild(argsView);
-      } else {
-        argsEl.parentElement.style.display = 'none';
+        runningInsteadEl.parentElement.removeChild(runningInsteadEl);
       }
     }
-  });
-  </script>
+
+    var argsEl = shadowRoot.querySelector('#args');
+    if (tr.b.dictionaryKeys(timeSlice.args).length > 0) {
+      var argsView =
+          document.createElement('tr-ui-a-generic-object-view');
+      argsView.object = timeSlice.args;
+
+      argsEl.parentElement.style.display = '';
+      argsEl.textContent = '';
+      argsEl.appendChild(argsView);
+    } else {
+      argsEl.parentElement.style.display = 'none';
+    }
+  }
+});
+</script>
