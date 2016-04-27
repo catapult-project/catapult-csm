@@ -62,7 +62,7 @@ Polymer({
   },
 
   ready: function() {
-    this.$.container.appendChild(this.chart_);
+    Polymer.dom(this.$.container).appendChild(this.chart_);
   },
 
   // TODO(polymer): Convert to Polymer property.

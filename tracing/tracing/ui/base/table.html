@@ -484,7 +484,7 @@ tr.exportTo('tr.ui.b', function() {
               headerCell.sideContent = UNSORTED_ARROW;
           }
 
-          td.appendChild(headerCell);
+          Polymer.dom(td).appendChild(headerCell);
           this.headerCells_.push(headerCell);
         }
       },
@@ -666,7 +666,8 @@ tr.exportTo('tr.ui.b', function() {
           }
 
           if (value !== undefined)
-            td.appendChild(tr.ui.b.asHTMLOrTextNode(value, this.ownerDocument));
+            Polymer.dom(td).appendChild(
+                tr.ui.b.asHTMLOrTextNode(value, this.ownerDocument));
 
           i += colSpan;
         }
@@ -793,13 +794,13 @@ tr.exportTo('tr.ui.b', function() {
               undefined, undefined);
           if (this.tableRows_.length === 0 && this.emptyValue_ !== undefined) {
             var trElement = this.ownerDocument.createElement('tr');
-            this.$.body.appendChild(trElement);
+            Polymer.dom(this.$.body).appendChild(trElement);
             trElement.classList.add('empty-row');
             var td = this.ownerDocument.createElement('td');
-            trElement.appendChild(td);
+            Polymer.dom(trElement).appendChild(td);
             td.colSpan = this.tableColumns_.length;
             var emptyValue = this.emptyValue_;
-            td.appendChild(
+            Polymer.dom(td).appendChild(
                 tr.ui.b.asHTMLOrTextNode(emptyValue, this.ownerDocument));
           }
           this.bodyDirty_ = false;
@@ -825,7 +826,7 @@ tr.exportTo('tr.ui.b', function() {
 
       appendNewElement_: function(parent, tagName) {
         var element = parent.ownerDocument.createElement(tagName);
-        parent.appendChild(element);
+        Polymer.dom(parent).appendChild(element);
         return element;
       },
 
@@ -1402,7 +1403,7 @@ Polymer({
         this.cellTitle_, this.ownerDocument);
 
     this.$.title.innerText = '';
-    this.$.title.appendChild(titleNode);
+    Polymer.dom(this.$.title).appendChild(titleNode);
   },
 
   get cellTitle() {
