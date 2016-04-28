@@ -7,7 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/dashboard/static/simple_xhr.html">
 
-<polymer-element name="editable-list" attributes="xsrfToken">
+<dom-module id="editable-list">
   <template>
     <style>
       .item-container {
@@ -90,7 +90,7 @@ found in the LICENSE file.
                    size="35"></input>
         </label>
 
-        <div hidden?="{{!subItemLabel}}">
+        <div hidden$="{{!subItemLabel}}">
           <label>
               {{subItemLabel}}<br />
               <input id="sub_item_textfield"
@@ -103,23 +103,23 @@ found in the LICENSE file.
 
         <br />
         <button class="kennedy-button-submit"
-                on-click="{{addItemClicked}}">Add</button>
+                on-click="addItemClicked">Add</button>
     </div>
 
     <br />
 
-    <template repeat="{{item, i in editable_list}}">
+    <template is="dom-repeat" items="{{editable_list}}">
      <p class="item-container">
-       <span class="item-box" removing?={{item.removing}}>
+       <span class="item-box" removing$={{item.removing}}>
          {{item.name}}<a class="remove-button"
-                         on-click="{{removeItemClicked}}"
-                         removing?={{item.removing}}></a></span>
+                         on-click="removeItemClicked"
+                         removing$={{item.removing}}></a></span>
 
-       <span hidden?="{{!item.sub_items}}">:&nbsp;&nbsp;</span>
+       <span hidden$="{{!item.sub_items}}">:&nbsp;&nbsp;</span>
 
-       <template repeat="{{sub_item, j in item.sub_items}}">
-         <span class="item-box sub-item" removing?={{sub_item.removing}}>
-           {{sub_item.name}}<a class="remove-button" on-click="{{removeItemClicked}}"></a>
+       <template is="dom-repeat" items="{{item.sub_items}}" as="sub_item">
+         <span class="item-box sub-item" removing$={{sub_item.removing}}>
+           {{sub_item.name}}<a class="remove-button" on-click="removeItemClicked"></a>
          </span>
        </template>
      </p>
@@ -127,7 +127,13 @@ found in the LICENSE file.
   </template>
   <script>
     'use strict';
-    Polymer('editable-list', {
+    Polymer({
+
+      is: 'editable-list',
+
+      properties: {
+        xsrfToken: {}
+      },
 
       init: function(editable_list, handlerURL, itemLabel, subItemLabel) {
         this.editable_list = editable_list.sort(this.itemCompare);
@@ -256,4 +262,4 @@ found in the LICENSE file.
       }
     });
   </script>
-</polymer-element>
+</dom-module>
