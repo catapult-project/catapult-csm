@@ -16,35 +16,35 @@ Example usage:
   var tooltip = document.getElementById("tooltip");
   tooltip.set('A tooltip message', bound.left, bound.top);
 -->
+<link rel="import" href="/components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="/components/iron-overlay-behavior/iron-o
+     verlay-behavior.html">
+<link rel="import" href="/components/paper-material/paper-material.html">
 
-<link rel="import" href="/components/core-overlay/core-overlay.html">
-<link rel="import" href="/components/paper-shadow/paper-shadow.html">
+<dom-module id="custom-tooltip">
+  <style>
+    :host {
+      border: 1px solid black;
+      position: absolute;
+      background-color: rgba(31, 31, 31, 0.901961);
+      color: white;
+    }
 
-<polymer-element
-    name="custom-tooltip"
-    attributes="autoCloseDisabled transition duration maxWidth">
+    #container {
+      overflow: hidden;
+    }
+
+    .message-content {
+      margin: 3px;
+    }
+  </style>
+
   <template>
-    <style>
-      :host {
-        border: 1px solid black;
-        position: absolute;
-        background-color: rgba(31, 31, 31, 0.901961);
-        color: white;
-      }
-
-      #container {
-        overflow: hidden;
-      }
-
-      .message-content {
-        margin: 3px;
-      }
-    </style>
-
-    <paper-shadow z="3">
-      <core-overlay id="overlay" target="{{}}" opened="{{opened}}"
+    <paper-material elevation="3">
+      <iron-overlay-behavior id="overlay" target="" opened="{{opened}}"
           autoCloseDisabled="{{autoCloseDisabled}}"
-          sizingTarget="{{$.container}}" transition="{{transition}}"></core-overlay>
+          sizingTarget="{{$.container}}"
+          transition="{{transition}}"></iron-overlay-behavior>
 
       <div id="container" horizontal layout  max-width="{{maxWidth}}">
         <div class="message-content" flex id="content"></div>
@@ -52,30 +52,51 @@ Example usage:
           <content></content>
         </div>
       </div>
-    </paper-shadow>
+    </paper-material>
 
   </template>
 
   <script>
     'use strict';
-    Polymer('custom-tooltip', {
-
-      /**
-       * Number of milliseconds to stay opened. 0 to stay open indefinitely.
-       */
-      duration: 6000,
-
-      /**
-       * Whether to close overlay if focus is taken somewhere else.
-       */
-      autoCloseDisabled: false,
-
-      /**
-       * Add event handler.
-       * See: https://goo.gl/QIYbsB
-       */
-      eventDelegates: {
-        'core-resize': 'positionChanged'
+    Polymer({
+      is: 'custom-tooltip',
+      properties: {
+        /**
+         * Whether to close overlay if focus is taken somewhere else.
+         */
+        autoCloseDisabled: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+        /**
+         * Number of milliseconds to stay opened. 0 to stay open indefinitely.
+         */
+        duration: {
+          type: Number,
+          value: 6000,
+          notify: true
+        },
+        /**
+         * Add event handler.
+         * See: https://goo.gl/QIYbsB
+         */
+        eventDelegates: {
+          type: Object,
+          value: () => { 'core-resize': 'positionChanged' },
+        },
+        maxWidth: {
+          notify: true
+        },
+        opened: {
+          observer: 'openedChanged'
+        },
+        position: {
+          observer: 'positionChanged'
+        },
+        transition: {
+          notify: true
+        }
       },
 
       ready: function() {
@@ -97,7 +118,7 @@ Example usage:
           this.$.content.innerHTML = content;
         } else {
           this.$.content.innerHTML = '';
-          this.$.content.appendChild(content);
+          Polymer.dom(this.$.content).appendChild(content);
         }
         this.targetXpos = targetXpos;
         this.targetYpos = targetYpos;
@@ -110,10 +131,10 @@ Example usage:
         }
       },
 
-      positionChanged: function(oldVal, newVal) {
+      positionChanged: function(newVal, oldVal) {
         // Add a little delay to prevent window jumping when user clicks the
         // target too fast.
-        this.job('positionJob', this.updatePosition, 50);
+        this.debounce('positionJob', this.updatePosition, 50);
       },
 
       updatePosition: function() {
@@ -133,7 +154,7 @@ Example usage:
             this.hideJob.stop();
           }
           // https://www.polymer-project.org/0.5/docs/polymer/polymer.html#job
-          this.hideJob = this.job(this.hideJob, this.hide, this.duration);
+          this.hideJob = this.debounce(this.hideJob, this.hide, this.duration);
         }
       },
 
@@ -162,4 +183,4 @@ Example usage:
       }
     });
   </script>
-</polymer-element>
+</dom-module>
