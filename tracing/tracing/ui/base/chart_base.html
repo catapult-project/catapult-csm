@@ -63,7 +63,7 @@ tr.exportTo('tr.ui.b', function() {
   var ChartBase = tr.ui.b.define('svg', undefined, svgNS);
 
   ChartBase.prototype = {
-    __proto__: HTMLUnknownElement.prototype,
+    __proto__: HTMLDivElement.prototype,
 
     decorate: function() {
       this.classList.add('chart-base');
