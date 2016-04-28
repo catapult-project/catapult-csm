@@ -5,8 +5,8 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
-<link rel="import" href="/tracing/base/utils.html">
 <link rel="import" href="/tracing/base/event.html">
+<link rel="import" href="/tracing/base/utils.html">
 <link rel="import" href="/tracing/ui/base/ui.html">
 <link rel="import" href="/tracing/ui/base/utils.html">
 
@@ -331,7 +331,7 @@ tr.exportTo('tr.ui.b', function() {
     Polymer.dom(o.buttons).appendChild(b);
     o.visible = true;
     return o;
-  }
+  };
 
   return {
     Overlay: Overlay
