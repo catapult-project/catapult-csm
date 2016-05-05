@@ -8,17 +8,17 @@ found in the LICENSE file.
 <link rel="import" href="/perf_insights/function_handle.html">
 <link rel="import" href="/tracing/base/xhr.html">
 
-<polymer-element name="pi-driver-base">
+<dom-module id="pi-driver-base">
   <script>
   'use strict';
 
   Polymer();
   </script>
-</polymer-element>
+</dom-module>
 
-<polymer-element name="pi-driver-devserver"
-                 display-name="DevServer (local)"
-                 extends="pi-driver-base">
+<dom-module id="pi-driver-devserver"
+            display-name="DevServer (local)"
+            extends="pi-driver-base">
   <script>
   'use strict';
 
@@ -31,11 +31,11 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>
+</dom-module>
 
-<polymer-element name="pi-driver-cloudmapper"
-                 display-name="Cloud Mapper"
-                 extends="pi-driver-base">
+<dom-module id="pi-driver-cloudmapper"
+            display-name="Cloud Mapper"
+            extends="pi-driver-base">
   <script>
   'use strict';
 
@@ -48,11 +48,11 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>
+</dom-module>
 
-<polymer-element name="pi-driver-localcloudmapper"
-                 display-name="Cloud Mapper (local devserver)"
-                 extends="pi-driver-base">
+<dom-module id="pi-driver-localcloudmapper"
+            display-name="Cloud Mapper (local devserver)"
+            extends="pi-driver-base">
   <script>
   'use strict';
 
@@ -65,5 +65,4 @@ found in the LICENSE file.
     }
   });
   </script>
-</polymer-element>
-
+</dom-module>
