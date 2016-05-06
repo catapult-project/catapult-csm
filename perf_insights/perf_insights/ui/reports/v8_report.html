@@ -15,7 +15,6 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/value/numeric.html">
 
 <dom-module id="pi-ui-v8-report"
-    extends="pi-ui-r-pi-report"
     map-function-href="/perf_insights/mappers/v8_map_function.html"
     map-function-name="v8ReportMapFunction"
     reduce-function-href="/perf_insights/reducers/v8_reduce_function.html"
@@ -116,7 +115,10 @@ tr.exportTo('pi.ui.r', function() {
       tr.v.Unit.byName.timeDurationInMs, tr.b.Range.fromExplicitRange(0, 100),
       100);
 
-  Polymer('pi-ui-v8-report', {
+  Polymer({
+    is: 'pi-ui-v8-report',
+    behaviors: [Catapult.pi_ui_r_pi_report_behavior],
+
     created: function() {
       this.mapResults_ = undefined;
     },

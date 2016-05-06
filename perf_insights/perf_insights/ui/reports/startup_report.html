@@ -93,7 +93,10 @@ found in the LICENSE file.
 (function() {
   var DEFAULT_SLOW_THRESHOLD_MS = 3500;
 
-  Polymer('pi-ui-r-startup-report', {
+  Polymer({
+    is: 'pi-ui-r-startup-report',
+    behaviors: [Catapult.pi_ui_r_pi_report_behavior],
+
     created: function() {
       this.mapResults_ = undefined;
       this.slowThresholdMs_ = DEFAULT_SLOW_THRESHOLD_MS;

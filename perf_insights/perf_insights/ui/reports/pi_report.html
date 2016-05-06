@@ -9,25 +9,48 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/ui/base/dom_helpers.html">
 <link rel="import" href="/tracing/ui/base/table.html">
 
-<dom-module id="pi-ui-r-pi-report">
-  <script>
-  'use strict';
+<script>
+'use strict';
 
-  Polymer({
+(function() {
+  if (!window.Catapult)
+    window.Catapult = {};
+
+  window.Catapult.pi_ui_r_pi_report_behavior = {
+    properties: {
+      mapFunctionHref: {
+        type: String,
+        reflectToAttribute: true
+      },
+      mapFunctionName: {
+        type: String,
+        reflectToAttribute: true
+      },
+      reduceFunctionHref: {
+        type: String,
+        reflectToAttribute: true
+      },
+      reduceFunctionName: {
+        type: String,
+        reflectToAttribute: true
+      }
+    },
+
     created: function() {
       // TODO(eakuefner): Testing on master shows that this check fails to
       // bail out.
       var thisPolymer = Polymer.getPolymerElementNamed(this.tagName);
-      var requiredAttrs = ['map-function-href',
-                           'map-function-name',
-                           'reduce-function-href',
-                           'reduce-function-name'];
+      var requiredAttrs = new Set([
+        'map-function-href',
+        'map-function-name',
+        'reduce-function-href',
+        'reduce-function-name'
+      ]);
 
-      for (var attrIdx in requiredAttrs) {
-        var attr = requiredAttrs[attrIdx];
-        if (!thisPolymer.getAttribute(attr)) {
-          throw new Error(
-            'Subclasses of pi-ui-report must have ' + attr + ' attrs');
+      for (var attr in requiredAttrs) {
+        if (!this[attr]) {
+          throw new Error('Polymer elements with the pi_ui_report behavior ' +
+              'must have ' + attr + ' attribute.');
         }
       }
     },
@@ -39,6 +62,6 @@ found in the LICENSE file.
     set mapResults(mapResults) {
       throw new Error('Not Implemented');
     }
-  });
-  </script>
-</dom-module>
+  };
+})();
+</script>

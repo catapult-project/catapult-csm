@@ -72,7 +72,9 @@ tr.exportTo('pi.ui', function() {
     return true;
   }
 
-  Polymer('pi-ui-pi-app-main', {
+  Polymer({
+    is: 'pi-ui-pi-app-main',
+
     created: function() {
       // Non-mapping state.
       this.mapTracesDrivers_ = undefined;
@@ -88,6 +90,8 @@ tr.exportTo('pi.ui', function() {
       var topLeftControls = this.$.top_left_controls;
       var topRightControls = this.$.top_right_controls;
 
+      // TODO(polymer): Migrate this to a registry system instead of a Polymer
+      // subclass lookup.
       var piDriverPolymerElementNames = tr.ui.b.getPolymerElementsThatSubclass(
           'pi-driver-base');
       var piDriverElementOptions = piDriverPolymerElementNames.map(
