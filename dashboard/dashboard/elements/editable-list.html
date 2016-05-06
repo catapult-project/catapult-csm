@@ -145,7 +145,7 @@ found in the LICENSE file.
       /**
        * Handles remove item button clicked.
        */
-      removeItemClicked: function(event, detail, sender) {
+      removeItemClicked: function(event, detail) {
         var model = event.target.templateInstance.model;
         var index = model.i;
         var subIndex = model.j;
@@ -198,7 +198,7 @@ found in the LICENSE file.
       /**
        * Handles add item button clicked.
        */
-      addItemClicked: function(event, detail, sender) {
+      addItemClicked: function(event, detail) {
         var itemValue = this.$.item_textfield.value;
         var subItemValue = null;
         if (this.$.sub_item_textfield) {
