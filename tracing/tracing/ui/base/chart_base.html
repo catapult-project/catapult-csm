@@ -66,7 +66,7 @@ tr.exportTo('tr.ui.b', function() {
     __proto__: HTMLDivElement.prototype,
 
     decorate: function() {
-      this.classList.add('chart-base');
+      Polymer.dom(this).classList.add('chart-base');
       this.chartTitle_ = undefined;
       this.seriesKeys_ = undefined;
       this.width_ = 400;

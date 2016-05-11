@@ -5,9 +5,9 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
-<link rel="import" href="/tracing/ui/extras/about_tracing/record_selection_dialog.html">
 <link rel="import" href="/tracing/base/settings.html">
 <link rel="import" href="/tracing/core/test_utils.html">
+<link rel="import" href="/tracing/ui/extras/about_tracing/record_selection_dialog.html">
 
 <script>
 'use strict';
@@ -208,7 +208,7 @@ tr.b.unittest.testSuite(function() {
     assert.isFalse(dlg.useSampling);
 
     // Make sure the manual settings are not visible.
-    var classList = dlg.categoriesView_.classList;
+    var classList = Polymer.dom(dlg.categoriesView_).classList;
     assert.isTrue(classList.contains('categories-column-view-hidden'));
 
     // Verify manual settings do not modify the checkboxes.
@@ -253,7 +253,7 @@ tr.b.unittest.testSuite(function() {
     assert.isFalse(dlg.useSampling);
 
     // Make sure the manual settings are not visible.
-    var classList = dlg.categoriesView_.classList;
+    var classList = Polymer.dom(dlg.categoriesView_).classList;
     assert.isTrue(classList.contains('categories-column-view-hidden'));
 
     // Switch to manual settings and verify the default values are not returned.
@@ -302,7 +302,7 @@ tr.b.unittest.testSuite(function() {
     assert.isTrue(dlg.useSampling);
 
     // Make sure the manual settings are not visible.
-    var classList = dlg.categoriesView_.classList;
+    var classList = Polymer.dom(dlg.categoriesView_).classList;
     assert.isTrue(classList.contains('categories-column-view-hidden'));
 
     // Switch to manual settings and verify the default values are not returned.

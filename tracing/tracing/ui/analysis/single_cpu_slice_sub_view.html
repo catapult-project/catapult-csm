@@ -104,7 +104,7 @@ Polymer({
     var cpuSlice = selection[0];
     var thread = cpuSlice.threadThatWasRunning;
 
-    var shadowRoot = this.shadowRoot;
+    var shadowRoot = Polymer.dom(this.root);
     if (thread) {
       shadowRoot.querySelector('#process-name').textContent =
           thread.parent.userFriendlyName;
