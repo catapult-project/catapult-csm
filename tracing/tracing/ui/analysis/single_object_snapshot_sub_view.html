@@ -73,7 +73,7 @@ Polymer({
     if (!(selection[0] instanceof tr.model.ObjectSnapshot))
       throw new Error('Only supports object instances');
 
-    this.textContent = '';
+    Polymer.dom(this).textContent = '';
     this.currentSelection_ = selection;
 
     var snapshot = selection[0];
@@ -92,7 +92,7 @@ Polymer({
   appendGenericAnalysis_: function(snapshot) {
     var instance = snapshot.objectInstance;
 
-    this.textContent = '';
+    Polymer.dom(this).textContent = '';
 
     var titleEl = document.createElement('div');
     Polymer.dom(titleEl).classList.add('title');
@@ -117,7 +117,7 @@ Polymer({
     Polymer.dom(tableEl).appendChild(rowEl);
 
     var labelEl = document.createElement('td');
-    labelEl.textContent = 'args:';
+    Polymer.dom(labelEl).textContent = 'args:';
     Polymer.dom(rowEl).appendChild(labelEl);
 
     var argsEl = document.createElement('td');

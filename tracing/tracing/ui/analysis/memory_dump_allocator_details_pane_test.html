@@ -298,7 +298,7 @@ tr.b.unittest.testSuite(function() {
     var suballocationsSubRow = rootRow.subRows[2];
     checkRow(columns, suballocationsSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'suballocations');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'suballocations');
         assert.equal(formattedTitle.title, '');
       },
       size: [135266304],
@@ -310,7 +310,7 @@ tr.b.unittest.testSuite(function() {
     var oilpanSuballocationSubRow = suballocationsSubRow.subRows[0];
     checkRow(columns, oilpanSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'oilpan');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'oilpan');
         assert.equal(formattedTitle.title, '');
       },
       size: [125829120],
@@ -323,7 +323,7 @@ tr.b.unittest.testSuite(function() {
         oilpanSuballocationSubRow.subRows[0];
     checkRow(columns, oilpanUnspecifiedSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, '<unspecified>');
+        assert.equal(Polymer.dom(formattedTitle).textContent, '<unspecified>');
         assert.equal(formattedTitle.title, 'v8/__99BEAD');
       },
       size: [75497472],
@@ -334,7 +334,7 @@ tr.b.unittest.testSuite(function() {
     var oilpanAnimalsSuballocationSubRow = oilpanSuballocationSubRow.subRows[1];
     checkRow(columns, oilpanAnimalsSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'animals');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'animals');
         assert.equal(formattedTitle.title, '');
       },
       size: [50331648],
@@ -347,7 +347,7 @@ tr.b.unittest.testSuite(function() {
         oilpanAnimalsSuballocationSubRow.subRows[0];
     checkRow(columns, oilpanCowSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'cow');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'cow');
         assert.equal(formattedTitle.title, 'v8/__42BEEF');
       },
       size: [33554432],
@@ -358,7 +358,7 @@ tr.b.unittest.testSuite(function() {
     var skiaSuballocationSubRow = suballocationsSubRow.subRows[1];
     checkRow(columns, skiaSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'skia');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'skia');
         assert.equal(formattedTitle.title, 'v8/__15FADE');
       },
       size: [8388608],
@@ -369,7 +369,7 @@ tr.b.unittest.testSuite(function() {
     var ccSuballocationSubRow = suballocationsSubRow.subRows[2];
     checkRow(columns, ccSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'cc');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'cc');
         assert.equal(formattedTitle.title, 'v8/__12FEED');
       },
       size: [1048576],
@@ -440,7 +440,7 @@ tr.b.unittest.testSuite(function() {
     var suballocationsSubRow = rootRow.subRows[3];
     checkRow(columns, suballocationsSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'suballocations');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'suballocations');
         assert.equal(formattedTitle.title, '');
       },
       size: [135266304, 272629760],
@@ -452,7 +452,7 @@ tr.b.unittest.testSuite(function() {
     var oilpanSuballocationSubRow = suballocationsSubRow.subRows[0];
     checkRow(columns, oilpanSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'oilpan');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'oilpan');
         assert.equal(formattedTitle.title, '');
       },
       size: [125829120, 268435456],
@@ -465,7 +465,7 @@ tr.b.unittest.testSuite(function() {
         oilpanSuballocationSubRow.subRows[0];
     checkRow(columns, oilpanUnspecifiedSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, '<unspecified>');
+        assert.equal(Polymer.dom(formattedTitle).textContent, '<unspecified>');
         assert.equal(formattedTitle.title, 'v8/__99BEAD');
       },
       size: [75497472, 268435456],
@@ -476,7 +476,7 @@ tr.b.unittest.testSuite(function() {
     var oilpanAnimalsSuballocationSubRow = oilpanSuballocationSubRow.subRows[1];
     checkRow(columns, oilpanAnimalsSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'animals');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'animals');
         assert.equal(formattedTitle.title, '');
       },
       size: [50331648, undefined],
@@ -489,7 +489,7 @@ tr.b.unittest.testSuite(function() {
         oilpanAnimalsSuballocationSubRow.subRows[0];
     checkRow(columns, oilpanCowSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'cow');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'cow');
         assert.equal(formattedTitle.title, 'v8/__42BEEF');
       },
       size: [33554432, undefined],
@@ -500,7 +500,7 @@ tr.b.unittest.testSuite(function() {
     var skiaSuballocationSubRow = suballocationsSubRow.subRows[1];
     checkRow(columns, skiaSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'skia');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'skia');
         assert.equal(formattedTitle.title, 'v8/__15FADE');
       },
       size: [8388608, undefined],
@@ -511,7 +511,7 @@ tr.b.unittest.testSuite(function() {
     var ccSuballocationSubRow = suballocationsSubRow.subRows[2];
     checkRow(columns, ccSuballocationSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'cc');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'cc');
         assert.equal(formattedTitle.title, 'v8/__12FEED, v8/__13DEED');
       },
       size: [1048576, 4194304],
@@ -592,7 +592,7 @@ tr.b.unittest.testSuite(function() {
     var suballocationsSubRow = rootRow.subRows[3];
     checkRow(columns, suballocationsSubRow, {
       title: function(formattedTitle) {
-        assert.equal(formattedTitle.textContent, 'suballocations');
+        assert.equal(Polymer.dom(formattedTitle).textContent, 'suballocations');
         assert.equal(formattedTitle.title, '');
       },
       size: [135266304, undefined, 272629760],
@@ -648,7 +648,7 @@ tr.b.unittest.testSuite(function() {
 
     // Sub-allocation row.
     var row = c.formatTitle({title: 'Suballocation row', suballocation: true});
-    assert.strictEqual(row.textContent, 'Suballocation row');
+    assert.strictEqual(Polymer.dom(row).textContent, 'Suballocation row');
     assert.strictEqual(row.style.fontStyle, 'italic');
   });
 

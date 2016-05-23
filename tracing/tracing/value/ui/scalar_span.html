@@ -172,12 +172,12 @@ Polymer({
 
   updateContent_: function() {
     if (this.unit_ === undefined) {
-      this.$.content.textContent = '';
+      Polymer.dom(this.$.content).textContent = '';
       this.$.content.style.color = '';
       return;
     }
 
-    this.$.content.textContent = this.unit_.format(this.value);
+    Polymer.dom(this.$.content).textContent = this.unit_.format(this.value);
 
     var BIGGER_IS_BETTER = tr.v.ImprovementDirection.BIGGER_IS_BETTER;
     var SMALLER_IS_BETTER = tr.v.ImprovementDirection.SMALLER_IS_BETTER;

@@ -151,17 +151,17 @@ Polymer({
   updateContents_: function() {
     this.$.container.style.display = this.histogram_ ? '' : 'none';
     if (!this.histogram_) {
-      this.$.nsamples.textContent = 0;
+      Polymer.dom(this.$.nsamples).textContent = 0;
       this.$.average.setValueAndUnit(undefined, undefined);
       return;
     }
 
-    this.$.nsamples.textContent = this.histogram_.numValues;
+    Polymer.dom(this.$.nsamples).textContent = this.histogram_.numValues;
     this.$.average.setValueAndUnit(this.histogram_.average,
                                    this.histogram_.unit);
     if (this.histogram_.numNans > 0) {
       this.$.hadnans.style.display = '';
-      this.$.nnans.textContent = this.histogram_.numNans;
+      Polymer.dom(this.$.nnans).textContent = this.histogram_.numNans;
     } else {
       this.$.hadnans.style.display = 'none';
     }
