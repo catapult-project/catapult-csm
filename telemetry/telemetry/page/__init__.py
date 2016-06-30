@@ -10,6 +10,7 @@ from catapult_base import cloud_storage  # pylint: disable=import-error
 
 from telemetry import story
 from telemetry.page import shared_page_state
+from telemetry.page import cache_temperature as cache_temperature_module
 from telemetry.internal.actions import action_runner as action_runner_module
 
 
@@ -20,7 +21,8 @@ class Page(story.Story):
                credentials_bucket=cloud_storage.PUBLIC_BUCKET, labels=None,
                startup_url='', make_javascript_deterministic=True,
                shared_page_state_class=shared_page_state.SharedPageState,
-               grouping_keys=None):
+               grouping_keys=None,
+               cache_temperature=cache_temperature_module.ANY):
     self._url = url
 
     super(Page, self).__init__(
@@ -43,6 +45,9 @@ class Page(story.Story):
         logging.error('Invalid credentials path: %s' % credentials_path)
         credentials_path = None
     self._credentials_path = credentials_path
+    self._cache_temperature = cache_temperature
+    if cache_temperature != cache_temperature_module.ANY:
+      self.grouping_keys['cache_temperature'] = cache_temperature
 
     # Whether to collect garbage on the page before navigating & performing
     # page actions.
@@ -59,6 +64,10 @@ class Page(story.Story):
   @property
   def credentials_path(self):
     return self._credentials_path
+
+  @property
+  def cache_temperature(self):
+    return self._cache_temperature
 
   @property
   def startup_url(self):
@@ -203,7 +212,7 @@ class Page(story.Story):
   def display_name(self):
     if self.name:
       return self.name
-    if not self.is_file:
+    if self.page_set is None or not self.is_file:
       return self.url
     all_urls = [p.url.rstrip('/') for p in self.page_set if p.is_file]
     common_prefix = os.path.dirname(os.path.commonprefix(all_urls))

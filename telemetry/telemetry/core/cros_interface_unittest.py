@@ -135,17 +135,25 @@ class CrOSInterfaceTest(unittest.TestCase):
       self.assertTrue(remote_port_1 != remote_port_2)
 
   @decorators.Enabled('cros-chrome')
-  def testTakeScreenShot(self):
+  def testTakeScreenshotWithPrefix(self):
     with self._GetCRI() as cri:
 
       def _Cleanup():
         cri.RmRF('/var/log/screenshots/test-prefix*')
 
       _Cleanup()
-      cri.TakeScreenShot('test-prefix')
+      self.assertTrue(cri.TakeScreenshotWithPrefix('test-prefix'))
       self.assertTrue(cri.FileExistsOnDevice(
           '/var/log/screenshots/test-prefix-0.png'))
       _Cleanup()
+
+  @decorators.Enabled('chromeos')
+  def testLsbReleaseValue(self):
+    with self._GetCRI() as cri:
+      build_num = cri.LsbReleaseValue('CHROMEOS_RELEASE_BUILD_NUMBER', None)
+      self.assertTrue(build_num.isdigit())
+      device_type = cri.GetDeviceTypeName()
+      self.assertTrue(device_type.isalpha())
 
   # TODO(tengs): It would be best if we can filter this test and other tests
   # that need to be run locally based on the platform of the system browser.

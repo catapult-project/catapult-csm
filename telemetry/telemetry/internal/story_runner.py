@@ -16,7 +16,7 @@ from telemetry.internal.browser import browser_finder
 from telemetry.internal.results import results_options
 from telemetry.internal.util import exception_formatter
 from telemetry import page
-from telemetry.page import page_test
+from telemetry.page import legacy_page_test
 from telemetry import story as story_module
 from telemetry.util import wpr_modes
 from telemetry.value import failure
@@ -69,8 +69,9 @@ def ProcessCommandLineArgs(parser, args):
 
 
 def _RunStoryAndProcessErrorIfNeeded(story, results, state, test):
-  def ProcessError():
-    results.AddValue(failure.FailureValue(story, sys.exc_info()))
+  def ProcessError(description=None):
+    state.DumpStateUponFailure(story, results)
+    results.AddValue(failure.FailureValue(story, sys.exc_info(), description))
   try:
     if isinstance(test, story_test.StoryTest):
       test.WillRunStory(state.platform)
@@ -84,7 +85,7 @@ def _RunStoryAndProcessErrorIfNeeded(story, results, state, test):
     state.RunStory(results)
     if isinstance(test, story_test.StoryTest):
       test.Measure(state.platform, results)
-  except (page_test.Failure, exceptions.TimeoutException,
+  except (legacy_page_test.Failure, exceptions.TimeoutException,
           exceptions.LoginException, exceptions.ProfilingException):
     ProcessError()
   except exceptions.Error:
@@ -94,9 +95,7 @@ def _RunStoryAndProcessErrorIfNeeded(story, results, state, test):
     results.AddValue(
         skip.SkipValue(story, 'Unsupported page action: %s' % e))
   except Exception:
-    results.AddValue(
-        failure.FailureValue(
-            story, sys.exc_info(), 'Unhandlable exception raised.'))
+    ProcessError(description='Unhandlable exception raised.')
     raise
   finally:
     has_existing_exception = (sys.exc_info() != (None, None, None))
@@ -110,6 +109,7 @@ def _RunStoryAndProcessErrorIfNeeded(story, results, state, test):
         test.DidRunPage(state.platform)
     except Exception:
       if not has_existing_exception:
+        state.DumpStateUponFailure(story, results)
         raise
       # Print current exception and propagate existing exception.
       exception_formatter.PrintFormattedException(
@@ -209,9 +209,9 @@ def Run(test, story_set, finder_options, results, max_failures=None,
   for group in story_groups:
     state = None
     try:
-      for _ in xrange(finder_options.pageset_repeat):
+      for storyset_repeat_counter in xrange(finder_options.pageset_repeat):
         for story in group.stories:
-          for _ in xrange(finder_options.page_repeat):
+          for story_repeat_counter in xrange(finder_options.page_repeat):
             if not state:
               # Construct shared state by using a copy of finder_options. Shared
               # state may update the finder_options. If we tear down the shared
@@ -219,7 +219,8 @@ def Run(test, story_set, finder_options, results, max_failures=None,
               # state for the next story from the original finder_options.
               state = group.shared_state_class(
                   test, finder_options.Copy(), story_set)
-            results.WillRunPage(story)
+            results.WillRunPage(
+                story, storyset_repeat_counter, story_repeat_counter)
             try:
               _WaitForThermalThrottlingIfNeeded(state.platform)
               _RunStoryAndProcessErrorIfNeeded(story, results, state, test)
@@ -297,7 +298,7 @@ def RunBenchmark(benchmark, finder_options):
     pt._enabled_strings = benchmark._enabled_strings
 
   stories = benchmark.CreateStorySet(finder_options)
-  if isinstance(pt, page_test.PageTest):
+  if isinstance(pt, legacy_page_test.LegacyPageTest):
     if any(not isinstance(p, page.Page) for p in stories.stories):
       raise Exception(
           'PageTest must be used with StorySet containing only '

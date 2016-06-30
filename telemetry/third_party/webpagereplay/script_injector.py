@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import util
+import third_party.jsmin as jsmin
 
 DOCTYPE_RE = re.compile(r'^.{,256}?(<!--.*-->)?.{,256}?<!doctype html>',
                         re.IGNORECASE | re.DOTALL)
@@ -43,47 +44,49 @@ def GetInjectScript(scripts):
       else:
         raise Exception('Script does not exist: %s', script)
 
-  def MinifyScript(script):
-    """Remove C-style comments and line breaks from script.
-    Note: statements must be ';' terminated, and not depending on newline"""
-    # Regex adapted from http://ostermiller.org/findcomment.html.
-    MULTILINE_COMMENT_RE = re.compile(r'/\*.*?\*/', re.DOTALL | re.MULTILINE)
-    SINGLELINE_COMMENT_RE = re.compile(r'//.*', re.MULTILINE)
-    # Remove C-style comments from JS.
-    script = re.sub(MULTILINE_COMMENT_RE, '', script)
-    script = re.sub(SINGLELINE_COMMENT_RE, '', script)
-    # Remove line breaks.
-    script = script.translate(None, '\r\n')
-    return script
-
-  return MinifyScript(''.join(lines))
+  return jsmin.jsmin(''.join(lines), quote_chars="'\"`")
 
 
-def InjectScript(content, content_type, script_to_inject):
+def _IsHtmlContent(content):
+  content = content.strip()
+  return content.startswith('<') and content.endswith('>')
+
+
+def InjectScript(text_chunks, content_type, script_to_inject):
   """Inject |script_to_inject| into |content| if |content_type| is 'text/html'.
 
-  Inject |script_to_inject| into |content| immediately after <head>, <html> or
-  <!doctype html>, if one of them is found. Otherwise, inject at the beginning.
+  Inject |script_to_inject| into |text_chunks| immediately after <head>,
+  <html> or <!doctype html>, if one of them is found. Otherwise, inject at
+  the beginning.
 
   Returns:
-    content, already_injected
-    |content| is the new content if script is injected, otherwise the original.
-    |already_injected| indicates if |script_to_inject| is already in |content|.
+    text_chunks, already_injected
+    |text_chunks| is the new content if script is injected, otherwise
+      the original.  If the script was injected, exactly one chunk in
+      |text_chunks| will have changed.
+    |just_injected| indicates if |script_to_inject| was just injected in
+      the content.
   """
-  already_injected = False
-  if content_type and content_type == 'text/html':
-    already_injected = not content or script_to_inject in content
-    if not already_injected:
-      def InsertScriptAfter(matchobj):
-        return '%s<script>%s</script>' % (matchobj.group(0), script_to_inject)
-
-      content, is_injected = HEAD_RE.subn(InsertScriptAfter, content, 1)
-      if not is_injected:
-        content, is_injected = HTML_RE.subn(InsertScriptAfter, content, 1)
-      if not is_injected:
-        content, is_injected = DOCTYPE_RE.subn(InsertScriptAfter, content, 1)
-      if not is_injected:
-        content = '<script>%s</script>%s' % (script_to_inject, content)
-        logging.warning('Inject at the very beginning, because no tag of '
-                        '<head>, <html> or <!doctype html> is found.')
-  return content, already_injected
+  if not content_type or content_type != 'text/html':
+    return text_chunks, False
+  content = "".join(text_chunks)
+  if not content or not _IsHtmlContent(content) or script_to_inject in content:
+    return text_chunks, False
+  for regexp in (HEAD_RE, HTML_RE, DOCTYPE_RE):
+    matchobj = regexp.search(content)
+    if matchobj:
+      pos = matchobj.end(0)
+      for i, chunk in enumerate(text_chunks):
+        if pos <= len(chunk):
+          result = text_chunks[:]
+          result[i] = '%s<script>%s</script>%s' % (chunk[0:pos],
+                                                   script_to_inject,
+                                                   chunk[pos:])
+          return result, True
+        pos -= len(chunk)
+  result = text_chunks[:]
+  result[0] = '<script>%s</script>%s' % (script_to_inject,
+                                         text_chunks[0])
+  logging.warning('Inject at the very beginning, because no tag of '
+                  '<head>, <html> or <!doctype html> is found.')
+  return result, True

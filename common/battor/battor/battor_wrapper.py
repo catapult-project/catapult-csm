@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import os
+import logging
 import platform
 import subprocess
 import sys
@@ -13,6 +14,54 @@ from battor import battor_error
 import dependency_manager
 from devil.utils import battor_device_mapping
 from devil.utils import find_usb_devices
+
+import serial
+from serial.tools import list_ports
+
+
+def IsBattOrConnected(test_platform, android_device=None,
+                      android_device_map=None, android_device_file=None):
+  """Returns True if BattOr is detected."""
+  if test_platform == 'android':
+    if not android_device:
+      raise ValueError('Must pass android device serial when determining '
+                       'support on android platform')
+
+    if not android_device_map:
+      device_tree = find_usb_devices.GetBusNumberToDeviceTreeMap()
+      if len(battor_device_mapping.GetBattorList(device_tree)) == 1:
+        return True
+      if android_device_file:
+        android_device_map = battor_device_mapping.ReadSerialMapFile(
+            android_device_file)
+      else:
+        try:
+          android_device_map = battor_device_mapping.GenerateSerialMap()
+        except battor_error.BattorError:
+          return False
+
+    # If neither if statement above is triggered, it means that an
+    # android_device_map was passed in and will be used.
+    return str(android_device) in android_device_map
+
+  elif test_platform == 'win':
+    for (_1, desc, _2) in serial.tools.list_ports.comports():
+      if 'USB Serial Port' in desc:
+        return True
+    logging.info('No usb serial port discovered. Available ones are: %s' %
+                 list(serial.tools.list_ports.comports()))
+    return False
+
+  elif test_platform == 'mac':
+    # TODO(rnephew): When we have a BattOr that can attach to mac, find a way
+    # to detect BattOrs on mac.
+    return False
+
+  elif test_platform == 'linux':
+    device_tree = find_usb_devices.GetBusNumberToDeviceTreeMap(fast=True)
+    return bool(battor_device_mapping.GetBattorList(device_tree))
+
+  return False
 
 
 class BattorWrapper(object):
@@ -128,9 +177,15 @@ class BattorWrapper(object):
       raise battor_error.BattorError(
           '%s is an unsupported platform.' % target_platform)
     if target_platform in ['win']:
-      # TODO: We need a way to automatically detect correct port.
-      # crbug.com/60397
-      return 'COM3'
+      # Right now, the BattOr agent binary isn't able to automatically detect
+      # the BattOr port on Windows. To get around this, we know that the BattOr
+      # shows up with a name of 'USB Serial Port', so use the COM port that
+      # corresponds to a device with that name.
+      for (port, desc, _) in serial.tools.list_ports.comports():
+        if 'USB Serial Port' in desc:
+          return port
+      raise battor_error.BattorError(
+          'Could not find BattOr attached to machine.')
     device_tree = find_usb_devices.GetBusNumberToDeviceTreeMap(fast=True)
     if battor_path:
       if not isinstance(battor_path, basestring):
@@ -157,15 +212,13 @@ class BattorWrapper(object):
           'attached unless address is explicitly given.')
     return '/dev/%s' % battors.pop()
 
-  def _SendBattorCommandImpl(self, cmd, return_results=True):
+  def _SendBattorCommandImpl(self, cmd):
     """Sends command to the BattOr."""
     self._battor_shell.stdin.write('%s\n' % cmd)
-    if return_results:
-      return self._battor_shell.stdout.readline()
-    return
+    return self._battor_shell.stdout.readline()
 
   def _SendBattorCommand(self, cmd, check_return=True):
-    status = self._SendBattorCommandImpl(cmd, return_results=check_return)
+    status = self._SendBattorCommandImpl(cmd)
     if check_return and not 'Done.' in status:
       raise battor_error.BattorError(
           'BattOr did not complete command \'%s\' correctly.\n'
@@ -174,4 +227,5 @@ class BattorWrapper(object):
 
   def _StartShellImpl(self, battor_cmd):
     return subprocess.Popen(
-        battor_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=False)
+        battor_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, shell=False)

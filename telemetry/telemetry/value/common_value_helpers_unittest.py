@@ -5,7 +5,7 @@
 import unittest
 import os
 
-from perf_insights import function_handle
+from perf_insights.mre import function_handle
 from perf_insights.mre import failure
 from perf_insights.mre import job as job_module
 
@@ -25,8 +25,7 @@ def _SingleFileFunctionHandle(filename, function_name, guid):
 class TranslateCommonValuesTest(unittest.TestCase):
   def testTranslateMreFailure(self):
     map_function_handle = _SingleFileFunctionHandle('foo.html', 'Foo', '2')
-    reduce_function_handle = _SingleFileFunctionHandle('bar.html', 'Bar', '3')
-    job = job_module.Job(map_function_handle, reduce_function_handle, '1')
+    job = job_module.Job(map_function_handle, '1')
 
     story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     p = page.Page('http://www.foo.com/', story_set, story_set.base_dir)
@@ -47,9 +46,7 @@ class TranslateCommonValuesTest(unittest.TestCase):
             'unit': 'timeInMs_smallerIsBetter',
             'value': 42
         },
-        'grouping_keys': {
-            'name': 'foo'
-        },
+        'name': 'foo',
         'options': {
             'description': 'desc'
         }
@@ -76,9 +73,7 @@ class TranslateCommonValuesTest(unittest.TestCase):
             'unit': 'timeInMs_smallerIsBetter',
             'value': None
         },
-        'grouping_keys': {
-            'name': 'foo'
-        }
+        'name': 'foo'
     }
 
     v = common_value_helpers.TranslateScalarValue(scalar_value, p)

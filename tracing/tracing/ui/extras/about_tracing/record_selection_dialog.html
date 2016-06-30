@@ -354,8 +354,7 @@ tr.exportTo('tr.ui.e.about_tracing', function() {
     },
 
     usingPreset_: function() {
-      return this.currentlyChosenPreset_.length > 0 ||
-             this.isPresetSelected_;
+      return this.currentlyChosenPreset_.length > 0;
     },
 
     get currentlyChosenPreset() {
@@ -367,10 +366,8 @@ tr.exportTo('tr.ui.e.about_tracing', function() {
         throw new Error('RecordSelectionDialog.currentlyChosenPreset:' +
             ' preset must be an array.');
       this.currentlyChosenPreset_ = preset;
-      this.isPresetSelected_ = false;
 
-      if (this.currentlyChosenPreset_.length) {
-        this.isPresetSelected_ = true;
+      if (this.usingPreset_()) {
         this.changeEditCategoriesState_(false);
       } else {
         this.updateCategoryColumnView_(true);
@@ -412,7 +409,7 @@ tr.exportTo('tr.ui.e.about_tracing', function() {
       if (!this.editCategoriesOpened_) {
         this.updateCategoryColumnView_(false);
         for (var i = 0; i < this.currentlyChosenPreset_.length; ++i) {
-          var categoryEl = document.getElementById(
+          var categoryEl = this.querySelector('#' +
               this.currentlyChosenPreset_[i]);
           if (!categoryEl)
             continue;
@@ -619,14 +616,9 @@ tr.exportTo('tr.ui.e.about_tracing', function() {
       // preset mode if and only if currently user is in preset record mode
       // and user selects/deselects any category in 'Edit Categories' mode.
       if (this.usingPreset_()) {
-        if (checkbox.checked) {
-          this.currentlyChosenPreset_.push(checkbox.value);
-        } else {
-          var pos = this.currentlyChosenPreset_.lastIndexOf(checkbox.value);
-          this.currentlyChosenPreset_.splice(pos, 1);
-        }
-        var categoryEl = document.getElementById(
-            'category-preset-Manually-select-settings');
+        this.currentlyChosenPreset_ = [] /* manually select settings */;
+        var categoryEl = this.querySelector(
+            '#category-preset-Manually-select-settings');
         categoryEl.checked = true;
         var description = Polymer.dom(this).querySelector(
             '.category-description');

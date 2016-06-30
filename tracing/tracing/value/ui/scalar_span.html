@@ -35,6 +35,9 @@ tr.exportTo('tr.v.ui', function() {
       numericValue = value;
     }
 
+    if (config.context)
+      span.context = config.context;
+
     if (config.total)
       span.percentage = numericValue / config.total;
 
@@ -125,6 +128,15 @@ Polymer({
     this.updateContent_();
   },
 
+    get context() {
+      return this.context_;
+    },
+
+    set context(context) {
+      this.context_ = context;
+      this.updateContent_();
+    },
+
   get unit() {
     return this.unit_;
   },
@@ -177,7 +189,8 @@ Polymer({
       return;
     }
 
-    Polymer.dom(this.$.content).textContent = this.unit_.format(this.value);
+    Polymer.dom(this.$.content).textContent =
+        this.unit_.format(this.value, this.context);
 
     var BIGGER_IS_BETTER = tr.v.ImprovementDirection.BIGGER_IS_BETTER;
     var SMALLER_IS_BETTER = tr.v.ImprovementDirection.SMALLER_IS_BETTER;

@@ -242,9 +242,8 @@ tr.b.unittest.testSuite(function() {
                        model.t1.sliceGroup.slices);
 
       controller.findNext();
-      assert.equal(brushingStateController.selection.length, 1);
-      assert.equal(brushingStateController.selection[0],
-                   model.t1.sliceGroup.slices[0]);
+      assert.isTrue(brushingStateController.selection.equals(
+                        new tr.model.EventSet(model.t1.sliceGroup.slices[0])));
 
       var nextPromise = controller.startFiltering('xxx');
       nextPromise.then(function() {

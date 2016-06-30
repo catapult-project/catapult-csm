@@ -14,7 +14,7 @@ class SharedState(object):
     Override to do any action before running stories that
     share this same state.
     Args:
-      test: a page_test.PageTest or story_test.StoryTest instance.
+      test: a legacy_page_test.LegacyPageTest or story_test.StoryTest instance.
       options: a BrowserFinderOptions instance that contains command line
         options.
       story_set: a story.StorySet instance.
@@ -64,5 +64,13 @@ class SharedState(object):
     """ Override to do any action after running multiple stories that
     share this same state.
     This method is styled on unittest.TestCase.tearDownClass.
+    """
+    raise NotImplementedError()
+
+  def DumpStateUponFailure(self, story, results):
+    """ Dump the state upon failure.
+    This method tries to dump as much information about the application under
+    test as possible (output, log, screenshot, etc.) to simplify triaging the
+    failure.
     """
     raise NotImplementedError()

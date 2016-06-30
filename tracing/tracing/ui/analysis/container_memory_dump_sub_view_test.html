@@ -329,11 +329,11 @@ tr.b.unittest.testSuite(function() {
         '1 memory dump in Process 4');
 
     // Check that the analysis link is associated with the right dumps.
-    assert.sameMembers(tr.b.asArray(column.value(rows[1]).selection), [
+    assert.isTrue(column.value(rows[1]).selection.equals(new tr.model.EventSet([
       globalMemoryDumps[0].processMemoryDumps[2],
       globalMemoryDumps[1].processMemoryDumps[2],
       globalMemoryDumps[2].processMemoryDumps[2]
-    ]);
+    ])));
 
     assert.lengthOf(rows[1].subRows, 3);
     var subRow = rows[1].subRows[0];
@@ -342,8 +342,8 @@ tr.b.unittest.testSuite(function() {
     assert.equal(column.value(subRow).children[0].value, 42);
 
     // Check that the analysis link is associated with the right dump.
-    assert.sameMembers(tr.b.asArray(column.value(subRow).selection),
-        [globalMemoryDumps[0].processMemoryDumps[2]]);
+    assert.isTrue(column.value(subRow).selection.equals(
+        new tr.model.EventSet(globalMemoryDumps[0].processMemoryDumps[2])));
   });
 });
 </script>

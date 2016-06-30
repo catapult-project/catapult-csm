@@ -368,8 +368,7 @@ tr.exportTo('tr.ui', function() {
      */
     getShiftedSelection: function(selection, offset) {
       var newSelection = new tr.model.EventSet();
-      for (var i = 0; i < selection.length; i++) {
-        var event = selection[i];
+      for (var event of selection) {
 
         // If this is a flow event, then move to its slice based on the
         // offset direction.

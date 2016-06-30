@@ -5,6 +5,7 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
+<link rel="import" href="/tracing/base/iteration_helpers.html">
 <link rel="import" href="/tracing/ui/analysis/analysis_sub_view.html">
 <link rel="import" href="/tracing/ui/analysis/related_events.html">
 <link rel="import" href="/tracing/ui/analysis/single_event_sub_view.html">
@@ -65,7 +66,7 @@ Polymer({
   get relatedEventsToHighlight() {
     if (!this.currentSelection_)
       return undefined;
-    return this.currentSelection_[0].associatedEvents;
+    return tr.b.getOnlyElement(this.currentSelection_).associatedEvents;
   }
 });
 </script>

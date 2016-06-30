@@ -15,12 +15,12 @@ import perf_insights_project
 import webapp2
 from webapp2 import Route
 
-from perf_insights import cloud_storage
-from perf_insights import local_directory_corpus_driver
-from perf_insights import corpus_query
-from perf_insights import map_runner
+from perf_insights.mre import cloud_storage
+from perf_insights.mre import local_directory_corpus_driver
+from perf_insights.mre import corpus_query
+from perf_insights.mre import map_runner
 from perf_insights.mre import job as job_module
-from perf_insights.results import json_output_formatter
+from perf_insights.mre import json_output_formatter
 
 MAX_TRACES = 10000
 
@@ -48,9 +48,7 @@ class RunMapFunctionHandler(webapp2.RequestHandler):
     job = job_module.Job.FromDict(job_dict)
 
     job_with_filenames = job_module.Job(
-        job.map_function_handle.ConvertHrefsToAbsFilenames(self.app),
-        job.reduce_function_handle.ConvertHrefsToAbsFilenames(self.app)
-            if job.reduce_function_handle else None)
+        job.map_function_handle.ConvertHrefsToAbsFilenames(self.app))
 
     corpus_driver = local_directory_corpus_driver.LocalDirectoryCorpusDriver(
         trace_directory=kwargs.pop('_pi_data_dir'),
@@ -112,17 +110,12 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
     job = job_module.Job.FromDict(job_dict)
 
     job_with_filenames = job_module.Job(
-        job.map_function_handle.ConvertHrefsToAbsFilenames(self.app),
-        job.reduce_function_handle.ConvertHrefsToAbsFilenames(self.app))
+        job.map_function_handle.ConvertHrefsToAbsFilenames(self.app))
 
     mapper_handle = job_with_filenames.map_function_handle
-    reducer_handle = job_with_filenames.reduce_function_handle
     with open(mapper_handle.modules_to_load[0].filename, 'r') as f:
       mapper = f.read()
-    with open(reducer_handle.modules_to_load[0].filename, 'r') as f:
-      reducer = f.read()
     mapper_name = job_with_filenames.map_function_handle.function_name
-    reducer_name = job_with_filenames.reduce_function_handle.function_name
 
     query_string = self.request.get('corpus_query', 'True')
     query = corpus_query.CorpusQuery.FromString(query_string)
@@ -135,8 +128,6 @@ class RunCloudMapperHandler(webapp2.RequestHandler):
         'query': query_string,
         'mapper': mapper,
         'mapper_function': mapper_name,
-        'reducer': reducer,
-        'reducer_function': reducer_name,
         'revision': 'HEAD',
         'corpus': 'https://performance-insights.appspot.com',
         'timeout': 240,

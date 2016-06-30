@@ -8,6 +8,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/statistics.html">
 <link rel="import" href="/tracing/ui/base/grouping_table.html">
 <link rel="import" href="/tracing/ui/base/grouping_table_groupby_picker.html">
+<link rel="import" href="/tracing/ui/base/table.html">
 <link rel="import" href="/tracing/ui/side_panel/side_panel.html">
 <link rel="import" href="/tracing/ui/side_panel/side_panel_registry.html">
 <link rel="import" href="/tracing/value/numeric.html">
@@ -20,7 +21,6 @@ found in the LICENSE file.
     :host {
       display: flex;
       flex-direction: column;
-      width: 600px;
     }
     toolbar {
       align-items: center;
@@ -147,7 +147,7 @@ found in the LICENSE file.
         },
         {
           title: 'Num Events',
-          textAlign: 'right',
+          align: tr.ui.b.TableFormat.ColumnAlignment.RIGHT,
           value: function(row) {
             return row.rowStats.numEvents;
           },
@@ -161,7 +161,7 @@ found in the LICENSE file.
       if (stats && stats.hasEventSizesinBytes) {
         columns.push({
           title: 'Bytes',
-          textAlign: 'right',
+          align: tr.ui.b.TableFormat.ColumnAlignment.RIGHT,
           value: function(row) {
             var value = new tr.v.ScalarNumeric(tr.v.Unit.byName.sizeInBytes,
                 row.rowStats.totalEventSizeinBytes);

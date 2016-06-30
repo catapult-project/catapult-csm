@@ -6,6 +6,7 @@ found in the LICENSE file.
 -->
 
 <link rel="import" href="/tracing/base/base.html">
+<link rel="import" href="/tracing/base/iteration_helpers.html">
 <link rel="import" href="/tracing/model/event_set.html">
 <link rel="import" href="/tracing/ui/analysis/analysis_sub_view.html">
 <link rel="import" href="/tracing/ui/analysis/generic_object_view.html">
@@ -239,6 +240,7 @@ Polymer({
       }
     }
 
+<<<<<<< HEAD
     if (event.associatedAlerts.length) {
       var alertSubRows = [];
       event.associatedAlerts.forEach(function(alert) {
@@ -279,15 +281,32 @@ Polymer({
         var argView =
             document.createElement('tr-ui-a-generic-object-view');
         argView.object = args[argName];
-        subRows.push({ name: argName,
-                    value: argView});
+        subRows.push({ name: argName, value: argView});
       }
       rows.push({
-        name: 'Args', value: '',
-        isExpanded: true, subRows: subRows
+        name: 'Args',
+        value: '',
+        isExpanded: true,
+        subRows: subRows
       });
     }
-    return rows;
+  },
+
+  addContextsToRows_: function(rows, contexts) {
+    if (contexts.length) {
+      var subRows = contexts.map(function(context) {
+        var contextView =
+            document.createElement('tr-ui-a-generic-object-view');
+        contextView.object = context;
+        return {name: 'Context', value: contextView};
+      });
+      rows.push({
+        name: 'Contexts',
+        value: '',
+        isExpanded: true,
+        subRows: subRows
+      });
+    }
   },
 
   updateContents_: function() {
@@ -297,13 +316,14 @@ Polymer({
       return;
     }
 
-    var event = this.currentSelection_[0];
+    var event = tr.b.getOnlyElement(this.currentSelection_);
 
     var rows = this.getEventRows_(event);
     if (event.argsStripped)
       rows.push({ name: 'Args', value: 'Stripped' });
     else
       this.addArgsToRows_(rows, event.args);
+    this.addContextsToRows_(rows, event.contexts);
 
     var event = new tr.b.Event('customize-rows');
     event.rows = rows;

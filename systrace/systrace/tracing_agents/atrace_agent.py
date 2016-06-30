@@ -3,18 +3,17 @@
 # found in the LICENSE file.
 
 import re
+import py_utils
 import subprocess
 import sys
 import threading
 import zlib
 
 from devil.android import device_utils
-from devil.utils import reraiser_thread
-from devil.utils import timeout_retry
 from py_trace_event import trace_time
+from systrace import tracing_agents
 from systrace import util
-from systrace.tracing_agents import TraceResult
-from systrace.tracing_agents import TracingAgent
+
 
 # Text that ADB sends, but does not need to be displayed to the user.
 ADB_IGNORE_REGEXP = r'^capturing trace\.\.\. done|^capturing trace\.\.\.'
@@ -133,7 +132,7 @@ def _construct_atrace_args(options, categories):
   atrace_args.extend(extra_args)
   return atrace_args
 
-class AtraceAgent(TracingAgent):
+class AtraceAgent(tracing_agents.TracingAgent):
 
   def __init__(self):
     super(AtraceAgent, self).__init__()
@@ -146,7 +145,8 @@ class AtraceAgent(TracingAgent):
     self._options = None
     self._categories = None
 
-  def _StartAgentTracingImpl(self, options, categories):
+  @py_utils.Timeout(tracing_agents.START_STOP_TIMEOUT)
+  def StartAgentTracing(self, options, categories, timeout=None):
     self._options = options
     self._categories = categories
     if not self._categories:
@@ -162,14 +162,6 @@ class AtraceAgent(TracingAgent):
     self._device_utils.RunShellCommand(self._tracer_args + ['--async_start'])
     return True
 
-  def StartAgentTracing(self, options, categories, timeout=10):
-    try:
-      return timeout_retry.Run(self._StartAgentTracingImpl,
-                               timeout, 1, args=[options, categories])
-    except reraiser_thread.TimeoutError:
-      print "StartAgentTracing in AtraceAgent timed out."
-      return False
-
   def _collect_and_preprocess(self):
     """Collects and preprocesses trace data.
 
@@ -178,7 +170,8 @@ class AtraceAgent(TracingAgent):
     trace_data = self._collect_trace_data()
     self._trace_data = self._preprocess_trace_data(trace_data)
 
-  def _StopAgentTracingImpl(self):
+  @py_utils.Timeout(tracing_agents.START_STOP_TIMEOUT)
+  def StopAgentTracing(self, timeout=None):
     """Stops tracing and starts collecting results.
 
     To synchronously retrieve the results after calling this function,
@@ -189,24 +182,12 @@ class AtraceAgent(TracingAgent):
     self._collection_thread.start()
     return True
 
-  def StopAgentTracing(self, timeout=10):
-    try:
-      return timeout_retry.Run(self._StopAgentTracingImpl, timeout, 1)
-    except reraiser_thread.TimeoutError:
-      print "StopAgentTracing in AtraceAgent timed out."
-
-  def _GetResultsImpl(self):
+  @py_utils.Timeout(tracing_agents.GET_RESULTS_TIMEOUT)
+  def GetResults(self, timeout=None):
     """Waits for collection thread to finish and returns trace results."""
     self._collection_thread.join()
     self._collection_thread = None
-    return TraceResult('systemTraceEvents', self._trace_data)
-
-  def GetResults(self, timeout=30):
-    try:
-      return timeout_retry.Run(self._GetResultsImpl,
-                               timeout, 1)
-    except reraiser_thread.TimeoutError:
-      print "GetResults in AtraceAgent timed out."
+    return tracing_agents.TraceResult('systemTraceEvents', self._trace_data)
 
   def SupportsExplicitClockSync(self):
     return True
@@ -299,7 +280,8 @@ class BootAgent(AtraceAgent):
   def __init__(self):
     super(BootAgent, self).__init__()
 
-  def _StartAgentTracingImpl(self, options, categories):
+  @py_utils.Timeout(tracing_agents.START_STOP_TIMEOUT)
+  def StartAgentTracing(self, options, categories, timeout=None):
     self._options = options
     try:
       setup_args = _construct_boot_setup_command(options, categories)
@@ -310,10 +292,6 @@ class BootAgent(AtraceAgent):
           ' '.join(setup_args))
       print >> sys.stderr, '    ', error
       sys.exit(1)
-
-  def StartAgentTracing(self, options, categories, timeout=10):
-    return timeout_retry.Run(self._StartAgentTracingImpl,
-                             timeout, 1, args=[options, categories])
 
   def _dump_trace(self): #called by StopAgentTracing
     """Dumps the running trace asynchronously and returns the dumped trace."""

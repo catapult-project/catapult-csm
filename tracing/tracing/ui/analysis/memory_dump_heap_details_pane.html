@@ -91,6 +91,10 @@ tr.exportTo('tr.ui.analysis', function() {
   var ScalarNumeric = tr.v.ScalarNumeric;
   var sizeInBytes_smallerIsBetter =
       tr.v.Unit.byName.sizeInBytes_smallerIsBetter;
+  var unitlessNumber_smallerIsBetter =
+      tr.v.Unit.byName.unitlessNumber_smallerIsBetter;
+  var MultiDimensionalViewBuilder = tr.b.MultiDimensionalViewBuilder;
+  var TotalState = tr.b.MultiDimensionalViewNode.TotalState;
 
   /** @{enum} */
   var RowDimension = {
@@ -159,10 +163,39 @@ tr.exportTo('tr.ui.analysis', function() {
     }
   };
 
+  /** @constructor */
+  function AllocationCountColumn(name, cellPath, aggregationMode) {
+    tr.ui.analysis.DetailsNumericMemoryColumn.call(
+        this, name, cellPath, aggregationMode);
+  }
+
+  AllocationCountColumn.prototype = {
+    __proto__: tr.ui.analysis.DetailsNumericMemoryColumn.prototype,
+
+    getFormattingContext: function(unit) {
+      return { minimumFractionDigits: 0 };
+    }
+  };
+
   var COLUMN_RULES = [
     {
+      condition: 'Size',
+      importance: 3,
+      columnConstructor: tr.ui.analysis.DetailsNumericMemoryColumn
+    },
+    {
+      condition: 'Count',
+      importance: 2,
+      columnConstructor: AllocationCountColumn
+    },
+    {
+      condition: 'Average size per allocation',
+      importance: 1,
+      columnConstructor: tr.ui.analysis.DetailsNumericMemoryColumn
+    },
+    {
       importance: 0,
-      columnConstructor: tr.ui.analysis.NumericMemoryColumn
+      columnConstructor: tr.ui.analysis.DetailsNumericMemoryColumn
     }
   ];
 
@@ -181,23 +214,27 @@ tr.exportTo('tr.ui.analysis', function() {
       this.$.info_bar.message = 'Note: Values displayed in the heavy view ' +
           'are lower bounds (except for the root).';
 
+
       Polymer.dom(this.$.view_mode_container).appendChild(
-          tr.ui.b.createSelector(this, 'viewMode',
-              'memoryDumpHeapDetailsPane.viewMode',
-              tr.b.MultiDimensionalViewType.TOP_DOWN_TREE_VIEW, [
-              {
-                label: 'Top-down (Tree)',
-                value: tr.b.MultiDimensionalViewType.TOP_DOWN_TREE_VIEW
-              },
-              {
-                label: 'Top-down (Heavy)',
-                value: tr.b.MultiDimensionalViewType.TOP_DOWN_HEAVY_VIEW
-              },
-              {
-                label: 'Bottom-up (Heavy)',
-                value: tr.b.MultiDimensionalViewType.BOTTOM_UP_HEAVY_VIEW
-              }
-          ]));
+          tr.ui.b.createSelector(
+              this, 'viewMode', 'memoryDumpHeapDetailsPane.viewMode',
+              MultiDimensionalViewBuilder.ViewType.TOP_DOWN_TREE_VIEW,
+              [
+                {
+                  label: 'Top-down (Tree)',
+                  value: MultiDimensionalViewBuilder.ViewType.TOP_DOWN_TREE_VIEW
+                },
+                {
+                  label: 'Top-down (Heavy)',
+                  value: MultiDimensionalViewBuilder.ViewType
+                      .TOP_DOWN_HEAVY_VIEW
+                },
+                {
+                  label: 'Bottom-up (Heavy)',
+                  value: MultiDimensionalViewBuilder.ViewType
+                      .BOTTOM_UP_HEAVY_VIEW
+                }
+              ]));
     },
 
     /**
@@ -242,8 +279,8 @@ tr.exportTo('tr.ui.analysis', function() {
 
     get heavyView() {
       switch (this.viewMode) {
-        case tr.b.MultiDimensionalViewType.TOP_DOWN_HEAVY_VIEW:
-        case tr.b.MultiDimensionalViewType.BOTTOM_UP_HEAVY_VIEW:
+        case MultiDimensionalViewBuilder.ViewType.TOP_DOWN_HEAVY_VIEW:
+        case MultiDimensionalViewBuilder.ViewType.BOTTOM_UP_HEAVY_VIEW:
           return true;
         default:
           return false;
@@ -287,7 +324,9 @@ tr.exportTo('tr.ui.analysis', function() {
         if (heapDump === undefined)
           return undefined;
 
-        var builder = new tr.b.MultiDimensionalViewBuilder(2 /* dimensions */);
+        var builder = new MultiDimensionalViewBuilder(
+            2 /* dimensions (stack frames, object type) */,
+            2 /* valueCount (size, count) */);
 
         // Build the heap tree.
         heapDump.entries.forEach(function(entry) {
@@ -299,8 +338,9 @@ tr.exportTo('tr.ui.analysis', function() {
           var objectTypeNamePath = objectTypeName === undefined ?
               [] : [objectTypeName];
 
-          builder.addPath([stackTracePath, objectTypeNamePath], entry.size,
-              tr.b.MultiDimensionalViewBuilder.ValueKind.TOTAL);
+          builder.addPath([stackTracePath, objectTypeNamePath],
+              [entry.size, entry.count],
+              MultiDimensionalViewBuilder.ValueKind.TOTAL);
         }, this);
 
         return builder.buildView(this.viewMode);
@@ -323,10 +363,20 @@ tr.exportTo('tr.ui.analysis', function() {
       // dictionary of cells (where each cell contains a chronological list
       // of the values of its numeric).
       var cells = tr.ui.analysis.createCells(nodes, function(node) {
-        return {
-          'Size': new ScalarNumeric(sizeInBytes_smallerIsBetter, node.total)
+        var size = node.values[0].total;
+        var row = {
+          'Size': new ScalarNumeric(sizeInBytes_smallerIsBetter, size)
         };
-      });
+        var countValue = node.values[1];
+        if (countValue.totalState >= this.minDisplayedTotalState_) {
+          var count = countValue.total;
+          row['Count'] = new ScalarNumeric(unitlessNumber_smallerIsBetter,
+              count);
+          row['Average size per allocation'] = new ScalarNumeric(
+              sizeInBytes_smallerIsBetter, count === 0 ? 0 : size / count);
+        }
+        return row;
+      }, this);
 
       var row = {
         dimension: dimension,
@@ -347,31 +397,66 @@ tr.exportTo('tr.ui.analysis', function() {
       return row;
     },
 
+    get minDisplayedTotalState_() {
+      if (this.heavyView) {
+        // Show lower-bound and exact values in heavy views.
+        return TotalState.LOWER_BOUND;
+      } else {
+        // Show only exact values in tree view.
+        return TotalState.EXACT;
+      }
+    },
+
     createHeapDimensionSubRowsRecursively_: function(nodes, dimension) {
       // Sub-row name (list index) -> Timestamp (list index) -> Child
       // MultiDimensionalViewNode.
       var dimensionGroupedChildNodes = tr.b.dictionaryValues(
           tr.b.invertArrayOfDicts(nodes, function(node) {
             var childDict = {};
-            var displayedChildrenTotal = 0;
+            var displayedChildrenTotalSize = 0;
+            var displayedChildrenTotalCount = 0;
             var hasDisplayedChildren = false;
+            var allDisplayedChildrenHaveDisplayedCounts = true;
             for (var child of node.children[dimension].values()) {
-              // Don't show lower-bound sub-rows in tree-view.
-              if (!this.heavyView && child.isLowerBound)
+              if (child.values[0].totalState < this.minDisplayedTotalState_)
                 continue;
+              if (child.values[1].totalState < this.minDisplayedTotalState_)
+                allDisplayedChildrenHaveDisplayedCounts = false;
               childDict[child.title[dimension]] = child;
-              displayedChildrenTotal += child.total;
+              displayedChildrenTotalSize += child.values[0].total;
+              displayedChildrenTotalCount += child.values[1].total;
               hasDisplayedChildren = true;
             }
 
+            var nodeTotalSize = node.values[0].total;
+            var nodeTotalCount = node.values[1].total;
+
             // Add '<other>' node if necessary in tree-view.
-            if (!this.heavyView && displayedChildrenTotal < node.total &&
+            var hasUnclassifiedSizeOrCount =
+                displayedChildrenTotalSize < nodeTotalSize ||
+                displayedChildrenTotalCount < nodeTotalCount;
+            if (!this.heavyView && hasUnclassifiedSizeOrCount &&
                 hasDisplayedChildren) {
               var otherTitle = node.title.slice();
               otherTitle[dimension] = '<other>';
               childDict['<other>'] = {
                 title: otherTitle,
-                total: node.total - displayedChildrenTotal,
+                values: [
+                  {
+                    self: 0,
+                    total: nodeTotalSize - displayedChildrenTotalSize,
+                    totalState: this.minDisplayedTotalState_
+                  },
+                  {
+                    self: 0,
+                    total: nodeTotalCount - displayedChildrenTotalCount,
+                    // Don't show allocation count of the '<other>' node if
+                    // there is a displayed child node that did NOT display
+                    // allocation count.
+                    totalState: allDisplayedChildrenHaveDisplayedCounts ?
+                        this.minDisplayedTotalState_ : TotalState.NOT_PROVIDED
+                  }
+                ],
                 children: [new Map(), new Map()]
               };
             }
@@ -401,7 +486,9 @@ tr.exportTo('tr.ui.analysis', function() {
   });
 
   return {
-    RowDimension: RowDimension  // Exported for testing.
+    // Exported for testing.
+    RowDimension: RowDimension,
+    AllocationCountColumn: AllocationCountColumn
   };
 });
 </script>

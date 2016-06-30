@@ -259,7 +259,7 @@ def GetGroupReportPageLink(alert):
     link_template = 'https://chromeperf.appspot.com/group_report?keys=%s'
     return link_template % alert.key.urlsafe()
   # If we can't make the above link, fall back to the /report page.
-  test_path = utils.TestPath(alert.test)
+  test_path = utils.TestPath(alert.GetTestMetadataKey())
   return GetReportPageLink(test_path, rev=alert.end_revision)
 
 
@@ -268,7 +268,7 @@ def GetAlertInfo(alert, test):
 
   Args:
     alert: An Anomaly entity.
-    test: The Test entity for the given alert.
+    test: The TestMetadata entity for the given alert.
 
   Returns:
     A dictionary of string keys to values. Keys are 'email_subject',
@@ -320,12 +320,12 @@ def GetBisectFYITryJobEmailReport(job, message):
   """Gets the contents of the email to send once a bisect FYI job completes."""
   results_data = job.results_data
   subject_dict = {
-      'bot': results_data['bisect_bot'],
+      'bot': job.bot,
       'test_name': job.job_name,
   }
   report_dict = {
       'message': message,
-      'bot': results_data['bisect_bot'],
+      'bot': job.bot,
       'job_url': results_data['buildbot_log_url'],
       'test_name': job.job_name,
       'config': job.config if job.config else 'Undefined',

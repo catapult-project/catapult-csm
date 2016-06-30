@@ -177,31 +177,31 @@ class Options(object):
 
     if isinstance(overhead_level,
                   tracing_category_filter.TracingCategoryFilter):
-      self._config.SetTracingCategoryFilter(overhead_level)
+      self._config.chrome_trace_config.SetTracingCategoryFilter(overhead_level)
     elif overhead_level in ALL_OVERHEAD_LEVELS:
       if overhead_level == NO_OVERHEAD_LEVEL:
-        self._config.SetNoOverheadFilter()
+        self._config.chrome_trace_config.SetNoOverheadFilter()
       elif overhead_level == MINIMAL_OVERHEAD_LEVEL:
-        self._config.SetMinimalOverheadFilter()
+        self._config.chrome_trace_config.SetMinimalOverheadFilter()
       else:
-        self._config.SetDebugOverheadFilter()
+        self._config.chrome_trace_config.SetDebugOverheadFilter()
     else:
       raise Exception("Overhead level must be a TracingCategoryFilter object"
                       " or valid overhead level string."
                       " Given overhead level: %s" % overhead_level)
 
     self._timeline_based_metric = None
-    self._legacy_timeline_based_metrics = _GetAllLegacyTimelineBasedMetrics()
+    self._legacy_timeline_based_metrics = []
 
 
   def ExtendTraceCategoryFilter(self, filters):
+    category_filter = self._config.chrome_trace_config.tracing_category_filter
     for new_category_filter in filters:
-      self._config.tracing_category_filter.AddIncludedCategory(
-          new_category_filter)
+      category_filter.AddIncludedCategory(new_category_filter)
 
   @property
   def category_filter(self):
-    return self._config.tracing_category_filter
+    return self._config.chrome_trace_config.tracing_category_filter
 
   @property
   def config(self):
@@ -218,14 +218,12 @@ class Options(object):
       metric: A string metric path under //tracing/tracing/metrics.
     """
     assert isinstance(metric, basestring)
-    self._legacy_timeline_based_metrics = None
     self._timeline_based_metric = metric
 
   def GetTimelineBasedMetric(self):
     return self._timeline_based_metric
 
   def SetLegacyTimelineBasedMetrics(self, metrics):
-    assert self._timeline_based_metric == None
     assert isinstance(metrics, collections.Iterable)
     for m in metrics:
       assert isinstance(m, timeline_based_metric.TimelineBasedMetric)
@@ -276,16 +274,25 @@ class TimelineBasedMeasurement(story_test.StoryTest):
 
   def Measure(self, platform, results):
     """Collect all possible metrics and added them to results."""
+    platform.tracing_controller.iteration_info = results.iteration_info
     trace_result = platform.tracing_controller.StopTracing()
     trace_value = trace.TraceValue(results.current_page, trace_result)
     results.AddValue(trace_value)
 
     if self._tbm_options.GetTimelineBasedMetric():
       self._ComputeTimelineBasedMetric(results, trace_value)
+      # Legacy metrics can be computed, but only if explicitly specified.
+      if self._tbm_options.GetLegacyTimelineBasedMetrics():
+        self._ComputeLegacyTimelineBasedMetrics(results, trace_result)
     else:
-      assert self._tbm_options.GetLegacyTimelineBasedMetrics()
+      # Run all TBMv1 metrics if no other metric is specified (legacy behavior)
+      if not self._tbm_options.GetLegacyTimelineBasedMetrics():
+        logging.warn('Please specify the TBMv1 metrics you are interested in '
+                     'explicitly. This implicit functionality will be removed '
+                     'on July 17, 2016.')
+        self._tbm_options.SetLegacyTimelineBasedMetrics(
+            _GetAllLegacyTimelineBasedMetrics())
       self._ComputeLegacyTimelineBasedMetrics(results, trace_result)
-
 
   def DidRunStory(self, platform):
     """Clean up after running the story."""
@@ -308,6 +315,7 @@ class TimelineBasedMeasurement(story_test.StoryTest):
           common_value_helpers.TranslateMreFailure(d, page))
 
     value_dicts = mre_result.pairs.get('values', [])
+    results.value_set.extend(value_dicts)
     for d in value_dicts:
       if common_value_helpers.IsScalarNumericValue(d):
         results.AddValue(

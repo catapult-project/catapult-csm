@@ -59,9 +59,9 @@ _SAMPLE_BISECT_RESULTS_JSON = {
             'revision_string': 'chromium@306477',
             'depot_name': 'chromium',
             'commit_hash': '306477abcdabcdfabcdfabcdfabcdfabcdfabcdf',
-            'mean_value': 80,
-            'std_dev': 0,
-            'values': [80, 80, 80],
+            'mean_value': 80.0,
+            'std_dev': 0.0,
+            'values': [80.0, 80.0, 80.0],
             'result': 'bad'
         }
     ]
@@ -105,10 +105,10 @@ Date    : 1/2/2015
 
 
 ===== TESTED REVISIONS =====
-Revision                Mean Value  Std. Dev.   Num Values  Good?
-chromium@306475         70          0           3           good
-chromium@306476         80          0           3           bad         <-
-chromium@306477         80          0           3           bad
+Revision         Mean  Std Dev  N  Good?
+chromium@306475  70    0        3  good
+chromium@306476  80    0        3  bad    <--
+chromium@306477  80.0  0.0      3  bad
 
 Bisect job ran on: linux
 Bug ID: 12345
@@ -138,10 +138,10 @@ Status: completed
 
 
 ===== TESTED REVISIONS =====
-Revision                Mean Value  Std. Dev.   Num Values  Good?
-chromium@306475         70          0           3           good
-chromium@306476         80          0           3           bad
-chromium@306477         80          0           3           bad
+Revision         Mean  Std Dev  N  Good?
+chromium@306475  70    0        3  good
+chromium@306476  80    0        3  bad
+chromium@306477  80.0  0.0      3  bad
 
 Bisect job ran on: linux
 Bug ID: 12345
@@ -274,10 +274,10 @@ Status: completed
 
 
 ===== TESTED REVISIONS =====
-Revision                Mean Value  Std. Dev.   Num Values  Good?
-chromium@306475         70          0           3           good
-chromium@306476         80          0           3           bad
-chromium@306477         80          0           3           bad
+Revision         Mean  Std Dev  N  Good?
+chromium@306475  70    0        3  good
+chromium@306476  80    0        3  bad
+chromium@306477  80.0  0.0      3  bad
 
 Bisect job ran on: linux
 Bug ID: 12345

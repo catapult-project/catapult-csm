@@ -122,9 +122,7 @@ class DevToolsClientBackend(object):
       return
 
     self._CreateTracingBackendIfNeeded(is_tracing_running=False)
-    self.StartChromeTracing(
-        trace_config=trace_config,
-        custom_categories=trace_config.tracing_category_filter.filter_string)
+    self.StartChromeTracing(trace_config)
 
   @property
   def remote_port(self):
@@ -162,6 +160,14 @@ class DevToolsClientBackend(object):
     # TODO(zhenw): Remove this once stable Chrome and reference browser have
     # passed 2512.
     return self.GetChromeBranchNumber() >= 2512
+
+  @property
+  def support_modern_devtools_tracing_start_api(self):
+    # Modern DevTools Tracing.start API (via 'traceConfig' parameter) was not
+    # supported until Chromium branch number 2683 (see crrev.com/1808353002).
+    # TODO(petrcermak): Remove this once stable Chrome and reference browser
+    # have passed 2683.
+    return self.GetChromeBranchNumber() >= 2683
 
   def IsAlive(self):
     """Whether the DevTools server is available and connectable."""
@@ -296,7 +302,8 @@ class DevToolsClientBackend(object):
     if not self._tracing_backend:
       self._CreateAndConnectBrowserInspectorWebsocketIfNeeded()
       self._tracing_backend = tracing_backend.TracingBackend(
-          self._browser_inspector_websocket, is_tracing_running)
+          self._browser_inspector_websocket, is_tracing_running,
+          self.support_modern_devtools_tracing_start_api)
 
   def _CreateMemoryBackendIfNeeded(self):
     assert self.supports_overriding_memory_pressure_notifications
@@ -318,21 +325,15 @@ class DevToolsClientBackend(object):
     self._CreateTracingBackendIfNeeded()
     return self._tracing_backend.IsTracingSupported()
 
-  def StartChromeTracing(
-      self, trace_config, custom_categories=None, timeout=10):
+  def StartChromeTracing(self, trace_config, timeout=10):
     """
     Args:
         trace_config: An tracing_config.TracingConfig instance.
-        custom_categories: An optional string containing a list of
-                         comma separated categories that will be traced
-                         instead of the default category set.  Example: use
-                         "webkit,cc,disabled-by-default-cc.debug" to trace only
-                         those three event categories.
     """
     assert trace_config and trace_config.enable_chrome_trace
     self._CreateTracingBackendIfNeeded()
     return self._tracing_backend.StartTracing(
-        trace_config, custom_categories, timeout)
+        trace_config.chrome_trace_config, timeout)
 
   def RecordChromeClockSyncMarker(self, sync_id):
     assert self.is_tracing_running, 'Tracing must be running to clock sync.'
@@ -347,12 +348,10 @@ class DevToolsClientBackend(object):
           continue
         context_id = context['id']
         backend = context_map.GetInspectorBackend(context_id)
-        success = backend.EvaluateJavaScript(
+        backend.EvaluateJavaScript(
             "console.time('" + backend.id + "');" +
             "console.timeEnd('" + backend.id + "');" +
             "console.time.toString().indexOf('[native code]') != -1;")
-        if not success:
-          raise Exception('Page stomped on console.time')
         trace_data_builder.AddEventsTo(
             trace_data_module.TAB_ID_PART, [backend.id])
     finally:

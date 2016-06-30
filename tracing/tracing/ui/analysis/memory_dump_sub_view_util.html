@@ -7,6 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/base/iteration_helpers.html">
 <link rel="import" href="/tracing/ui/base/dom_helpers.html">
+<link rel="import" href="/tracing/ui/base/table.html">
 <link rel="import" href="/tracing/value/numeric.html">
 <link rel="import" href="/tracing/value/ui/scalar_span.html">
 
@@ -331,6 +332,7 @@ tr.exportTo('tr.ui.analysis', function() {
       var fieldEl = document.createElement('span');
       fieldEl.style.display = 'flex';
       fieldEl.style.alignItems = 'center';
+      fieldEl.style.justifyContent = 'flex-end';
       Polymer.dom(fieldEl).appendChild(
           tr.ui.b.asHTMLOrTextNode(formattedFields));
 
@@ -658,6 +660,8 @@ tr.exportTo('tr.ui.analysis', function() {
   NumericMemoryColumn.prototype = {
     __proto__: MemoryColumn.prototype,
 
+    align: tr.ui.b.TableFormat.ColumnAlignment.RIGHT,
+
     aggregateCells: function(row, subRows) {
       var subRowCells = subRows.map(this.cell, this);
 
@@ -722,9 +726,14 @@ tr.exportTo('tr.ui.analysis', function() {
     },
 
     formatSingleField: function(numeric) {
-      if (numeric === undefined)
-        return '';
-      return tr.v.ui.createScalarSpan(numeric);
+      var formattingContext = this.getFormattingContext(numeric.unit);
+      var config = formattingContext !== undefined ?
+          { context: formattingContext } : undefined;
+      return tr.v.ui.createScalarSpan(numeric, config);
+    },
+
+    getFormattingContext: function(unit) {
+      return undefined;
     },
 
     formatMultipleFieldsDiff: function(firstNumeric, lastNumeric) {
@@ -833,9 +842,10 @@ tr.exportTo('tr.ui.analysis', function() {
     });
   }
 
-  function createCells(timeToValues, valueFieldsGetter) {
+  function createCells(timeToValues, valueFieldsGetter, opt_this) {
+    opt_this = opt_this || this;
     var fieldNameToFields = tr.b.invertArrayOfDicts(
-        timeToValues, valueFieldsGetter);
+        timeToValues, valueFieldsGetter, opt_this);
     return tr.b.mapItems(fieldNameToFields, function(fieldName, fields) {
       return new tr.ui.analysis.MemoryCell(fields);
     });
@@ -849,6 +859,22 @@ tr.exportTo('tr.ui.analysis', function() {
     };
   }
 
+  // TODO(petrcermak): Use a context manager instead
+  // (https://github.com/catapult-project/catapult/issues/2420).
+  function DetailsNumericMemoryColumn(name, cellPath, aggregationMode) {
+    NumericMemoryColumn.call(this, name, cellPath, aggregationMode);
+  }
+
+  DetailsNumericMemoryColumn.prototype = {
+    __proto__: NumericMemoryColumn.prototype,
+
+    getFormattingContext: function(unit) {
+      if (unit.baseUnit === tr.v.Unit.byName.sizeInBytes)
+        return { unitPrefix: tr.v.UnitScale.Binary.KIBI };
+      return undefined;
+    }
+  };
+
   return {
     TitleColumn: TitleColumn,
     MemoryColumn: MemoryColumn,
@@ -859,7 +885,8 @@ tr.exportTo('tr.ui.analysis', function() {
     aggregateTableRowCellsRecursively: aggregateTableRowCellsRecursively,
     aggregateTableRowCells: aggregateTableRowCells,
     createCells: createCells,
-    createWarningInfo: createWarningInfo
+    createWarningInfo: createWarningInfo,
+    DetailsNumericMemoryColumn: DetailsNumericMemoryColumn
   };
 });
 </script>
