@@ -13,7 +13,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/value/ui/value_set_view.html">
 <link rel="import" href="/tracing/value/unit.html">
 
-<polymer-element name='tr-v-ui-value-set-table'>
+<dom-module id="tr-v-ui-value-set-table">
   <template>
     <style>
     :host {
@@ -36,12 +36,14 @@ found in the LICENSE file.
     </table-container>
     <tr-v-ui-histogram-span id="histogram"></tr-v-ui-histogram-span>
   </template>
-</polymer-element>
+</dom-module>
 
 <script>
 'use strict';
 tr.exportTo('tr.ui', function() {
-  Polymer('tr-v-ui-value-set-table', {
+  Polymer({
+    is: 'tr-v-ui-value-set-table',
+
     /**
      * Return true if this view supports this ValueSet.
      * Value-set-table supports all possible metrics, so it always returns true.
@@ -70,7 +72,7 @@ tr.exportTo('tr.ui', function() {
           title: 'Name',
           value: function(value) {
             var nameEl = document.createElement('span');
-            nameEl.textContent = value.name;
+            Polymer.dom(nameEl).textContent = value.name;
             if (value.description)
               nameEl.title = value.description;
             nameEl.style.textOverflow = 'ellipsis';
@@ -78,25 +80,21 @@ tr.exportTo('tr.ui', function() {
           },
           cmp: function(a, b) {
             return a.name.localeCompare(b.name);
-          },
+          }
         },
         {
           title: 'Value',
           align: tr.ui.b.TableFormat.ColumnAlignment.RIGHT,
           value: function(value) {
-            if (value.diagnostic instanceof tr.v.d.Diagnostic) {
+            if (value.diagnostic instanceof tr.v.d.Diagnostic)
               return tr.v.ui.createDiagnosticSpan(value.diagnostic);
-            }
-
-            if (value.unit) {
-              return tr.v.ui.createScalarSpan(
-                  value.value, {unit: value.unit});
-            }
+            if (value.unit)
+              return tr.v.ui.createScalarSpan(value.value, {unit: value.unit});
             return value.value;
           },
           cmp: function(a, b) {
             return a.value - b.value;
-          },
+          }
         }
       ];
       this.$.table.sortColumnIndex = 1;
@@ -120,16 +118,16 @@ tr.exportTo('tr.ui', function() {
     set values(values) {
       this.style.width = '';
       this.$.table.style.display = '';
-      this.$.error.textContent = '';
+      Polymer.dom(this.$.error).textContent = '';
 
       values.map(function(value) {
         if (value instanceof tr.v.FailureValue) {
-          this.$.error.textContent = value.description;
+          Polymer.dom(this.$.error).textContent = value.description;
           this.$.table.style.display = 'none';
           this.style.width = '10em';
         }
       }, this);
-      if (this.$.error.textContent)
+      if (Polymer.dom(this.$.error).textContent)
         return;
 
       this.$.table.tableRows = values.map(function(value) {
