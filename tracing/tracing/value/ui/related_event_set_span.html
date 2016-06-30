@@ -7,11 +7,13 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/ui/analysis/analysis_link.html">
 
-<polymer-element name="tr-v-ui-related-event-set-span">
+<dom-module id="tr-v-ui-related-event-set-span">
   <script>
   'use strict';
   Polymer({
-    ready: function() {
+    is: 'tr-v-ui-related-event-set-span',
+
+    ready: function () {
       this.diagnostic_ = undefined;
     },
 
@@ -24,14 +26,14 @@ found in the LICENSE file.
       this.updateContents_();
     },
 
-    updateContents_: function() {
-      this.textContent = '';
+    updateContents_: function () {
+      Polymer.dom(this).textContent = '';
       var events = this.diagnostic.events;
       var link = document.createElement('tr-ui-a-analysis-link');
       var label = (events.length === 1) ? 'event' : 'events';
       link.setSelectionAndContent(events, events.length + ' ' + label);
-      this.appendChild(link);
+      Polymer.dom(this).appendChild(link);
     }
   });
   </script>
-</polymer-element>
+</dom-module>
