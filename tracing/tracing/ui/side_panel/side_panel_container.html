@@ -214,10 +214,10 @@ Polymer({
       if (this.model && supported.supported) {
         supportedPanelTypes.push(panelType);
         Polymer.dom(labelEl).setAttribute('enabled', true);
-        labelEl.addEventListener('click', function() {
+        labelEl.addEventListener('click', function(panelType) {
           this.activePanelType =
               this.activePanelType === panelType ? undefined : panelType;
-        }.bind(this));
+        }.bind(this, panelType));
       } else {
         labelEl.title = 'Not supported for the current trace: ' +
             supported.reason;
