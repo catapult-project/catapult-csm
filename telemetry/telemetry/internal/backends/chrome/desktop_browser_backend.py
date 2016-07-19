@@ -114,6 +114,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     self._proc = None
     self._tmp_profile_dir = None
     self._tmp_output_file = None
+    self._most_recent_symbolized_minidump_paths = set([])
 
     self._executable = executable
     if not self._executable:
@@ -133,12 +134,18 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     self._browser_directory = browser_directory
     self._port = None
     self._tmp_minidump_dir = tempfile.mkdtemp()
-    if self.browser_options.enable_logging:
+    if self.is_logging_enabled:
       self._log_file_path = os.path.join(tempfile.mkdtemp(), 'chrome.log')
     else:
       self._log_file_path = None
 
     self._SetupProfile()
+
+  @property
+  def is_logging_enabled(self):
+    return self.browser_options.logging_verbosity in [
+        self.browser_options.NON_VERBOSE_LOGGING,
+        self.browser_options.VERBOSE_LOGGING]
 
   @property
   def log_file_path(self):
@@ -268,7 +275,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     env = os.environ.copy()
     env['CHROME_HEADLESS'] = '1'  # Don't upload minidumps.
     env['BREAKPAD_DUMP_LOCATION'] = self._tmp_minidump_dir
-    if self.browser_options.enable_logging:
+    if self.is_logging_enabled:
       sys.stderr.write(
         'Chrome log file will be saved in %s\n' % self.log_file_path)
       env['CHROME_LOG_FILE'] = self.log_file_path
@@ -326,7 +333,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     except IOError:
       return ''
 
-  def _GetMostRecentCrashpadMinidump(self):
+  def _GetAllCrashpadMinidumps(self):
     os_name = self.browser.platform.GetOSName()
     arch_name = self.browser.platform.GetArchName()
     try:
@@ -385,11 +392,18 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
         logging.warning('Crashpad report expected valid keys'
                           ' "Path" and "Creation time": %s', e)
 
+    return reports_list
+
+  def _GetMostRecentCrashpadMinidump(self):
+    reports_list = self._GetAllCrashpadMinidumps()
     if reports_list:
       _, most_recent_report_path = max(reports_list)
       return most_recent_report_path
 
     return None
+
+  def _GetBreakPadMinidumpPaths(self):
+    return glob.glob(os.path.join(self._tmp_minidump_dir, '*.dmp'))
 
   def _GetMostRecentMinidump(self):
     # Crashpad dump layout will be the standard eventually, check it first.
@@ -398,7 +412,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     # Typical breakpad format is simply dump files in a folder.
     if not most_recent_dump:
       logging.info('No minidump found via crashpad_database_util')
-      dumps = glob.glob(os.path.join(self._tmp_minidump_dir, '*.dmp'))
+      dumps = self._GetBreakPadMinidumpPaths()
       if dumps:
         most_recent_dump = heapq.nlargest(1, dumps, os.path.getmtime)[0]
         if most_recent_dump:
@@ -435,8 +449,16 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
       if not cdb:
         logging.warning('cdb.exe not found.')
         return None
+      # Include all the threads' stacks ("~*kb30") in addition to the
+      # ostensibly crashed stack associated with the exception context
+      # record (".ecxr;kb30"). Note that stack dumps, including that
+      # for the crashed thread, may not be as precise as the one
+      # starting from the exception context record.
+      # Specify kb instead of k in order to get four arguments listed, for
+      # easier diagnosis from stacks.
       output = subprocess.check_output([cdb, '-y', self._browser_directory,
-                                        '-c', '.ecxr;k30;q', '-z', minidump])
+                                        '-c', '.ecxr;kb30;~*kb30;q',
+                                        '-z', minidump])
       # cdb output can start the stack with "ChildEBP", "Child-SP", and possibly
       # other things we haven't seen yet. If we can't find the start of the
       # stack, include output from the beginning.
@@ -490,13 +512,42 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     if not most_recent_dump:
       return (False, 'No crash dump found.')
     logging.info('Minidump found: %s' % most_recent_dump)
-    stack = self._GetStackFromMinidump(most_recent_dump)
+    return self._InternalSymbolizeMinidump(most_recent_dump)
+
+  def GetMostRecentMinidumpPath(self):
+    return self._GetMostRecentMinidump()
+
+  def GetAllMinidumpPaths(self):
+    reports_list = self._GetAllCrashpadMinidumps()
+    if reports_list:
+      return [report[1] for report in reports_list]
+    else:
+      logging.info('No minidump found via crashpad_database_util')
+      dumps = self._GetBreakPadMinidumpPaths()
+      if dumps:
+        logging.info('Found minidump via globbing in minidump dir')
+        return dumps
+      return None
+
+  def GetAllUnsymbolizedMinidumpPaths(self):
+    minidump_paths = set(self.GetAllMinidumpPaths())
+    # If we have already symbolized paths remove them from the list
+    unsymbolized_paths = (minidump_paths
+      - self._most_recent_symbolized_minidump_paths)
+    return list(unsymbolized_paths)
+
+  def SymbolizeMinidump(self, minidump_path):
+    return self._InternalSymbolizeMinidump(minidump_path)
+
+  def _InternalSymbolizeMinidump(self, minidump_path):
+    stack = self._GetStackFromMinidump(minidump_path)
     if not stack:
-      cloud_storage_link = self._UploadMinidumpToCloudStorage(most_recent_dump)
+      cloud_storage_link = self._UploadMinidumpToCloudStorage(minidump_path)
       error_message = ('Failed to symbolize minidump. Raw stack is uploaded to'
                        ' cloud storage: %s.' % cloud_storage_link)
       return (False, error_message)
 
+    self._most_recent_symbolized_minidump_paths.add(minidump_path)
     return (True, stack)
 
   def __del__(self):

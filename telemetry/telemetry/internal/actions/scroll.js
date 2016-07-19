@@ -32,7 +32,9 @@
   function supportedByBrowser() {
     return !!(window.chrome &&
               chrome.gpuBenchmarking &&
-              chrome.gpuBenchmarking.smoothScrollBy);
+              chrome.gpuBenchmarking.smoothScrollBy &&
+              chrome.gpuBenchmarking.visualViewportHeight &&
+              chrome.gpuBenchmarking.visualViewportWidth);
   }
 
   // This class scrolls a page from the top to the bottom once.
@@ -52,7 +54,7 @@
     var clientHeight;
     // clientHeight is "special" for the body element.
     if (this.element_ == document.body)
-      clientHeight = window.innerHeight;
+      clientHeight = __GestureCommon_GetWindowHeight();
     else
       clientHeight = this.element_.clientHeight;
 
@@ -69,7 +71,7 @@
     var clientWidth;
     // clientWidth is "special" for the body element.
     if (this.element_ == document.body)
-      clientWidth = window.innerWidth;
+      clientWidth = __GestureCommon_GetWindowWidth();
     else
       clientWidth = this.element_.clientWidth;
 
@@ -124,14 +126,10 @@
                             this.getScrollDistance_());
 
     var rect = __GestureCommon_GetBoundingVisibleRect(this.options_.element_);
-    // TODO(bccheng): workaround crbug/599656
-    // Use device-independent pixel value for the x and y positions
     var start_left =
-        rect.left + (rect.width / window.devicePixelRatio) *
-        this.options_.left_start_ratio_;
+        rect.left + rect.width * this.options_.left_start_ratio_;
     var start_top =
-        rect.top + (rect.height / window.devicePixelRatio) *
-        this.options_.top_start_ratio_;
+        rect.top + rect.height * this.options_.top_start_ratio_;
     chrome.gpuBenchmarking.smoothScrollBy(
         distance, this.onGestureComplete_.bind(this), start_left, start_top,
         this.options_.gesture_source_type_, this.options_.direction_,

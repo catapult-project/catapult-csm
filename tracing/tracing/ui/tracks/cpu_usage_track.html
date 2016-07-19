@@ -25,6 +25,7 @@ tr.exportTo('tr.ui.tracks', function() {
 
   var ColorScheme = tr.b.ColorScheme;
   var ChartTrack = tr.ui.tracks.ChartTrack;
+  var MAX_CPU_TRACK_INTERVAL_COUNT = 100000;
 
   /**
    * A track that displays the cpu usage of a process.
@@ -64,16 +65,23 @@ tr.exportTo('tr.ui.tracks', function() {
     // processes.
     computeCpuUsage_: function(model) {
       var intervalCount = Math.ceil(model.bounds.max / this.interval_);
+      // Rather than attempting a huge allocation and having the tab crash with
+      // an out-of-memory error, throw an error here if there are too many
+      // CPU intervals to handle.
+      if (intervalCount > MAX_CPU_TRACK_INTERVAL_COUNT) {
+        throw new Error('The trace is too long or the CPU usage counter ' +
+            'interval is too small, leading to too many CPU usage intervals.');
+      }
       var cpuUsage = undefined;
       if (intervalCount > 0) {
         tr.b.iterItems(model.processes, function(pid, process) {
           // Iterate slices, find all the CPU samples which overlap. For each
           // such CPU sample, increment it of the "average CPU usage" of the
           // slice.
-          process.iterateAllEvents(function(e) {
+          for (var e of process.getDescendantEvents()) {
             if (!(e instanceof tr.model.ThreadSlice) || e.duration === 0 ||
                 e.cpuDuration === undefined) {
-              return;
+              continue;
             }
 
             // This slice contains the most fine-grained CPU usage information
@@ -89,7 +97,7 @@ tr.exportTo('tr.ui.tracks', function() {
             //                    = s.cpuSelfTime / s.selfTime
             if (e.selfTime === 0 || e.selfTime === undefined ||
                 e.cpuSelfTime === undefined) {
-              return;
+              continue;
             }
 
             var cpuSelfTimeRatio = e.cpuSelfTime / e.selfTime;
@@ -109,7 +117,7 @@ tr.exportTo('tr.ui.tracks', function() {
             }, this);
             this.addCPUUsageOverInterval_(cpuUsage, cpuSelfTimeRatio, lastTime,
                 e.end);
-          }, this);
+          }
         }, this);
       }
       return cpuUsage || [];

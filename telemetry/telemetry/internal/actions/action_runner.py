@@ -8,6 +8,7 @@ import urlparse
 
 from telemetry.internal.actions.drag import DragAction
 from telemetry.internal.actions.javascript_click import ClickElementAction
+from telemetry.internal.actions.key_event import KeyPressAction
 from telemetry.internal.actions.load_media import LoadMediaAction
 from telemetry.internal.actions.loop import LoopAction
 from telemetry.internal.actions.mouse_click import MouseClickAction
@@ -363,7 +364,9 @@ class ActionRunner(object):
                                     y_scroll_distance_ratio=0.5,
                                     repeat_count=0,
                                     repeat_delay_ms=250,
-                                    timeout=60):
+                                    timeout=60,
+                                    prevent_fling=None,
+                                    speed=None):
     """Perform a browser driven repeatable scroll gesture.
 
     The scroll gesture is driven from the browser, this is useful because the
@@ -377,12 +380,15 @@ class ActionRunner(object):
           of the screen height.
       repeat_count: The number of additional times to repeat the gesture.
       repeat_delay_ms: The delay in milliseconds between each scroll gesture.
+      prevent_fling: Prevents a fling gesture.
+      speed: Swipe speed in pixels per second.
     """
     self._RunAction(RepeatableScrollAction(
         x_scroll_distance_ratio=x_scroll_distance_ratio,
         y_scroll_distance_ratio=y_scroll_distance_ratio,
         repeat_count=repeat_count,
-        repeat_delay_ms=repeat_delay_ms, timeout=timeout))
+        repeat_delay_ms=repeat_delay_ms, timeout=timeout,
+        prevent_fling=prevent_fling, speed=speed))
 
   def ScrollElement(self, selector=None, text=None, element_function=None,
                     left_start_ratio=0.5, top_start_ratio=0.5,
@@ -561,6 +567,31 @@ class ActionRunner(object):
         left_start_ratio=left_start_ratio, top_start_ratio=top_start_ratio,
         direction=direction, distance=distance,
         speed_in_pixels_per_second=speed_in_pixels_per_second))
+
+  def PressKey(self, key, repeat_count=1, repeat_delay_ms=100, timeout=60):
+    """Perform a key press.
+
+    Args:
+      key: DOM value of the pressed key (e.g. 'PageDown', see
+          https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key).
+      repeat_count: How many times the key should be pressed.
+      repeat_delay_ms: Delay after each keypress (including the last one) in
+          milliseconds.
+    """
+    for _ in xrange(repeat_count):
+      self._RunAction(KeyPressAction(key, timeout=timeout))
+      self.Wait(repeat_delay_ms / 1000.0)
+
+  def EnterText(self, text, character_delay_ms=100, timeout=60):
+    """Enter text by performing key presses.
+
+    Args:
+      text: The text to enter.
+      character_delay_ms: Delay after each keypress (including the last one) in
+          milliseconds.
+    """
+    for c in text:
+      self.PressKey(c, repeat_delay_ms=character_delay_ms, timeout=timeout)
 
   def LoadMedia(self, selector=None, event_timeout_in_seconds=0,
                 event_to_await='canplaythrough'):

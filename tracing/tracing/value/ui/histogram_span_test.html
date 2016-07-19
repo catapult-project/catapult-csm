@@ -5,6 +5,7 @@ Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 -->
 
+<link rel="import" href="/tracing/value/numeric.html">
 <link rel="import" href="/tracing/value/ui/histogram_span.html">
 <link rel="import" href="/tracing/value/unit.html">
 
@@ -53,6 +54,7 @@ tr.b.unittest.testSuite(function() {
     var h = DURATION_NUMERIC_BUILDER.build();
     h.add(undefined, 'b');
     h.add(NaN, 'c');
+    h.customizeSummaryOptions({nans: true});
 
     var span = document.createElement('tr-v-ui-histogram-span');
     span.histogram = h;

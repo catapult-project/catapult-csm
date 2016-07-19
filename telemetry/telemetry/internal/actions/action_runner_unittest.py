@@ -31,7 +31,7 @@ class ActionRunnerInteractionTest(tab_test_case.TabTestCase):
     self.Navigate('interaction_enabled_page.html')
     action_runner.Wait(1)
     config = tracing_config.TracingConfig()
-    config.chrome_trace_config.SetNoOverheadFilter()
+    config.chrome_trace_config.SetLowOverheadFilter()
     config.enable_chrome_trace = True
     self._browser.platform.tracing_controller.StartTracing(config)
     with action_runner.CreateInteraction('InteractionName',
@@ -254,6 +254,31 @@ class ActionRunnerTest(tab_test_case.TabTestCase):
     action_runner.SwipePage(direction='left', left_start_ratio=0.9)
     self.assertTrue(action_runner.EvaluateJavaScript(
         '(document.scrollingElement || document.body).scrollLeft') > 75)
+
+  def testEnterText(self):
+    self.Navigate('blank.html')
+    self._tab.ExecuteJavaScript(
+        '(function() {'
+        '  var elem = document.createElement("textarea");'
+        '  document.body.appendChild(elem);'
+        '  elem.focus();'
+        '})();')
+
+    action_runner = action_runner_module.ActionRunner(self._tab,
+                                                      skip_waits=True)
+    action_runner.EnterText('That is boring')  # That is boring|.
+    action_runner.PressKey('Home')  # |That is boring.
+    action_runner.PressKey('ArrowRight', repeat_count=2)  # Th|at is boring.
+    action_runner.PressKey('Delete', repeat_count=2)  # Th| is boring.
+    action_runner.EnterText('is')  # This| is boring.
+    action_runner.PressKey('End')  # This is boring|.
+    action_runner.PressKey('ArrowLeft', repeat_count=3)  # This is bor|ing.
+    action_runner.PressKey('Backspace', repeat_count=3)  # This is |ing.
+    action_runner.EnterText('interest')  # This is interest|ing.
+
+    self.assertEqual('This is interesting',
+                     self._tab.EvaluateJavaScript(
+                         'document.querySelector("textarea").value'))
 
 
 class InteractionTest(unittest.TestCase):

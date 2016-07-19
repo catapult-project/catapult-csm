@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 from telemetry.core import util
+from telemetry.core import exceptions
 from telemetry import decorators
 from telemetry.internal.browser import browser as browser_module
 from telemetry.internal.browser import browser_finder
@@ -58,8 +59,9 @@ class BrowserTest(browser_test_case.BrowserTestCase):
     tab.Navigate(self.UrlOfUnittestFile('blank.html'))
     self._browser.tabs[0].WaitForDocumentReadyStateToBeInteractiveOrBetter()
 
+  # Disable bug: https://github.com/catapult-project/catapult/issues/2455
   @decorators.Enabled('has tabs')
-  @decorators.Disabled('win')  # crbug.com/321527
+  @decorators.Disabled('linux', 'mac')
   def testCloseReferencedTab(self):
     self._browser.tabs.New()
     tab = self._browser.tabs[0]
@@ -82,6 +84,16 @@ class BrowserTest(browser_test_case.BrowserTestCase):
     # other tab
     original_tab.Close()
     self.assertEqual(self._browser.foreground_tab, new_tab)
+
+  # This test uses the reference browser and doesn't have access to
+  # helper binaries like crashpad_database_util.
+  @decorators.Enabled('linux')
+  def testGetMinidumpPathOnCrash(self):
+    tab = self._browser.tabs[0]
+    with self.assertRaises(exceptions.AppCrashException):
+      tab.Navigate('chrome://crash', timeout=5)
+    crash_minidump_path = self._browser.GetMostRecentMinidumpPath()
+    self.assertIsNotNone(crash_minidump_path)
 
   def testGetSystemInfo(self):
     if not self._browser.supports_system_info:
@@ -154,7 +166,7 @@ class DirtyProfileBrowserTest(browser_test_case.BrowserTestCase):
 class BrowserLoggingTest(browser_test_case.BrowserTestCase):
   @classmethod
   def CustomizeBrowserOptions(cls, options):
-    options.enable_logging = True
+    options.logging_verbosity = options.VERBOSE_LOGGING
 
   @decorators.Disabled('chromeos', 'android')
   def testLogFileExist(self):

@@ -624,6 +624,15 @@ def PerformBisect(bisect_job):
   if 'error' in result:
     bisect_job.run_count += 1
     bisect_job.SetFailed()
+    comment = 'Bisect job failed to kick off'
+  elif result.get('issue_url'):
+    comment = 'Started bisect job %s' % result['issue_url']
+  else:
+    comment = 'Started bisect job: %s' % result
+  if bisect_job.bug_id:
+    issue_tracker = issue_tracker_service.IssueTrackerService(
+        additional_credentials=utils.ServiceAccountCredentials())
+    issue_tracker.AddBugComment(bisect_job.bug_id, comment, send_email=False)
   return result
 
 

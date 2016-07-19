@@ -109,10 +109,6 @@ Polymer({
     }
   },
 
-  get selection() {
-    return this.brushingStateController_.selection;
-  },
-
   onSelectionChanged_: function() {
     if (this.activePanel)
       this.activePanel.selection = this.selection;
@@ -137,8 +133,10 @@ Polymer({
     return this.activePanelContainer_.children[1];
   },
 
-  get activePanelType() {
-    return this.activePanelType_;
+  get activePanel() {
+    if (Polymer.dom(this.activePanelContainer_).children.length < 2)
+      return undefined;
+    return Polymer.dom(this.activePanelContainer_).children[1];
   },
 
   set activePanelType(panelType) {
@@ -158,8 +156,13 @@ Polymer({
     }
     Polymer.dom(this.activePanelContainer_).textContent = '';
 
+    if (this.activePanelType) {
+      this.getLabelElementForPanelType_(
+          this.activePanelType).removeAttribute('selected');
+    }
+
     if (this.activePanel)
-      Polymer.dom(this.activePanelContainer_).removeChild(this.activePanel);
+      this.activePanelContainer_.removeChild(this.activePanel);
 
     if (panelType === undefined) {
       Polymer.dom(this).removeAttribute('expanded');
@@ -219,9 +222,9 @@ Polymer({
               this.activePanelType === panelType ? undefined : panelType;
         }.bind(this, panelType));
       } else {
-        labelEl.title = 'Not supported for the current trace: ' +
-            supported.reason;
-        labelEl.style.display = 'none';
+        if (this.activePanel)
+          this.activePanelContainer_.removeChild(this.activePanel);
+        this.removeAttribute('expanded');
       }
       Polymer.dom(this.tabStrip_).appendChild(labelEl);
     }

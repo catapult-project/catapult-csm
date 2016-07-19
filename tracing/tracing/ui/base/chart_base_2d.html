@@ -6,6 +6,7 @@ found in the LICENSE file.
 -->
 
 <link rel="import" href="/tracing/base/iteration_helpers.html">
+<link rel="import" href="/tracing/base/raf.html">
 <link rel="import" href="/tracing/base/range.html">
 <link rel="import" href="/tracing/ui/base/chart_base.html">
 <link rel="import" href="/tracing/ui/base/mouse_tracker.html">
@@ -38,10 +39,9 @@ tr.exportTo('tr.ui.b', function() {
       this.isYLogScale_ = false;
       this.yLogScaleMin_ = undefined;
       this.dataRange_ = new tr.b.Range();
-
+      this.hideXAxis_ = false;
+      this.hideYAxis_ = false;
       this.data_ = [];
-      this.seriesKeys_ = [];
-      this.leftMargin_ = 50;
 
       d3.select(this.chartAreaElement)
           .append('g')
@@ -51,6 +51,24 @@ tr.exportTo('tr.ui.b', function() {
           .attr('id', 'series');
 
       this.addEventListener('mousedown', this.onMouseDown_.bind(this));
+    },
+
+    get hideXAxis() {
+      return this.hideXAxis_;
+    },
+
+    set hideXAxis(h) {
+      this.hideXAxis_ = h;
+      this.updateContents_();
+    },
+
+    get hideYAxis() {
+      return this.hideYAxis_;
+    },
+
+    set hideYAxis(h) {
+      this.hideYAxis_ = h;
+      this.updateContents_();
     },
 
     get data() {
@@ -109,23 +127,16 @@ tr.exportTo('tr.ui.b', function() {
       return leftWidth * 0.5 + rightWidth * 0.5;
     },
 
-    getLegendKeys_: function() {
-      if (this.seriesKeys_ &&
-          this.seriesKeys_.length > 1)
-        return this.seriesKeys_.slice();
-      return [];
-    },
-
     updateSeriesKeys_: function() {
-      // Accumulate the keys on each data point.
-      var keySet = {};
+      // Don't clear seriesByKey_; the caller might have put state in it using
+      // customizeLegendTargets, customizeOptionalSeries, or
+      // customizeEnabledSeries before setting data.
       this.data_.forEach(function(datum) {
         Object.keys(datum).forEach(function(key) {
           if (this.isDatumFieldSeries_(key))
-            keySet[key] = true;
+            this.getDataSeries(key);
         }, this);
       }, this);
-      this.seriesKeys_ = Object.keys(keySet);
     },
 
     isDatumFieldSeries_: function(fieldName) {
@@ -149,11 +160,12 @@ tr.exportTo('tr.ui.b', function() {
 
       // Y.
       var yRange = new tr.b.Range();
-      var keySet = new Set(this.seriesKeys_);
-      for (var i = 0; i < this.data_.length; i++)
-        for (var key in this.data_[i])
-          if (keySet.has(key))
+      for (var i = 0; i < this.data_.length; i++) {
+        for (var key in this.data_[i]) {
+          if (!isNaN(Math.max(this.data_[i][key])))
             yRange.addValue(this.data_[i][key]);
+        }
+      }
 
       this.yScale_.range([height, 0]);
       this.yScale_.domain([yRange.min, yRange.max]);
@@ -166,11 +178,14 @@ tr.exportTo('tr.ui.b', function() {
     updateXAxis_: function(xAxis) {
       xAxis.selectAll('*').remove();
       xAxis[0][0].style.opacity = 0;
+      if (this.hideXAxis)
+        return;
+
       xAxis.attr('transform', 'translate(0,' + this.chartAreaSize.height + ')')
         .call(d3.svg.axis()
               .scale(this.xScale_)
               .orient('bottom'));
-      window.requestAnimationFrame(function() {
+      tr.b.requestAnimationFrame(function() {
         var previousRight = undefined;
         xAxis.selectAll('.tick')[0].forEach(function(tick) {
           var currentLeft = tick.transform.baseVal[0].matrix.e;
@@ -183,13 +198,7 @@ tr.exportTo('tr.ui.b', function() {
           }
         });
         xAxis[0][0].style.opacity = 1;
-      });
-    },
-
-    getMargin_: function() {
-      var margin = ChartBase.prototype.getMargin_.call(this);
-      margin.left = this.leftMargin_;
-      return margin;
+      }, this);
     },
 
     updateDataRange_: function() {
@@ -218,6 +227,8 @@ tr.exportTo('tr.ui.b', function() {
     updateYAxis_: function(yAxis) {
       yAxis.selectAll('*').remove();
       yAxis[0][0].style.opacity = 0;
+      if (this.hideYAxis)
+        return;
 
       var axisModifier = d3.svg.axis()
         .scale(this.yScale_)
@@ -248,7 +259,7 @@ tr.exportTo('tr.ui.b', function() {
 
       yAxis.call(axisModifier);
 
-      window.requestAnimationFrame(function() {
+      tr.b.requestAnimationFrame(function() {
         var previousTop = undefined;
         var leftMargin = 0;
         yAxis.selectAll('.tick')[0].forEach(function(tick) {
@@ -263,13 +274,15 @@ tr.exportTo('tr.ui.b', function() {
             tick.style.opacity = 0;
           }
         });
-        if (leftMargin > this.leftMargin_) {
-          this.leftMargin_ = leftMargin;
+
+        leftMargin = parseInt(Math.ceil(leftMargin));
+        if (leftMargin > this.margin.left) {
+          this.margin.left = leftMargin;
           this.updateContents_();
         } else {
           yAxis[0][0].style.opacity = 1;
         }
-      }.bind(this));
+      }, this);
     },
 
     updateContents_: function() {
@@ -296,9 +309,9 @@ tr.exportTo('tr.ui.b', function() {
      */
     getDataBySeriesKey_: function() {
       var dataBySeriesKey = {};
-      this.seriesKeys_.forEach(function(seriesKey) {
-        dataBySeriesKey[seriesKey] = [];
-      });
+      for (var [key, series] of this.seriesByKey_) {
+        dataBySeriesKey[key] = [];
+      }
 
       this.data_.forEach(function(multiSeriesDatum, index) {
         var x = this.getXForDatum_(multiSeriesDatum, index);
@@ -325,9 +338,8 @@ tr.exportTo('tr.ui.b', function() {
 
     getDataPointAtClientPoint_: function(clientX, clientY) {
       var rect = this.getBoundingClientRect();
-      var margin = this.margin;
-      var x = clientX - rect.left - margin.left;
-      var y = clientY - rect.top - margin.top;
+      var x = clientX - rect.left - this.margin.left;
+      var y = clientY - rect.top - this.margin.top;
       x = this.xScale_.invert(x);
       y = this.yScale_.invert(y);
       x = tr.b.clamp(x, this.xScale_.domain()[0], this.xScale_.domain()[1]);

@@ -7,37 +7,28 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/base/statistics.html">
 <link rel="import" href="/tracing/ui/base/bar_chart.html">
+<link rel="import" href="/tracing/value/ui/numeric_stats_span.html">
 <link rel="import" href="/tracing/value/ui/scalar_span.html">
 
 <dom-module id='tr-v-ui-histogram-span'>
   <template>
     <style>
-      :host {
+      #container {
+        display: flex;
+        flex-direction: row;
+      }
+      #diagnostics {
         display: flex;
         flex-direction: column;
       }
-
-      #stats {
-        display: flex;
-        flex-direction: row;
-        flex: 0 0 auto;
-        font-weight: bold;
-      }
-
-      #nnans {
-        color: red;
-      }
-      #table {
-        flex: 1 1 auto;
-      }
     </style>
-    <div id="stats">
-      <span id="nsamples"></span>&nbsp;samples,&nbsp;
-      <span id="hadnans"><span id="nnans"></span> non-numeric samples,&nbsp;
-      </span>
-      average=<tr-v-ui-scalar-span id="average"></tr-v-ui-scalar-span>
+
+    <div id="container">
+      <div id="chart"></div>
+      <tr-v-ui-numeric-stats-span id="stats"></tr-v-ui-numeric-stats-span>
     </div>
-    <div id="container"></div>
+    <div id="diagnostics">
+    </div>
   </template>
 </dom-module>
 <script>
@@ -51,6 +42,7 @@ Polymer({
     this.chart_ = new tr.ui.b.BarChart();
     this.chart_.width = 400;
     this.chart_.height = 200;
+    this.chart_.margin.right = 2;
     this.mouseDownBin_ = undefined;
     this.brushedBins_ = [];
     this.chart_.addEventListener('item-mousedown',
@@ -59,10 +51,12 @@ Polymer({
         this.onMouseMove_.bind(this));
     this.chart_.addEventListener('item-mouseup',
         this.onMouseUp_.bind(this));
+    this.chart_.hideLegend = true;
+    this.chart_.margin.right = 0;
   },
 
   ready: function() {
-    Polymer.dom(this.$.container).appendChild(this.chart_);
+    Polymer.dom(this.$.chart).appendChild(this.chart_);
   },
 
   get brushedBins() {
@@ -86,11 +80,11 @@ Polymer({
           (this.brushedBins_.indexOf(bin) < 0))
         this.brushedBins_.push(bin);
     }, this);
-    if ((this.histogram_.underflowBin.max > r.min) &&
+    if ((this.histogram_.underflowBin.range.max > r.min) &&
         (this.brushedBins_.indexOf(this.histogram_.underflowBin) < 0)) {
       this.brushedBins_.push(this.histogram_.underflowBin);
     }
-    if ((this.histogram_.overflowBin.min < r.max) &&
+    if ((this.histogram_.overflowBin.range.min < r.max) &&
         (this.brushedBins_.indexOf(this.histogram_.overflowBin) < 0)) {
       this.brushedBins_.push(this.histogram_.overflowBin);
     }
@@ -108,6 +102,14 @@ Polymer({
       centralMax + binWidth;
 
     this.chart_.brushedRange = r;
+
+    Polymer.dom(this.$.diagnostics).textContent = '';
+    for (var bin of this.brushedBins) {
+      for (var diagnostic of bin.diagnostics) {
+        Polymer.dom(this.$.diagnostics).appendChild(
+            tr.v.ui.createDiagnosticSpan(diagnostic));
+      }
+    }
 
     this.dispatchEvent(new tr.b.Event('brushed-bins-changed'));
   },
@@ -141,6 +143,7 @@ Polymer({
 
   set histogram(histogram) {
     this.histogram_ = histogram;
+    Polymer.dom(this.$.diagnostics).textContent = '';
     this.updateContents_();
   },
 
@@ -149,22 +152,10 @@ Polymer({
   },
 
   updateContents_: function() {
-    this.$.container.style.display = this.histogram_ ? '' : 'none';
-    if (!this.histogram_) {
-      Polymer.dom(this.$.nsamples).textContent = 0;
-      this.$.average.setValueAndUnit(undefined, undefined);
+    this.$.chart.style.display = this.histogram_ ? '' : 'none';
+    this.$.stats.numeric = this.histogram_;
+    if (!this.histogram_)
       return;
-    }
-
-    Polymer.dom(this.$.nsamples).textContent = this.histogram_.numValues;
-    this.$.average.setValueAndUnit(this.histogram_.average,
-                                   this.histogram_.unit);
-    if (this.histogram_.numNans > 0) {
-      this.$.hadnans.style.display = '';
-      Polymer.dom(this.$.nnans).textContent = this.histogram_.numNans;
-    } else {
-      this.$.hadnans.style.display = 'none';
-    }
 
     var maximumBinValue = tr.b.Statistics.max(this.histogram_.allBins,
                                               function(bin) {
@@ -179,13 +170,12 @@ Polymer({
           return;
         x = bin.range.max - binWidth;
       }
-      chartData.push({x: x,
-                      y: bin.count});
+      chartData.push({x: x, y: bin.count});
     });
     chartData.sort(function(x, y) {
       return x.x - y.x;
     });
-    this.$.container.style.display = chartData.length ? '' : 'none';
+    this.$.chart.style.display = chartData.length ? '' : 'none';
     this.chart_.data = chartData;
     this.brushedBins_ = [];
     this.chart_.brushedRange = new tr.b.Range();

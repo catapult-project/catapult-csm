@@ -47,6 +47,10 @@ except Exception:
   surface_stats_collector = None
 
 
+_ARCH_TO_STACK_TOOL_ARCH = {
+  'armeabi-v7a': 'arm',
+  'arm64-v8a': 'arm64',
+}
 _DEVICE_COPY_SCRIPT_FILE = os.path.abspath(os.path.join(
     os.path.dirname(__file__), 'efficient_android_directory_copy.sh'))
 _DEVICE_COPY_SCRIPT_LOCATION = (
@@ -515,7 +519,8 @@ class AndroidPlatformBackend(
       logging.warning('Test certificate authority is already installed.')
       return
     self._device_cert_util = adb_install_cert.AndroidCertInstaller(
-        self._device.adb.GetDeviceSerial(), None, ca_cert_path)
+        self._device.adb.GetDeviceSerial(), None, ca_cert_path,
+        adb_path=self._device.adb.GetAdbPath())
     self._device_cert_util.install_cert(overwrite_cert=True)
 
   def RemoveTestCa(self):
@@ -649,10 +654,11 @@ class AndroidPlatformBackend(
       number_of_lines: Number of lines of log to return.
     """
     return '\n'.join(self._device.RunShellCommand(
-        ['logcat', '-d', '-t', str(number_of_lines)]))
+        ['logcat', '-d', '-t', str(number_of_lines)],
+        check_return=True, large_output=True))
 
   def GetStandardOutput(self):
-    return None
+    return 'Cannot get standard output on Android'
 
   def GetStackTrace(self):
     """Returns stack trace.
@@ -674,7 +680,9 @@ class AndroidPlatformBackend(
     # Try to symbolize logcat.
     if os.path.exists(stack):
       cmd = [stack]
-      cmd.append('--arch=%s' % self.GetArchName())
+      arch = self.GetArchName()
+      arch = _ARCH_TO_STACK_TOOL_ARCH.get(arch, arch)
+      cmd.append('--arch=%s' % arch)
       p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
       ret += Decorate('Stack from Logcat', p.communicate(input=logcat)[0])
 
@@ -687,6 +695,9 @@ class AndroidPlatformBackend(
                                         self._device.adb.GetDeviceSerial()],
                                        stdout=subprocess.PIPE).communicate()[0])
     return (True, ret)
+
+  def GetMinidumpPath(self):
+    return None
 
   def IsScreenOn(self):
     """Determines if device screen is on."""

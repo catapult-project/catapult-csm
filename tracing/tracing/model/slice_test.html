@@ -47,9 +47,8 @@ tr.b.unittest.testSuite(function() {
     group.createSubSlices();
 
     var foundSlices = [];
-    sC1.findTopmostSlicesRelativeToThisSlice(PREDICATE, slice => (
-        foundSlices.push(slice))
-    );
+    for (var slice of sC1.findTopmostSlicesRelativeToThisSlice(PREDICATE))
+      foundSlices.push(slice);
 
     assert.deepEqual([sC1], foundSlices);
   });
@@ -69,13 +68,12 @@ tr.b.unittest.testSuite(function() {
     group.createSubSlices();
 
     var foundSlices = [];
-    sD.findTopmostSlicesRelativeToThisSlice(PREDICATE, slice => (
-        foundSlices.push(slice)));
-
+    for (var slice of sD.findTopmostSlicesRelativeToThisSlice(PREDICATE))
+      foundSlices.push(slice);
     assert.deepEqual([sC1, sC2], foundSlices);
   });
 
-  test('iterateAllDescendents', function() {
+  test('enumerateAllDescendents', function() {
     var group = new SliceGroup(newFakeThread());
 
     var sA = group.pushSlice(newSliceEx(
@@ -108,7 +106,7 @@ tr.b.unittest.testSuite(function() {
     assert.equal(sC.mostTopLevelSlice, sA);
   });
 
-  test('iterateAllAncestors', function() {
+  test('enumerateAllAncestors', function() {
     var group = new SliceGroup(newFakeThread());
 
     var sA = group.pushSlice(newSliceEx(

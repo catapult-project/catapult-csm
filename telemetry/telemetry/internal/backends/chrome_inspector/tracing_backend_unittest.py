@@ -23,7 +23,7 @@ class TracingBackendTest(tab_test_case.TabTestCase):
 
   @classmethod
   def CustomizeBrowserOptions(cls, options):
-    options.enable_logging = True
+    options.logging_verbosity = options.VERBOSE_LOGGING
     options.AppendExtraBrowserArgs([
         # Memory maps currently cannot be retrieved on sandboxed processes.
         # See crbug.com/461788.
@@ -49,7 +49,7 @@ class TracingBackendTest(tab_test_case.TabTestCase):
 
     # Start tracing with memory dumps enabled.
     config = tracing_config.TracingConfig()
-    config.chrome_trace_config.tracing_category_filter.AddDisabledByDefault(
+    config.chrome_trace_config.category_filter.AddDisabledByDefault(
         'disabled-by-default-memory-infra')
     config.enable_chrome_trace = True
     self._tracing_controller.StartTracing(config)

@@ -7,6 +7,7 @@ found in the LICENSE file.
 
 <link rel="import" href="/tracing/base/range.html">
 <link rel="import" href="/tracing/base/statistics.html">
+<link rel="import" href="/tracing/value/diagnostics/generic.html">
 <link rel="import" href="/tracing/value/numeric.html">
 <link rel="import" href="/tracing/value/unit.html">
 
@@ -14,7 +15,6 @@ found in the LICENSE file.
 'use strict';
 
 tr.b.unittest.testSuite(function() {
-
   var TEST_NUMERIC_BUILDER = tr.v.NumericBuilder.createLinear(
       tr.v.Unit.byName.timeDurationInMs, tr.b.Range.fromExplicitRange(0, 1000),
       10);
@@ -42,6 +42,30 @@ tr.b.unittest.testSuite(function() {
     }
   }
 
+  test('significance', function() {
+    assert.strictEqual(TEST_NUMERIC_BUILDER.build().getDifferenceSignificance(
+        TEST_NUMERIC_BUILDER.build()), tr.v.Significance.DONT_CARE);
+
+    var builder = tr.v.NumericBuilder.createLinear(
+        tr.v.Unit.byName.unitlessNumber_smallerIsBetter,
+        tr.b.Range.fromExplicitRange(0, 100), 10);
+    var numericA = builder.build();
+    var numericB = builder.build();
+    for (var i = 0; i < 100; ++i) {
+      numericA.add(i);
+      numericB.add(i * 0.85);
+    }
+
+    assert.strictEqual(numericA.getDifferenceSignificance(numericB),
+        tr.v.Significance.INSIGNIFICANT);
+    assert.strictEqual(numericB.getDifferenceSignificance(numericA),
+        tr.v.Significance.INSIGNIFICANT);
+    assert.strictEqual(numericA.getDifferenceSignificance(numericB, 0.1),
+        tr.v.Significance.SIGNIFICANT);
+    assert.strictEqual(numericB.getDifferenceSignificance(numericA, 0.1),
+        tr.v.Significance.SIGNIFICANT);
+  });
+
   test('nonUnitThrows', function() {
     assert.throws(function() { new tr.v.NumericBase('foo', -273.15); });
   });
@@ -55,16 +79,16 @@ tr.b.unittest.testSuite(function() {
     var n = TEST_NUMERIC_BUILDER.build();
     assert.equal(n.getBinForValue(250).range.min, 200);
     assert.equal(n.getBinForValue(250).range.max, 300);
-    n.add(-1, 'a');
-    n.add(0, 'b');
-    n.add(0, 'c');
-    n.add(500, 'c');
-    n.add(999, 'd');
-    n.add(1000, 'd');
+    n.add(-1, new tr.v.d.Generic('a'));
+    n.add(0, new tr.v.d.Generic('b'));
+    n.add(0, new tr.v.d.Generic('c'));
+    n.add(500, new tr.v.d.Generic('c'));
+    n.add(999, new tr.v.d.Generic('d'));
+    n.add(1000, new tr.v.d.Generic('d'));
     assert.equal(n.underflowBin.count, 1);
 
     assert.equal(n.getBinForValue(0).count, 2);
-    assert.deepEqual(n.getBinForValue(0).sourceInfos,
+    assert.deepEqual(n.getBinForValue(0).diagnostics.map(d => d.value),
                      ['b', 'c']);
 
     assert.equal(n.getBinForValue(500).count, 1);
@@ -77,56 +101,68 @@ tr.b.unittest.testSuite(function() {
 
   test('numericNans', function() {
     var n = TEST_NUMERIC_BUILDER.build();
-    n.add(undefined, 'b');
-    n.add(NaN, 'c');
+    n.add(undefined, new tr.v.d.Generic('b'));
+    n.add(NaN, new tr.v.d.Generic('c'));
+    n.add(undefined);
+    n.add(NaN);
 
-    assert.equal(n.numNans, 2);
-    assert.deepEqual(n.nanSourceInfos, ['b', 'c']);
+    assert.equal(n.numNans, 4);
+    assert.deepEqual(n.nanDiagnostics.map(d => d.value), ['b', 'c']);
+
+    var n2 = n.clone();
+    assert.instanceOf(n2.nanDiagnostics[0], tr.v.d.Generic);
   });
 
   test('addNumericsValid', function() {
     var n0 = TEST_NUMERIC_BUILDER.build();
     var n1 = TEST_NUMERIC_BUILDER.build();
-    n0.add(-1, 'a0');
-    n0.add(0, 'b0');
-    n0.add(0, 'c0');
-    n0.add(500, 'c0');
-    n0.add(1000, 'd0');
-    n0.add(NaN, 'e0');
+    n0.add(-1, new tr.v.d.Generic('a0'));
+    n0.add(0, new tr.v.d.Generic('b0'));
+    n0.add(0, new tr.v.d.Generic('c0'));
+    n0.add(500, new tr.v.d.Generic('c0'));
+    n0.add(1000, new tr.v.d.Generic('d0'));
+    n0.add(NaN, new tr.v.d.Generic('e0'));
 
-    n1.add(-1, 'a1');
-    n1.add(0, 'b1');
-    n1.add(0, 'c1');
-    n1.add(999, 'd1');
-    n1.add(1000, 'd1');
-    n1.add(NaN, 'e1');
+    n1.add(-1, new tr.v.d.Generic('a1'));
+    n1.add(0, new tr.v.d.Generic('b1'));
+    n1.add(0, new tr.v.d.Generic('c1'));
+    n1.add(999, new tr.v.d.Generic('d1'));
+    n1.add(1000, new tr.v.d.Generic('d1'));
+    n1.add(NaN, new tr.v.d.Generic('e1'));
 
     n0.addNumeric(n1);
 
     assert.equal(n0.numNans, 2);
-    assert.deepEqual(n0.nanSourceInfos, ['e0', 'e1']);
+    assert.deepEqual(n0.nanDiagnostics.map(d => d.value), ['e0', 'e1']);
 
     assert.equal(n0.underflowBin.count, 2);
-    assert.deepEqual(n0.underflowBin.sourceInfos, ['a0', 'a1']);
+    assert.deepEqual(n0.underflowBin.diagnostics.map(d => d.value),
+        ['a0', 'a1']);
 
     assert.equal(n0.getBinForValue(0).count, 4);
-    assert.deepEqual(n0.getBinForValue(0).sourceInfos,
+    assert.deepEqual(n0.getBinForValue(0).diagnostics.map(d => d.value),
         ['b0', 'c0', 'b1', 'c1']);
 
     assert.equal(n0.getBinForValue(500).count, 1);
-    assert.deepEqual(n0.getBinForValue(500).sourceInfos, ['c0']);
+    assert.deepEqual(n0.getBinForValue(500).diagnostics.map(d => d.value),
+        ['c0']);
 
     assert.equal(n0.getBinForValue(999).count, 1);
-    assert.deepEqual(n0.getBinForValue(999).sourceInfos, ['d1']);
+    assert.deepEqual(n0.getBinForValue(999).diagnostics.map(d => d.value),
+        ['d1']);
 
     assert.equal(n0.overflowBin.count, 2);
-    assert.deepEqual(n0.overflowBin.sourceInfos, ['d0', 'd1']);
+    assert.deepEqual(n0.overflowBin.diagnostics.map(d => d.value),
+        ['d0', 'd1']);
 
     assert.equal(n0.numValues, 10);
     assert.closeTo(n0.average, 349.7, 0.1);
 
     assert.equal(2, n0.maxCount);
     assert.equal(2, n1.maxCount);
+
+    var n02 = n0.clone();
+    assert.instanceOf(n02.underflowBin.diagnostics[0], tr.v.d.Generic);
   });
 
   test('addNumericsInvalid', function() {
@@ -189,7 +225,7 @@ tr.b.unittest.testSuite(function() {
           tr.v.Unit.byName.timeDurationInMs,
           tr.b.Range.fromExplicitRange(min, max),
           bins).build();
-      array.forEach((x) => n.add(x, 'x'));
+      array.forEach((x) => n.add(x, new tr.v.d.Generic('x')));
       [0.25, 0.5, 0.75, 0.8, 0.95, 0.99].forEach(function(percent) {
         var expected = tr.b.Statistics.percentile(array, percent);
         var actual = n.getApproximatePercentile(percent);
@@ -414,6 +450,120 @@ tr.b.unittest.testSuite(function() {
     assert.strictEqual(values.pct_050.value, 0);
     assert.strictEqual(values.pct_099_5.value, 0);
     assert.strictEqual(values.pct_100.value, 0);
+  });
+
+  test('sampleValues', function() {
+    var n0 = TEST_NUMERIC_BUILDER.build();
+    var n1 = TEST_NUMERIC_BUILDER.build();
+    // maxNumSampleValues defaults to numBins * 10, which, including the
+    // underflowBin and overflowBin plus this builder's 10 central bins,
+    // is 12 * 10.
+    assert.strictEqual(n0.maxNumSampleValues, 120);
+    assert.strictEqual(n1.maxNumSampleValues, 120);
+    var values0 = [];
+    var values1 = [];
+    for (var i = 0; i < 10; ++i) {
+      values0.push(i);
+      n0.add(i);
+    }
+    for (var i = 10; i < 20; ++i) {
+      values1.push(i);
+      n1.add(i);
+    }
+    assert.deepEqual(n0.sampleValues, values0);
+    assert.deepEqual(n1.sampleValues, values1);
+    n0.addNumeric(n1);
+    assert.deepEqual(n0.sampleValues, values0.concat(values1));
+    var n2 = n0.clone();
+    assert.deepEqual(n2.sampleValues, values0.concat(values1));
+
+    for (var i = 0; i < 200; ++i)
+      n0.add(i);
+    assert.strictEqual(n0.sampleValues.length, n0.maxNumSampleValues);
+
+    var n3 = TEST_NUMERIC_BUILDER.build();
+    n3.maxNumSampleValues = 10;
+    for (var i = 0; i < 100; ++i)
+      n3.add(i);
+    assert.strictEqual(n3.sampleValues.length, 10);
+  });
+
+  test('mergeScalarNumerics', function() {
+    var scalarA = new tr.v.ScalarNumeric(tr.v.Unit.byName.timeDurationInMs, 10);
+    var scalarB = new tr.v.ScalarNumeric(tr.v.Unit.byName.timeDurationInMs, 20);
+
+    var numeric = scalarA.merge(scalarB);
+    assert.instanceOf(numeric, tr.v.Numeric);
+    assert.strictEqual(numeric.range.min, 10);
+    assert.strictEqual(numeric.range.max, 20);
+    assert.strictEqual(numeric.maxNumSampleValues, 1000);
+    assert.strictEqual(numeric.numValues, 2);
+    assert.strictEqual(numeric.numNans, 0);
+    assert.lengthOf(numeric.sampleValues, 2);
+    assert.lengthOf(numeric.allBins, 4);
+
+    scalarB.value = scalarA.value;
+    numeric = scalarA.merge(scalarB);
+    assert.instanceOf(numeric, tr.v.Numeric);
+    assert.strictEqual(numeric.maxNumSampleValues, 1000);
+    assert.strictEqual(numeric.numValues, 2);
+    assert.strictEqual(numeric.numNans, 0);
+    assert.lengthOf(numeric.sampleValues, 2);
+    assert.lengthOf(numeric.allBins, 4);
+    assert.strictEqual(numeric.range.min, 9);
+    assert.strictEqual(numeric.range.max, 10);
+
+    scalarA.value = 'i am not a number';
+    scalarB.value = 'i am also not a number';
+    numeric = scalarA.merge(scalarB);
+    assert.instanceOf(numeric, tr.v.Numeric);
+    assert.strictEqual(numeric.maxNumSampleValues, 1000);
+    assert.strictEqual(numeric.numValues, 0);
+    assert.strictEqual(numeric.numNans, 2);
+    assert.lengthOf(numeric.sampleValues, 2);
+    assert.lengthOf(numeric.allBins, 4);
+    assert.strictEqual(numeric.range.min, 0);
+    assert.strictEqual(numeric.range.max, 1);
+  });
+
+  test('mergeNumericWithScalar', function() {
+    var scalar = new tr.v.ScalarNumeric(
+        tr.v.Unit.byName.timeDurationInMs, 1010);
+    var numeric = TEST_NUMERIC_BUILDER.build();
+    for (var i = 0; i < 100; ++i)
+      numeric.add(Math.random() * 1000);
+    numeric.add('i am not a number');
+
+    var mergedA = scalar.merge(numeric);
+    var mergedB = numeric.merge(scalar);
+    assert.instanceOf(mergedA, tr.v.Numeric);
+    assert.instanceOf(mergedB, tr.v.Numeric);
+
+    assert.strictEqual(mergedA.maxNumSampleValues, 1000);
+    // numValues does not include non-number samples.
+    assert.strictEqual(mergedA.numValues, 101);
+    assert.strictEqual(mergedA.numNans, 1);
+    assert.strictEqual(mergedA.range.min, numeric.running.min);
+    assert.strictEqual(mergedA.range.max, 1010);
+
+    assert.strictEqual(mergedB.maxNumSampleValues, 1000);
+    // numValues does not include non-number samples.
+    assert.strictEqual(mergedB.numValues, 101);
+    assert.strictEqual(mergedB.numNans, 1);
+    assert.strictEqual(mergedB.range.min, numeric.running.min);
+    assert.strictEqual(mergedB.range.max, 1010);
+
+    // Normalize away some insignificant differences so that deepEqual can test
+    // the significant fields.
+    var mergedAdict = mergedA.asDict();
+    var mergedBdict = mergedB.asDict();
+    mergedAdict.sampleValues.sort();
+    mergedBdict.sampleValues.sort();
+    for (var stat in mergedAdict.running) {
+      mergedAdict.running[stat] = Math.round(mergedAdict.running[stat]);
+      mergedBdict.running[stat] = Math.round(mergedBdict.running[stat]);
+    }
+    assert.deepEqual(mergedAdict, mergedBdict);
   });
 });
 

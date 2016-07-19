@@ -157,7 +157,7 @@ class BattorWrapper(object):
     with open(self._trace_results_path) as results:
       self._trace_results = results.read()
     self._battor_shell = None
-    return self._trace_results.splitlines()
+    return self._trace_results
 
   def SupportsExplicitClockSync(self):
     """Returns if BattOr supports Clock Sync events."""
@@ -201,7 +201,7 @@ class BattorWrapper(object):
         battor_map = battor_device_mapping.GenerateSerialMap()
 
       return battor_device_mapping.GetBattorPathFromPhoneSerial(
-          android_device, serial_map_file=battor_map_file,
+          str(android_device), serial_map_file=battor_map_file,
           serial_map=battor_map)
 
     # Not Android and no explicitly passed BattOr.
@@ -215,6 +215,7 @@ class BattorWrapper(object):
   def _SendBattorCommandImpl(self, cmd):
     """Sends command to the BattOr."""
     self._battor_shell.stdin.write('%s\n' % cmd)
+    self._battor_shell.stdin.flush()
     return self._battor_shell.stdout.readline()
 
   def _SendBattorCommand(self, cmd, check_return=True):

@@ -258,14 +258,23 @@ def main():
 
   run_tests_helper.SetLogLevel(args.verbose)
 
-  devil_custom_deps = None
+
+  devil_dynamic_config = {
+    'config_type': 'BaseConfig',
+    'dependencies': {},
+  }
+
   if args.adb_path:
-    devil_custom_deps = {
-      'adb': {
-        devil_env.GetPlatform(): [args.adb_path],
-      },
-    }
-  devil_env.config.Initialize(configs=devil_custom_deps)
+    devil_dynamic_config['dependencies'].update({
+        'adb': {
+          'file_info': {
+            devil_env.GetPlatform(): {
+              'local_paths': [args.adb_path]
+            }
+          }
+        }
+    })
+  devil_env.config.Initialize(configs=[devil_dynamic_config])
 
   blacklist = (device_blacklist.Blacklist(args.blacklist_file)
                if args.blacklist_file
@@ -300,6 +309,8 @@ def main():
                       and not IsBlacklisted(status['serial'], blacklist))]
 
   # If all devices failed, or if there are no devices, it's an infra error.
+  if not live_devices:
+    logging.error('No available devices.')
   return 0 if live_devices else exit_codes.INFRA
 
 

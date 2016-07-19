@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from telemetry import decorators
 from telemetry.timeline import atrace_config
 from telemetry.timeline import chrome_trace_config
 
@@ -40,6 +39,7 @@ class TracingConfig(object):
     self._enable_platform_display_trace = False
     self._enable_android_graphics_memtrack = False
     self._enable_battor_trace = False
+    self.enable_cpu_trace = False
     self._enable_chrome_trace = False
 
     self._atrace_config = atrace_config.AtraceConfig()
@@ -51,9 +51,6 @@ class TracingConfig(object):
 
   @enable_atrace_trace.setter
   def enable_atrace_trace(self, value):
-    if value:
-      assert not self._chrome_trace_config.enable_systrace, (
-          "Cannot enable atrace while Chrome systrace is already enabled.")
     self._enable_atrace_trace = value
 
   @property
@@ -95,17 +92,3 @@ class TracingConfig(object):
   @property
   def chrome_trace_config(self):
     return self._chrome_trace_config
-
-
-@decorators.Deprecated(2016, 6, 24, 'This class is deprecated. Please use '
-                       'atrace_config.AtraceConfig.')
-class AtraceConfig(atrace_config.AtraceConfig):
-  def __init__(self):
-    super(AtraceConfig, self).__init__()
-
-
-@decorators.Deprecated(2016, 6, 24, 'This class is deprecated. Please use '
-                       'chrome_trace_config.MemoryDumpConfig.')
-class MemoryDumpConfig(chrome_trace_config.MemoryDumpConfig):
-  def __init__(self):
-    super(MemoryDumpConfig, self).__init__()
