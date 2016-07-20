@@ -298,7 +298,7 @@ found in the LICENSE file.
             improvement$="{{item.improvement}}"
             triaged$="{{item.triaged}}"
             hidden$="{{item.hideRow}}"
-            highlighted$="{{item.highlighted}}"
+            highlighted$="{{isHighlighted(commonRevisionRange, item)}}"
             expanded$="{{item.expanded}}"
             on-click="onRowClicked">
 
@@ -366,6 +366,28 @@ found in the LICENSE file.
       return '/group_report?keys=' + keys.join(',');
     }
 
+    /**
+     * Returns the intersection of the two ranges.
+     *
+     * @param {Object} range1 An range in the form:
+     * { start: <Number>, end: <Number> }, or null for an empty range.
+     * @param {Object} range2 A range in the same form.
+     * @return {Object} The intersection of the two ranges in the same form, or
+     * null if no such intersection exists.
+     */
+    function findRangeIntersection(range1, range2) {
+      if (range1 == null || range2 == null)
+        return null;
+
+      var start = Math.max(range1.start, range2.start);
+      var end = Math.min(range1.end, range2.end);
+
+      if (end < start)
+        return null;
+
+      return { start: start, end: end };
+    }
+
     Polymer({
 
       is: 'alerts-table',
@@ -422,6 +444,20 @@ found in the LICENSE file.
          * Current id of checkbox input element that was checked.
          */
         currentCheckboxId: { value: null },
+
+        /**
+         * The revision range that's common between all selected alerts.
+         *
+         * If there's a common range, this is an object of the form:
+         *
+         *   { start: <number>, end: <number> }
+         *
+         * If there's no common range, this is null.
+         */
+        commonRevisionRange: {
+          type: Object,
+          value: null
+        },
 
         NUM_ALERTS_TO_CHECK_ON_INIT: {
           type: Number,
@@ -805,7 +841,7 @@ found in the LICENSE file.
        * represents the range [300, 400].
        *
        * The input and output revision ranges are inclusive; that is, both
-       * start and end revision are included in the range. Thus the minimum
+       * start and end revision are included in the range. Thus the common
        * revision range for alerts with ranges [110, 120] and [120, 130] is
        * [120, 120].
        *
@@ -813,49 +849,24 @@ found in the LICENSE file.
        * @return {?Object} An object containing start and end revision,
        *     or null if the checked alerts don't overlap.
        */
-      getMinimumRevisionRange: function(alerts) {
-        if (!alerts || alerts.length == 0) {
+      getCommonRevisionRange: function(alerts) {
+        if (!alerts || alerts.length == 0)
           return null;
-        }
-        // Start with the range of the first alert, and then narrow it down.
-        var start = alerts[0]['start_revision'];
-        var end = alerts[0]['end_revision'];
-        for (var i = 1; i < alerts.length; i++) {
-          var a = alerts[i];
-          if (a['start_revision'] > start) {
-            if (a['start_revision'] > end) {
-              return null;
-            }
-            start = a['start_revision'];
-          }
-          if (a['end_revision'] < end) {
-            if (a['end_revision'] < start) {
-              return null;
-            }
-            end = a['end_revision'];
-          }
-        }
-        return {'start': start, 'end': end};
-      },
 
-      /**
-       * Highlights alerts that overlap with checked alerts revision range.
-       */
-      updateHighlights: function() {
-        for (var i = 0; i < this.alertList.length; i++) {
-          this.setAlertList(i, 'highlighted', false);
+        var commonRange = { start: -Infinity, end: Infinity };
+        for (var alert of alerts) {
+          var alertRange = {
+            start: alert['start_revision'],
+            end: alert['end_revision']
+          };
+
+          commonRange = findRangeIntersection(commonRange, alertRange);
+
+          if (commonRange == null)
+            return null;
         }
-        var minRevisionRange = this.getMinimumRevisionRange(this.checkedAlerts);
-        if (!minRevisionRange) {
-          return;
-        }
-        for (var i = 0; i < this.alertList.length; i++) {
-          var alert = this.alertList[i];
-          if (alert.start_revision > minRevisionRange.end ||
-              alert.end_revision < minRevisionRange.start) {
-                this.setAlertList(i, 'highlighted', true);
-              }
-        }
+
+        return commonRange;
       },
 
       /**
@@ -930,8 +941,12 @@ found in the LICENSE file.
         this.set('checkedAlerts', this.alertList.filter(function(alertRow) {
           return alertRow.selected;
         }));
+
+        this.set(
+            'commonRevisionRange',
+            this.getCommonRevisionRange(this.checkedAlerts));
+
         this.updateHeaderCheckbox();
-        this.updateHighlights();
         this.maybeDisableButtons();
         this.fire('changeselection');
       },
@@ -1006,6 +1021,19 @@ found in the LICENSE file.
         });
         this.onCheckboxChange();
         this.updateBugColumn();
+      },
+
+      isHighlighted: function(commonRevisionRange, alert) {
+        if (commonRevisionRange == null)
+          return false;
+
+        var alertRevisionRange = {
+          start: alert.start_revision,
+          end: alert.end_revision
+        };
+
+        return findRangeIntersection(
+            commonRevisionRange, alertRevisionRange) != null;
       }
     });
   })();
