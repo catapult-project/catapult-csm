@@ -335,10 +335,10 @@ found in the LICENSE file.
           <td class="revision_range">
             <revision-range start={{item.start_revision}} end="{{item.end_revision}}"></revision-range>
           </td>
-          <td class="master"><label>{{item.master}}</label><label hidden$="{{computeAbsentOrExpanded(item.additionColumnValues.master, expanded)}}">...</label></td>
-          <td class="bot"><label>{{item.bot}}</label><label hidden$="{{computeAbsentOrExpanded(item.additionColumnValues.bot, expanded)}}">...</label></td>
-          <td class="testsuite"><label>{{item.testsuite}}</label><label hidden$="{{computeAbsentOrExpanded(item.additionColumnValues.testsuite, expanded)}}">...</label></td>
-          <td class="test"><label>{{item.test}}</label><label hidden$="{{computeAbsentOrExpanded(item.additionColumnValues.test, expanded)}}">...</label></td>
+          <td class="master"><label>{{item.master}}</label><label hidden$="{{!computeColumnEllipsized(item.*, 'master')}}">...</label></td>
+          <td class="bot"><label>{{item.bot}}</label><label hidden$="{{!computeColumnEllipsized(item.*, 'bot')}}">...</label></td>
+          <td class="testsuite"><label>{{item.testsuite}}</label><label hidden$="{{!computeColumnEllipsized(item.*, 'testSuite')}}">...</label></td>
+          <td class="test"><label>{{item.test}}</label><label hidden$="{{!computeColumnEllipsized(item.*, 'test')}}">...</label></td>
 
           <template is="dom-repeat" items="{{extraColumns}}" as="column" index-as="colnum">
             <td class="{{column.key}}"><label>{{computeExtraColumnValue(alertList.*, index, column.key)}}</td>
@@ -471,7 +471,26 @@ found in the LICENSE file.
       ready: function() {
       },
 
-      computeAbsentOrExpanded: (prop, exanded) => !prop || expanded,
+      // TODO(charliea): The current implementation of this depends on the fact
+      // the additional column values are computed immediately after the alerts
+      // are updated. If the additional column values are updated without
+      // resetting the alerts, this will stop working because this function
+      // observes the alert, not the alert's deep properties. Restructuring this
+      // so that additionalColumnValues is its own computed property that
+      // observes alerts rather than a weird appendage of the alert itself
+      // would fix this problem.
+      /**
+       * Returns whether the column associated with the given alert property
+       * should be ellipsized, which indicates that there are grouped alerts
+       * that have different values for that column.
+       */
+      computeColumnEllipsized: function(iterInfo, property) {
+        var alert = iterInfo.base;
+
+        return alert.additionalColumnValues != undefined &&
+            alert.additionalColumnValues[property] &&
+            !alert.expanded;
+      },
 
       computeIsPlural: (unused, n) => n > 1,
 
@@ -551,21 +570,26 @@ found in the LICENSE file.
         for (var i = 0; i < this.alertList.length; i++) {
           var alert = this.alertList[i];
           if (alert.rowType == 'group-header' && alert.size > 1) {
-            this.setAlertList(i, 'additionColumnValues', {});
+            var headerRowIndex = i;
+            this.setAlertList(i, 'additionalColumnValues', {});
             for (var j = i + 1; j < this.alertList.length; j++) {
               var memberAlert = this.alertList[j];
               if (memberAlert.rowType == 'group-member') {
                 if (memberAlert.master != alert.master) {
-                  this.setAlertList(i, 'additionColumnValues.master', true);
+                  this.setAlertList(
+                    headerRowIndex, 'additionalColumnValues.master', true);
                 }
                 if (memberAlert.bot != alert.bot) {
-                  this.setAlertList(i, 'additionColumnValues.bot', true);
+                  this.setAlertList(
+                    headerRowIndex, 'additionalColumnValues.bot', true);
                 }
                 if (memberAlert.testsuite != alert.testsuite) {
-                  this.setAlertList(i, 'additionColumnValues.testsuite', true);
+                  this.setAlertList(
+                    headerRowIndex, 'additionalColumnValues.testsuite', true);
                 }
                 if (memberAlert.test != alert.test) {
-                  this.setAlertList(i, 'additionColumnValues.test', true);
+                  this.setAlertList(
+                    headerRowIndex, 'additionalColumnValues.test', true);
                 }
               } else {
                 break;
@@ -585,7 +609,8 @@ found in the LICENSE file.
         var alertIndex = row.rowIndex - 1;
         var alert = this.alertList[alertIndex];
         var isExpand = !alert.expanded;
-        alert.expanded = isExpand;
+        this.setAlertList(alertIndex, 'expanded', isExpand);
+
         for (var i = alertIndex + 1; i < this.alertList.length; i++) {
           if (this.alertList[i].group == alert.group) {
             this.setAlertList(i, 'hideRow', !isExpand);
