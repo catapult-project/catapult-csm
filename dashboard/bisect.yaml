@@ -1,0 +1,20 @@
+module: bisect
+
+runtime: python27
+api_version: 1
+threadsafe: true
+
+instance_class: B1
+basic_scaling:
+  max_instances: 10
+
+handlers:
+
+- url: /run
+  script: bisect.dispatcher.APP
+  login: admin
+  secure: always
+
+- url: /.*
+  script: bisect.dispatcher.APP
+  secure: always
