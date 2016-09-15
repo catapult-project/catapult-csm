@@ -13,7 +13,7 @@ class Step(object):
   and running tests are all steps.
   """
 
-  def Run(self, repository, git_hash):
+  def Run(self, *args):
     """Run a step.
 
     Running a step must produce a Sample object. The exit code can be inserted
@@ -21,16 +21,11 @@ class Step(object):
     significance. This allows for flaky failure bisects.
 
     Args:
-      repository: The repository git_hash is in.
-      git_hash: The git hash of the commit to run on.
+      args: Any arguments passed from the previous Step.
 
     Returns:
-      A tuple of (bool, Sample). If the bool is True, the step failed fatally,
-      and subsequent steps should not be run. Otherwise, the step passed or
-      failed non-fatally.
-
-      Run() may make multiple attempts. The Sample object
-      contains the aggregated result of all attempts.
+      A tuple of (tuple, Sample). The inner tuple contains arguments that are
+      passed to the subsequent Step's Run() method.
     """
     raise NotImplementedError()
 

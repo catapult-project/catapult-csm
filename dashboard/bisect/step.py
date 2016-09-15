@@ -9,7 +9,7 @@ class FindIsolated(bisection.Step):
 
   def Run(self, repository, git_hash):
     isolated_hash = '396b8d0569cd75102e910bc837305ecb6c8cace3'
-    return False, sample.Sample([0])
+    return (isolated_hash,), sample.Sample([0])
 
   @property
   def metric_name(self):

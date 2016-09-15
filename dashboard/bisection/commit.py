@@ -37,8 +37,9 @@ class Commit(object):
     self._run_count += 1
     logging.debug('Running commit %s, iteration %d.', self, self._run_count)
 
+    step_args = (self._repository, self._git_hash)
     for step in steps:
-      is_fatal, result = step.Run(self._repository, self._git_hash)
+      step_args, result = step.Run(*step_args)
 
       if step in self._results:
         self._results[step] += result
