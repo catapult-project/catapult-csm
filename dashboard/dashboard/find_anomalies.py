@@ -20,6 +20,8 @@ from dashboard.models import alert_group
 from dashboard.models import anomaly
 from dashboard.models import anomaly_config
 from dashboard.models import graph_data
+from dashboard.models import histogram
+from tracing.value.diagnostics import reserved_infos
 
 # Number of points to fetch and pass to FindChangePoints. A different number
 # may be used if a test has a "max_window_size" anomaly config parameter.
@@ -50,6 +52,12 @@ def _ProcessTest(test_key):
     test_key: The ndb.Key for a TestMetadata.
   """
   test = yield test_key.get_async()
+
+  sheriff = yield _GetSheriffForTest(test)
+  if not sheriff:
+    logging.error('No sheriff for %s', test_key)
+    raise ndb.Return(None)
+
   config = anomaly_config.GetAnomalyConfigDict(test)
   max_num_rows = config.get('max_window_size', DEFAULT_NUM_POINTS)
   rows = yield GetRowsToAnalyzeAsync(test, max_num_rows)
@@ -65,11 +73,6 @@ def _ProcessTest(test_key):
       test.last_alerted_revision = None
       yield test.put_async()
     logging.error('No rows fetched for %s', test.test_path)
-    raise ndb.Return(None)
-
-  sheriff = yield _GetSheriffForTest(test)
-  if not sheriff:
-    logging.error('No sheriff for %s', test_key)
     raise ndb.Return(None)
 
   # Get anomalies and check if they happen in ref build also.
@@ -321,6 +324,17 @@ def _MakeAnomalyEntity(change_point, test, rows):
     display_start, display_end = _GetDisplayRange(change_point.x_value, rows)
   median_before = change_point.median_before
   median_after = change_point.median_after
+
+  queried_diagnostics = histogram.SparseDiagnostic.GetMostRecentValuesByNames(
+      test.key, set([reserved_infos.BUG_COMPONENTS.name,
+                     reserved_infos.OWNERS.name]))
+
+  bug_components = queried_diagnostics.get(reserved_infos.BUG_COMPONENTS.name)
+
+  ownership_information = {
+      'emails': queried_diagnostics.get(reserved_infos.OWNERS.name),
+      'component': (bug_components[0] if bug_components else None)}
+
   return anomaly.Anomaly(
       start_revision=start_rev,
       end_revision=end_rev,
@@ -340,8 +354,8 @@ def _MakeAnomalyEntity(change_point, test, rows):
       internal_only=test.internal_only,
       units=test.units,
       display_start=display_start,
-      display_end=display_end)
-
+      display_end=display_end,
+      ownership=ownership_information)
 
 def FindChangePointsForTest(rows, config_dict):
   """Gets the anomaly data from the anomaly detection module.

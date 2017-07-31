@@ -51,7 +51,8 @@ class Browser(app.App):
         elif self.platform.SupportFlushEntireSystemCache():
           self.platform.FlushEntireSystemCache()
         else:
-          logging.warning('Flush system cache is not supported. ' +
+          logging.warning(
+              'Flush system cache is not supported. ' +
               'Did not flush system cache.')
 
       self._browser_backend.SetBrowser(self)
@@ -63,10 +64,10 @@ class Browser(app.App):
     except Exception:
       exc_info = sys.exc_info()
       logging.error(
-        'Failed with %s while starting the browser backend.',
-        exc_info[0].__name__)  # Show the exception name only.
+          'Failed with %s while starting the browser backend.',
+          exc_info[0].__name__)  # Show the exception name only.
       try:
-        self._platform_backend.WillCloseBrowser(self, self._browser_backend)
+        self.Close()
       except Exception:
         exception_formatter.PrintFormattedException(
             msg='Exception raised while closing platform backend')
@@ -113,6 +114,7 @@ class Browser(app.App):
     return extension_dict.ExtensionDict(self._browser_backend.extension_backend)
 
   def _LogBrowserInfo(self):
+    logging.info('Browser started (pid=%s).', self._browser_backend.pid)
     logging.info('OS: %s %s',
                  self._platform_backend.platform.GetOSName(),
                  self._platform_backend.platform.GetOSVersionName())
@@ -123,6 +125,8 @@ class Browser(app.App):
       system_info = self.GetSystemInfo()
       if system_info.model_name:
         logging.info('Model: %s', system_info.model_name)
+      if system_info.command_line:
+        logging.info('Browser command line: %s', system_info.command_line)
       if system_info.gpu:
         for i, device in enumerate(system_info.gpu.devices):
           logging.info('GPU device %d: %s', i, device)
@@ -261,6 +265,7 @@ class Browser(app.App):
     """Closes this browser."""
     try:
       if self._browser_backend.IsBrowserRunning():
+        logging.info('Closing browser (pid=%s) ...', self._browser_backend.pid)
         self._platform_backend.WillCloseBrowser(self, self._browser_backend)
 
       self._browser_backend.profiling_controller_backend.WillCloseBrowser()
@@ -271,6 +276,11 @@ class Browser(app.App):
           logging.error('Cannot upload browser log: %s' % str(e))
     finally:
       self._browser_backend.Close()
+      if self._browser_backend.IsBrowserRunning():
+        logging.error(
+            'Browser is still running (pid=%s).', self._browser_backend.pid)
+      else:
+        logging.info('Browser is closed.')
       self.credentials = None
 
   def Foreground(self):
@@ -336,8 +346,16 @@ class Browser(app.App):
   def supports_memory_dumping(self):
     return self._browser_backend.supports_memory_dumping
 
-  def DumpMemory(self, timeout=web_contents.DEFAULT_WEB_CONTENTS_TIMEOUT):
-    return self._browser_backend.DumpMemory(timeout)
+  def DumpMemory(self, timeout=None):
+    return self._browser_backend.DumpMemory(timeout=timeout)
+
+  @property
+  def supports_java_heap_garbage_collection(self):
+    return hasattr(self._browser_backend, 'ForceJavaHeapGarbageCollection')
+
+  def ForceJavaHeapGarbageCollection(self):
+    """Forces java heap GC on supported platforms."""
+    return self._browser_backend.ForceJavaHeapGarbageCollection()
 
   @property
   def supports_overriding_memory_pressure_notifications(self):

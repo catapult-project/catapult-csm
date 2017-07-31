@@ -10,13 +10,14 @@ found in the LICENSE file.
 <link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="/components/paper-spinner/paper-spinner.html">
 <link rel="import" href="/dashboard/elements/autocomplete-box.html">
+<link rel="import" href="/dashboard/static/async_map.html">
 <link rel="import" href="/dashboard/static/simple_xhr.html">
 
 <dom-module id="test-picker">
   <template>
     <style include="iron-flex iron-flex-alignment">
       #container * {
-        margin-right: 3px;
+        margin-right: 1em;
       }
 
       #dnd-btn {
@@ -84,34 +85,15 @@ found in the LICENSE file.
     // TODO(eakuefner): generalize this request memoization pattern. See
     // https://github.com/catapult-project/catapult/issues/3441.
     tr.exportTo('d', function() {
-      class Subtests {
-        constructor() {
-          this.subtestPromises_ = new Map();
-        }
-
-        // TODO(eakuefner): implemement cancellation by wrapping
-        async getSubtestsForPath(path) {
-          if (this.subtestPromises_.has(path)) {
-            return await this.subtestPromises_.get(path);
-          }
-          const subtests = this.fetchAndProcessSubtests_(path);
-          this.subtestPromises_[path] = subtests;
-          return await subtests;
-        }
-
-        prepopulate(obj) {
-          for (const [path, subtests] of Object.entries(obj)) {
-            this.subtestPromises_.set(path, Promise.resolve(subtests));
-          }
-        }
-
-        async fetchAndProcessSubtests_(path) {
+      class Subtests extends d.AsyncMap {
+        async process_(path) {
           const params = {
-            type: 'pattern'
+            type: 'pattern',
+            p: path + '/*',
           };
-          params.p = `${path}/*`;
           const fullSubtests = await simple_xhr.asPromise(
               '/list_tests', params);
+
           // TODO(eakuefner): Standardize logic for dealing with test paths on
           // the client side. See
           // https://github.com/catapult-project/catapult/issues/3443.
@@ -124,7 +106,9 @@ found in the LICENSE file.
         }
       }
 
-      return {Subtests};
+      return {
+        Subtests,
+      };
     });
 
     Polymer({
@@ -276,7 +260,7 @@ found in the LICENSE file.
       /**
        * Handles dropdown menu select; updates the subsequent menu accordingly.
        */
-      onDropdownSelect(event) {
+      async onDropdownSelect(event) {
         const model = event.model;
         const boxIndex = model.index;
         if (this.updatingSubtestMenus) return;
@@ -284,11 +268,15 @@ found in the LICENSE file.
           return;
         } else if (boxIndex == 0) {
           this.updateTestSuiteDescription();
-          this.updateBotMenu();
+          await this.updateBotMenu();
         } else {
           // Update all the next dropdown menus for subtests.
-          this.updateSubtestMenus(boxIndex + 1);
+          await this.updateSubtestMenus(boxIndex + 1);
         }
+
+        // Focus the next menu so the user can go ahead and start typing in it.
+        const nextMenu = this.getSelectionMenu(boxIndex + 1);
+        if (nextMenu) nextMenu.focus();
       },
 
       updateTestSuiteDescription() {
@@ -335,7 +323,7 @@ found in the LICENSE file.
        * Updates all subtest menus starting at 'startIndex'.
        */
       async updateSubtestMenus(startIndex) {
-        let subtests = await this.subtests.getSubtestsForPath(
+        let subtests = await this.subtests.get(
             this.getCurrentSelectedPathUpTo(startIndex));
 
         // Update existing subtest menu.
@@ -355,7 +343,7 @@ found in the LICENSE file.
           if (menu.selectedItem) {
             const selectedPath = this.getCurrentSelectedPathUpTo(i + 1, false);
             if (selectedPath !== undefined) {
-              subtests = await this.subtests.getSubtestsForPath(selectedPath);
+              subtests = await this.subtests.get(selectedPath);
             } else {
               subtests = [];
             }
@@ -498,6 +486,36 @@ found in the LICENSE file.
         return this.currentSelectedPath_;
       },
 
+      async setCurrentSelectedPath(testPath) {
+        this.updatingSubtestMenus = true;
+        for (let boxIndex = 0; boxIndex < testPath.length; ++boxIndex) {
+          const menu = this.getSelectionMenu(boxIndex);
+          const name = testPath[boxIndex];
+          let found = false;
+
+          for (const menuItem of menu.items) {
+            if (menuItem.name === name) {
+              found = true;
+              menu.selectedItem = menuItem;
+              break;
+            }
+          }
+
+          if (!found) {
+            this.updatingSubtestMenus = false;
+            throw new Error(`Invalid testPath ${testPath} @ ${boxIndex}`);
+          }
+
+          if (boxIndex == 0) {
+            this.updateTestSuiteDescription();
+            await this.updateBotMenu();
+          } else {
+            await this.updateSubtestMenus(boxIndex + 1);
+          }
+        }
+        this.updatingSubtestMenus = false;
+      },
+
       getCurrentUnselected() {
         return this.currentUnselectedTests_;
       },
@@ -519,7 +537,8 @@ found in the LICENSE file.
           params.return_selected = '0';
         }
 
-        return await simple_xhr.asPromise('/list_tests', params);
+        const result = await simple_xhr.asPromise('/list_tests', params);
+        return result.tests;
       },
 
       /**

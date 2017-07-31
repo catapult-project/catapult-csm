@@ -63,10 +63,10 @@ class StartupTimelineMetricTest(unittest.TestCase):
     self.AddEvent('requestStart', START1 + DURATION1 * 2)
 
     results = self.ComputeStartupMetrics()
-    results.AssertHasPageSpecificScalarValue('foreground_tab_load_complete',
-        'ms', DURATION0)
-    results.AssertHasPageSpecificScalarValue('foreground_tab_request_start',
-        'ms', DURATION0 * 2)
+    results.AssertHasPageSpecificScalarValue(
+        'foreground_tab_load_complete', 'ms', DURATION0)
+    results.AssertHasPageSpecificScalarValue(
+        'foreground_tab_request_start', 'ms', DURATION0 * 2)
 
   def testDurationEventsBasedValues(self):
     DURATION_EVENTS = set([
@@ -78,9 +78,9 @@ class StartupTimelineMetricTest(unittest.TestCase):
 
     # Test case to get the duration of the first occurrence of a duration event.
     i = 1
-    for display_name in DURATION_EVENTS:
-      self.assertTrue(len(startup._METRICS[display_name]) == 1)
-      event_name = startup._METRICS[display_name][0]
+    for name in DURATION_EVENTS:
+      self.assertTrue(len(startup._METRICS[name]) == 1)
+      event_name = startup._METRICS[name][0]
 
       duration = 13 * i
       i += 1
@@ -93,8 +93,8 @@ class StartupTimelineMetricTest(unittest.TestCase):
     results = self.ComputeStartupMetrics()
 
     i = 1
-    for display_name in DURATION_EVENTS:
+    for name in DURATION_EVENTS:
       duration = 13 * i
       i += 1
 
-      results.AssertHasPageSpecificScalarValue(display_name, 'ms', duration)
+      results.AssertHasPageSpecificScalarValue(name, 'ms', duration)

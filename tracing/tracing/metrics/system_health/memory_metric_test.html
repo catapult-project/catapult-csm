@@ -392,7 +392,8 @@ tr.b.unittest.testSuite(function() {
     pmdBrowser1.memoryAllocatorDumps = [
       newAllocatorDump(pmdBrowser1, 'malloc', {numerics: {
         size: 8,
-        allocated_objects_size: 4
+        allocated_objects_size: 4,
+        shim_allocated_objects_size: 3,
       }})
     ];
     pmdBrowser1.totals = {
@@ -544,7 +545,8 @@ tr.b.unittest.testSuite(function() {
     pmdBrowser3.memoryAllocatorDumps = [
       newAllocatorDump(pmdBrowser3, 'malloc', {numerics: {
         size: 8000,
-        allocated_objects_size: 4000
+        allocated_objects_size: 4000,
+        shim_allocated_objects_size: 3000
       }})
     ];
     const pmdRendererB3 = addProcessMemoryDump(gmd3, pRendererB, {ts: 61});
@@ -626,6 +628,13 @@ tr.b.unittest.testSuite(function() {
       description: 'total size of all allocated objects reported by Chrome ' +
           'for all processes in Chrome'
     },
+    'memory:chrome:all_processes:reported_by_chrome:shim_allocated_objects_size':
+    {
+      value: [3, 0, 3000, 0],
+      unit: sizeInBytes_smallerIsBetter,
+      description: 'total size of all allocated objects through shim ' +
+          'reported by Chrome for all processes in Chrome'
+    },
     'memory:chrome:all_processes:reported_by_chrome:peak_size':
     {
       value: [0, 2 + 20 + 200, 0, 0],
@@ -674,6 +683,13 @@ tr.b.unittest.testSuite(function() {
       value: [8 + 16, 120 - 40, 8000, 80000],
       unit: sizeInBytes_smallerIsBetter,
       description: 'effective size of malloc in all processes in Chrome'
+    },
+    'memory:chrome:all_processes:reported_by_chrome:malloc:shim_allocated_objects_size':
+    {
+      value: [3, 0, 3000, 0],
+      unit: sizeInBytes_smallerIsBetter,
+      description: 'size of all objects allocated through shim by malloc in ' +
+              'all processes in Chrome'
     },
     'memory:chrome:all_processes:reported_by_chrome:malloc:allocated_objects_size':
     {
@@ -871,6 +887,13 @@ tr.b.unittest.testSuite(function() {
       description: 'total size of all allocated objects reported by Chrome ' +
           'for the browser process in Chrome'
     },
+    'memory:chrome:browser_process:reported_by_chrome:shim_allocated_objects_size':
+    {
+      value: [3, 0, 3000, 0],
+      unit: sizeInBytes_smallerIsBetter,
+      description: 'total size of all allocated objects through shim ' +
+          'reported by Chrome for the browser process in Chrome'
+    },
     'memory:chrome:browser_process:reported_by_chrome:malloc:effective_size': {
       value: [8, 120 - 40, 8000, 80000],
       unit: sizeInBytes_smallerIsBetter,
@@ -882,6 +905,13 @@ tr.b.unittest.testSuite(function() {
       unit: sizeInBytes_smallerIsBetter,
       description: 'size of all objects allocated by malloc in the ' +
               'browser process in Chrome'
+    },
+    'memory:chrome:browser_process:reported_by_chrome:malloc:shim_allocated_objects_size':
+    {
+      value: [3, 0, 3000, 0],
+      unit: sizeInBytes_smallerIsBetter,
+      description: 'size of all objects allocated through shim by malloc in ' +
+              'the browser process in Chrome'
     },
     'memory:chrome:browser_process:reported_by_chrome:tracing:effective_size': {
       value: [0, 40, 0, 0],
@@ -3622,6 +3652,48 @@ tr.b.unittest.testSuite(function() {
     assert.strictEqual(breakdown.get('browser_process'), browserHistogram);
     assert.strictEqual(breakdown.get('renderer_processes'), rendererHistogram);
     assert.strictEqual(breakdown.get('gpu_process'), undefined);
+  });
+
+  test('componentsHaveBreakdowns', function() {
+    const model = tr.c.TestUtils.newModel(function(model) {
+      const pBrowser = createChromeBrowserProcess(model);
+
+      const gmd = addGlobalMemoryDump(model, {ts: 20});
+      const pmdBrowser = addProcessMemoryDump(gmd, pBrowser, {ts: 19});
+      const v8Dump = newAllocatorDump(pmdBrowser, 'v8', {numerics: {
+        size: 10,
+      }});
+
+      const isolateDumpA = addChildDump(v8Dump, 'isolate_A');
+      addChildDump(isolateDumpA, 'malloc', {numerics: {
+        size: 1,
+        peak_size: 2
+      }});
+
+      const heapDumpA = addChildDump(isolateDumpA, 'heap_spaces', {numerics: {
+        size: 42,
+        allocated_objects_size: 36
+      }});
+
+      addChildDump(heapDumpA, 'code_space', {numerics: {
+        allocated_objects_size: 1,
+        size: 2
+      }});
+
+      pmdBrowser.memoryAllocatorDumps = [v8Dump];
+    });
+
+    const histograms = new tr.v.HistogramSet();
+    tr.metrics.sh.memoryMetric(histograms, model);
+    const prefix = 'memory:chrome:';
+    const suffix = ':reported_by_chrome:v8:effective_size';
+    const browserHistogram =
+        histograms.getHistogramNamed(`${prefix}browser_process${suffix}`);
+
+    const codeSpace = browserHistogram
+      .diagnostics.get('components').get('heap')
+      .diagnostics.get('components').get('code_space');
+    assert.strictEqual(codeSpace.average, 2);
   });
 
   test('dumpIdBrowserClashThrows', function() {

@@ -17,20 +17,23 @@ from telemetry.internal.results import gtest_progress_reporter
 from telemetry.internal.results import histogram_set_json_output_formatter
 from telemetry.internal.results import html_output_formatter
 from telemetry.internal.results import json_output_formatter
+from telemetry.internal.results import json_3_output_formatter
 from telemetry.internal.results import legacy_html_output_formatter
 from telemetry.internal.results import page_test_results
 from telemetry.internal.results import progress_reporter
 
 # Allowed output formats. The default is the first item in the list.
 
-_OUTPUT_FORMAT_CHOICES = ('html', 'gtest', 'json', 'chartjson',
-    'csv-pivot-table', 'histograms', 'legacy-html', 'none')
+_OUTPUT_FORMAT_CHOICES = (
+    'html', 'gtest', 'json', 'json-test-results',
+    'chartjson', 'csv-pivot-table', 'histograms', 'legacy-html', 'none')
 
 
 # Filenames to use for given output formats.
 _OUTPUT_FILENAME_LOOKUP = {
     'html': 'results.html',
     'json': 'results.json',
+    'json-test-results': 'test-results.json',
     'chartjson': 'results-chart.json',
     'csv-pivot-table': 'results-pivot-table.csv',
     'histograms': 'histograms.json',
@@ -40,35 +43,50 @@ _OUTPUT_FILENAME_LOOKUP = {
 
 def AddResultsOptions(parser):
   group = optparse.OptionGroup(parser, 'Results options')
-  group.add_option('--output-format', action='append', dest='output_formats',
-                    choices=_OUTPUT_FORMAT_CHOICES, default=[],
-                    help='Output format. Defaults to "%%default". '
-                    'Can be %s.' % ', '.join(_OUTPUT_FORMAT_CHOICES))
-  group.add_option('-o', '--output',
-                    dest='output_file',
-                    default=None,
-                    help='Redirects output to a file. Defaults to stdout.')
-  group.add_option('--output-dir', default=util.GetBaseDir(),
-                    help='Where to save output data after the run.')
-  group.add_option('--output-trace-tag',
-                    default='',
-                    help='Append a tag to the key of each result trace. Use '
-                    'with html, csv-pivot-table output formats.')
-  group.add_option('--reset-results', action='store_true',
-                    help='Delete all stored results.')
-  group.add_option('--upload-results', action='store_true',
-                    help='Upload the results to cloud storage.')
-  group.add_option('--upload-bucket', default='output',
-                    help='Storage bucket to use for the uploaded results. ' +
-                    'Defaults to output bucket. Supported values are: ' +
-                    ', '.join(cloud_storage.BUCKET_ALIAS_NAMES) +
-                    '; or a valid cloud storage bucket name.')
-  group.add_option('--results-label',
-                    default=None,
-                    help='Optional label to use for the results of a run .')
-  group.add_option('--suppress_gtest_report',
-                   default=False,
-                   help='Whether to suppress GTest progress report.')
+  group.add_option(
+      '--output-format',
+      action='append',
+      dest='output_formats',
+      choices=_OUTPUT_FORMAT_CHOICES,
+      default=[],
+      help='Output format. Defaults to "%%default". '
+      'Can be %s.' % ', '.join(_OUTPUT_FORMAT_CHOICES))
+  group.add_option(
+      '-o',
+      '--output',
+      dest='output_file',
+      default=None,
+      help='Redirects output to a file. Defaults to stdout.')
+  group.add_option(
+      '--output-dir',
+      default=util.GetBaseDir(),
+      help='Where to save output data after the run.')
+  group.add_option(
+      '--output-trace-tag',
+      default='',
+      help='Append a tag to the key of each result trace. Use '
+      'with html, csv-pivot-table output formats.')
+  group.add_option(
+      '--reset-results', action='store_true', help='Delete all stored results.')
+  group.add_option(
+      '--upload-results',
+      action='store_true',
+      help='Upload the results to cloud storage.')
+  group.add_option(
+      '--upload-bucket',
+      default='output',
+      help='Storage bucket to use for the uploaded results. ' +
+      'Defaults to output bucket. Supported values are: ' +
+      ', '.join(cloud_storage.BUCKET_ALIAS_NAMES) +
+      '; or a valid cloud storage bucket name.')
+  group.add_option(
+      '--results-label',
+      default=None,
+      help='Optional label to use for the results of a run .')
+  group.add_option(
+      '--suppress_gtest_report',
+      default=False,
+      help='Whether to suppress GTest progress report.')
   parser.add_option_group(group)
 
 
@@ -146,6 +164,9 @@ def CreateResults(benchmark_metadata, options,
     elif output_format == 'json':
       output_formatters.append(json_output_formatter.JsonOutputFormatter(
           output_stream, benchmark_metadata))
+    elif output_format == 'json-test-results':
+      output_formatters.append(json_3_output_formatter.JsonOutputFormatter(
+          output_stream))
     elif output_format == 'chartjson':
       output_formatters.append(
           chart_json_output_formatter.ChartJsonOutputFormatter(

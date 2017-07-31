@@ -68,6 +68,12 @@ tr.exportTo('tr.e.v8', function() {
 
   class RuntimeStatsGroupCollection {
     constructor() {
+      this.blink_rcs_group_ =
+        new RuntimeStatsGroup('Blink RCS', /Blink_(.*)/);
+      this.blink_cpp_group_ =
+        new RuntimeStatsGroup('Blink C++', /.*Callback.*/);
+      this.api_group_ = new RuntimeStatsGroup('API', /.*API.*/);
+
       this.groups_ = [
         new RuntimeStatsGroup('Total'),
         new RuntimeStatsGroup('IC', /.*IC_.*/),
@@ -78,8 +84,8 @@ tr.exportTo('tr.e.v8', function() {
         new RuntimeStatsGroup('Compile', /(^Compile.*)|(.*_Compile.*)/),
         new RuntimeStatsGroup('Parse-Background', /.*ParseBackground.*/),
         new RuntimeStatsGroup('Parse', /.*Parse.*/),
-        new RuntimeStatsGroup('Blink C++', /.*Callback.*/),
-        new RuntimeStatsGroup('API', /.*API.*/),
+        this.blink_cpp_group_,
+        this.api_group_,
         new RuntimeStatsGroup('GC', /GC|AllocateInTargetSpace/),
         new RuntimeStatsGroup('JavaScript', /JS_Execution/),
         new RuntimeStatsGroup('V8 C++', /.*/)
@@ -97,6 +103,17 @@ tr.exportTo('tr.e.v8', function() {
         }
         if (runtimeCallStats === undefined) continue;
         for (const [name, stat] of Object.entries(runtimeCallStats)) {
+          // Blink RCS stats go to a separate table
+          if (this.blink_rcs_group_.match(name)) {
+            // This counter is used to avoid counting time spent in V8 as time
+            // spent doing Blink C++, and interferes with total and percentage
+            // calculations, so we skip this counter.
+            if (name === 'Blink_V8') continue;
+            const entry = new RuntimeStatsEntry(name, stat[0], stat[1]);
+            this.blink_rcs_group_.add(entry);
+            continue;
+          }
+
           // Skip the 'Total' group
           for (let i = 1; i < this.groups_.length; ++i) {
             if (this.groups_[i].match(name)) {
@@ -115,8 +132,21 @@ tr.exportTo('tr.e.v8', function() {
       return this.groups_[0].time;
     }
 
+    get totalCount() {
+      return this.groups_[0].count;
+    }
+
     get runtimeGroups() {
       return this.groups_;
+    }
+
+    get blinkRCSGroup() {
+      return this.blink_rcs_group_;
+    }
+
+    get blinkCppTotalTime() {
+      // Include API time because Blink RCS times also include V8 API times
+      return this.blink_cpp_group_.time + this.api_group_.time;
     }
   }
 

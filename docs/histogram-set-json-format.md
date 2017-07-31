@@ -126,14 +126,13 @@ DiagnosticMap is a dictionary mapping strings to Diagnostic dictionaries.
 ## Diagnostics
 
 The only field that is required for all Diagnostics, `type`, must be one of
- * `Generic`
+ * `GenericSet`
  * `RelatedEventSet`
  * `Breakdown`
  * `RelatedHistogramSet`
  * `RelatedHistogramMap`
  * `RelatedHistogramBreakdown`
  * `TelemetryInfo`
- * `DeviceInfo`
  * `RevisionInfo`
  * `BuildbotInfo`
  * `Scalar`
@@ -174,23 +173,6 @@ merge results across revisions.
  * `skia`: array of 1 or 2 strings
  * `webrtc`: array of 1 or 2 strings
 
-### DeviceInfo
-
-This tracks information about the device that was used to produce the Histogram
-to allow users to compare or merge results across similar devices.
-
- * `chromeVersion`: string
- * `osName`: one of
-    * `mac`
-    * `android`
-    * `linux`
-    * `chrome`
-    * `win`
- * `osVersion`: string
- * `arch`: not yet specified, but will contain bittiness (32-bit vs 64-bit)
- * `gpuInfo`: not yet specified, but will contain information about the GPU
- * `ram`: number of bytes of RAM
-
 ### BuildbotInfo
 
 This tracks buildbot parameters when the Histogram was produced to allow users
@@ -203,15 +185,11 @@ to compare or merge results across similar bots.
  * `buildNumber`: number
  * `logUri`: string
 
-### OwnershipInfo
-
- * `owners`: an array of strings containing email addresses
-
-### Generic
+### GenericSet
 
 This allows metrics to store arbitrary untyped data in Histograms.
 
- * `value`: can contain any JSON data.
+ * `values`: array of any JSON data.
 
 ### Scalar
 
@@ -258,3 +236,10 @@ specific event or set of events in a trace.
 
  * `events`: array of dictionaries containing `stableId`, `title`, `start`,
    `duration` fields of Events
+
+### DateRange
+
+This is a Range of Dates.
+
+ * `min`: Unix timestamp in ms
+ * `max`: optional Unix timestamp in ms

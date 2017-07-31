@@ -121,7 +121,6 @@ found in the LICENSE file.
         <alerts-table id="alerts-table"
                       xsrf-token="{{xsrfToken}}"
                       alert-list="{{alertList}}"
-                      extra-columns="{{extraColumns}}"
                       on-changeselection="onAlertSelectionChange"
                       selected-keys="{{selectedKeys}}"></alerts-table>
       </div>
@@ -149,10 +148,6 @@ found in the LICENSE file.
         error: {
           type: Boolean,
           value: false
-        },
-        extraColumns: {
-          type: Array,
-          value: () => []
         },
         loading: {
           type: Boolean,
@@ -362,7 +357,8 @@ found in the LICENSE file.
           chart.graphParams = graphParams;
           chart.alertKey = alert.key;
           chart.addSeriesGroup([this.getTestPathAndSelectedSeries(alert)]);
-          chart.addEventListener('chartclosed', this.onGraphClose, false);
+          chart.addEventListener(
+              'chartclosed', this.onGraphClose.bind(this), false);
           chart.addEventListener('alertChangedRevisions',
               this.alertChangedRevisions, true);
           this.setChartData(chart);
@@ -393,43 +389,6 @@ found in the LICENSE file.
               delete this.graphElements_[key];
             }
           }
-        }
-      },
-
-      /**
-       * Sets the extra columns on the alerts table based on the type of alerts
-       * in the list for the table.
-       */
-      setExtraColumns(extraColumns) {
-        if (extraColumns == 'anomalies') {
-          this.set('extraColumns', [
-            {
-              'key': 'percent_changed',
-              'label': 'Delta %'
-            },
-            {
-              'key': 'absolute_delta',
-              'label': 'Abs Delta'
-            },
-            {
-              'key': 'units',
-              'label': 'Units'
-            }
-          ]);
-        } else if (extraColumns == 'stoppage_alerts') {
-          this.set('extraColumns', [
-            {
-              'key': 'last_row_date',
-              'label': 'Date'
-            },
-            {
-              'key': 'debug_button',
-              'label': ''
-            }
-          ]);
-        } else {
-          // Either multiple or no types. Can't set extraColumns.
-          this.set('extraColumns', []);
         }
       },
 
@@ -465,7 +424,6 @@ found in the LICENSE file.
               this.xsrfToken = response.xsrf_token;
               this.warningBug = response.warning_bug;
               this.warningMessage = response.warning_message;
-              this.setExtraColumns(response.extra_columns);
               this.alertList = response.alert_list;
               if (this.alertList.length == 0) {
                 this.missing = response.display_username;

@@ -15,6 +15,7 @@ from telemetry.internal.results import output_formatter
 
 from tracing import results_renderer
 from tracing.value import convert_chart_json
+from tracing.value import histogram_set
 
 
 class HtmlOutputFormatter(output_formatter.OutputFormatter):
@@ -43,16 +44,19 @@ class HtmlOutputFormatter(output_formatter.OutputFormatter):
 
     if vinn_result.returncode != 0:
       logging.error('Error converting chart json to Histograms:\n' +
-          vinn_result.stdout)
+                    vinn_result.stdout)
       return []
     return json.loads(vinn_result.stdout)
 
   def Format(self, page_test_results):
-    histograms = page_test_results.value_set
+    histograms = page_test_results.histograms
     if not histograms:
       histograms = self._ConvertChartJson(page_test_results)
+    if isinstance(histograms, histogram_set.HistogramSet):
+      histograms = histograms.AsDicts()
 
-    results_renderer.RenderHTMLView(histograms,
+    results_renderer.RenderHTMLView(
+        histograms,
         self._output_stream, self._reset_results)
     file_path = os.path.abspath(self._output_stream.name)
     if self._upload_bucket:

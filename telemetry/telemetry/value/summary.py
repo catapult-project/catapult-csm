@@ -37,8 +37,8 @@ class Summary(object):
   """
   def __init__(self, all_page_specific_values,
                key_func=merge_values.DefaultKeyFunc):
-    had_failures = any(isinstance(v, failure.FailureValue) for v in
-        all_page_specific_values)
+    had_failures = any(
+        isinstance(v, failure.FailureValue) for v in all_page_specific_values)
     self.had_failures = had_failures
     self._computed_per_page_values = []
     self._computed_summary_values = []
@@ -126,7 +126,7 @@ class Summary(object):
       # Sort the values by their URL.
       sorted_per_page_values = list(per_page_values)
       sorted_per_page_values.sort(
-          key=lambda per_page_values: per_page_values.page.display_name)
+          key=lambda per_page_values: per_page_values.page.name)
 
       # Output the page-specific results.
       num_successful_pages_for_this_key = (

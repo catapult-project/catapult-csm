@@ -4,7 +4,6 @@
 
 import functools
 import logging
-import os
 import socket
 import sys
 
@@ -135,11 +134,6 @@ class InspectorBackend(object):
   @property
   @decorators.Cache
   def screenshot_supported(self):
-    if (self.app.platform.GetOSName() == 'linux' and (
-        os.getenv('DISPLAY') not in [':0', ':0.0'])):
-      # Displays other than 0 mean we are likely running in something like
-      # xvfb where screenshotting doesn't work.
-      return False
     return True
 
   @_HandleInspectorWebSocketExceptions
@@ -160,9 +154,9 @@ class InspectorBackend(object):
     """
     dom_counters = self._memory.GetDOMCounters(timeout)
     return {
-      'document_count': dom_counters['documents'],
-      'node_count': dom_counters['nodes'],
-      'event_listener_count': dom_counters['jsEventListeners']
+        'document_count': dom_counters['documents'],
+        'node_count': dom_counters['nodes'],
+        'event_listener_count': dom_counters['jsEventListeners']
     }
 
   # Page public methods.
@@ -362,8 +356,8 @@ class InspectorBackend(object):
       params['interactionMarkerName'] = interactionMarkerName
 
     scroll_command = {
-      'method': 'Input.synthesizeScrollGesture',
-      'params': params
+        'method': 'Input.synthesizeScrollGesture',
+        'params': params
     }
     return self._runtime.RunInspectorCommand(scroll_command, timeout)
 
@@ -402,7 +396,7 @@ class InspectorBackend(object):
       exceptions.DevtoolsTargetCrashException
     """
     params = {
-      'type': keyEventType,
+        'type': keyEventType,
     }
 
     if modifiers is not None:
@@ -431,8 +425,8 @@ class InspectorBackend(object):
       params['isSystemKey'] = isSystemKey
 
     key_command = {
-      'method': 'Input.dispatchKeyEvent',
-      'params': params
+        'method': 'Input.dispatchKeyEvent',
+        'params': params
     }
     return self._runtime.RunInspectorCommand(key_command, timeout)
 

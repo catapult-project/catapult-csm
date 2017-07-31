@@ -16,11 +16,14 @@ class TestBase(unittest.TestCase):
   def setUp(self):
     story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     story_set.AddStory(
-        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir,
+                         name='http://www.bar.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir,
+                         name='http://www.baz.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir,
+                         name='http://www.foo.com/'))
     self.story_set = story_set
 
   @property
@@ -47,7 +50,7 @@ class ValueTest(TestBase):
     self.assertEquals('default', v.GetBuildbotDataType(
         value.COMPUTED_PER_PAGE_SUMMARY_OUTPUT_CONTEXT))
     self.assertEquals([3], v.GetBuildbotValue())
-    self.assertEquals(('x', page0.display_name),
+    self.assertEquals(('x', page0.name),
                       v.GetChartAndTraceNameForPerPageResult())
 
     v = scalar.ScalarValue(page0, 'x', 'unit', 3, important=False,
@@ -130,9 +133,7 @@ class ValueTest(TestBase):
                            improvement_direction=improvement_direction.DOWN)
     d = v.AsDictWithoutBaseClassEntries()
 
-    self.assertEquals(d, {
-          'value': 42
-        })
+    self.assertEquals(d, {'value': 42})
 
   def testNoneValueAsDict(self):
     v = scalar.ScalarValue(None, 'x', 'unit', None, important=False,
@@ -140,18 +141,15 @@ class ValueTest(TestBase):
                            improvement_direction=improvement_direction.DOWN)
     d = v.AsDictWithoutBaseClassEntries()
 
-    self.assertEquals(d, {
-          'value': None,
-          'none_value_reason': 'n'
-        })
+    self.assertEquals(d, {'value': None, 'none_value_reason': 'n'})
 
   def testFromDictInt(self):
     d = {
-      'type': 'scalar',
-      'name': 'x',
-      'units': 'unit',
-      'value': 42,
-      'improvement_direction': improvement_direction.DOWN,
+        'type': 'scalar',
+        'name': 'x',
+        'units': 'unit',
+        'value': 42,
+        'improvement_direction': improvement_direction.DOWN,
     }
 
     v = value.Value.FromDict(d, {})
@@ -162,11 +160,11 @@ class ValueTest(TestBase):
 
   def testFromDictFloat(self):
     d = {
-      'type': 'scalar',
-      'name': 'x',
-      'units': 'unit',
-      'value': 42.4,
-      'improvement_direction': improvement_direction.UP,
+        'type': 'scalar',
+        'name': 'x',
+        'units': 'unit',
+        'value': 42.4,
+        'improvement_direction': improvement_direction.UP,
     }
 
     v = value.Value.FromDict(d, {})
@@ -176,10 +174,10 @@ class ValueTest(TestBase):
 
   def testFromDictWithoutImprovementDirection(self):
     d = {
-      'type': 'scalar',
-      'name': 'x',
-      'units': 'unit',
-      'value': 42,
+        'type': 'scalar',
+        'name': 'x',
+        'units': 'unit',
+        'value': 42,
     }
 
     v = value.Value.FromDict(d, {})
@@ -189,12 +187,12 @@ class ValueTest(TestBase):
 
   def testFromDictNoneValue(self):
     d = {
-      'type': 'scalar',
-      'name': 'x',
-      'units': 'unit',
-      'value': None,
-      'none_value_reason': 'n',
-      'improvement_direction': improvement_direction.UP,
+        'type': 'scalar',
+        'name': 'x',
+        'units': 'unit',
+        'value': None,
+        'none_value_reason': 'n',
+        'improvement_direction': improvement_direction.UP,
     }
 
     v = value.Value.FromDict(d, {})

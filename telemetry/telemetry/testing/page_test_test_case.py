@@ -18,8 +18,8 @@ from telemetry.testing import options_for_unittests
 
 
 class BasicTestPage(page_module.Page):
-  def __init__(self, url, story_set, base_dir):
-    super(BasicTestPage, self).__init__(url, story_set, base_dir)
+  def __init__(self, url, story_set, base_dir, name=''):
+    super(BasicTestPage, self).__init__(url, story_set, base_dir, name=name)
 
   def RunPageInteractions(self, action_runner):
     with action_runner.CreateGestureInteraction('ScrollAction'):
@@ -36,7 +36,8 @@ class PageTestTestCase(unittest.TestCase):
 
   def CreateStorySetFromFileInUnittestDataDir(self, test_filename):
     ps = self.CreateEmptyPageSet()
-    page = BasicTestPage('file://' + test_filename, ps, base_dir=ps.base_dir)
+    page = BasicTestPage('file://' + test_filename, ps, base_dir=ps.base_dir,
+                         name=test_filename)
     ps.AddStory(page)
     return ps
 
@@ -45,8 +46,7 @@ class PageTestTestCase(unittest.TestCase):
     ps = story.StorySet(base_dir=base_dir)
     return ps
 
-  def RunMeasurement(self, measurement, ps,
-      options=None):
+  def RunMeasurement(self, measurement, ps, options=None):
     """Runs a measurement against a pageset, returning the rows its outputs."""
     if options is None:
       options = options_for_unittests.GetCopy()
@@ -67,7 +67,8 @@ class PageTestTestCase(unittest.TestCase):
     options.output_trace_tag = None
     story_runner.ProcessCommandLineArgs(temp_parser, options)
     results = results_options.CreateResults(EmptyMetadataForTest(), options)
-    story_runner.Run(measurement, ps, options, results)
+    story_runner.Run(
+        measurement, ps, options, results, metadata=EmptyMetadataForTest())
     return results
 
   def TestTracingCleanedUp(self, measurement_class, options=None):

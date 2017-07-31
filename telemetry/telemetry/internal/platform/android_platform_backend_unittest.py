@@ -58,6 +58,22 @@ class AndroidPlatformBackendTest(unittest.TestCase):
       self.assertFalse(backend.IsSvelte())
 
   @decorators.Disabled('chromeos', 'mac', 'win')
+  def testIsAosp(self):
+    with mock.patch('devil.android.device_utils.DeviceUtils.GetProp',
+                    return_value='aosp'):
+      backend = android_platform_backend.AndroidPlatformBackend(
+          android_device.AndroidDevice('12345'))
+      self.assertTrue(backend.IsAosp())
+
+  @decorators.Disabled('chromeos', 'mac', 'win')
+  def testIsNotAosp(self):
+    with mock.patch('devil.android.device_utils.DeviceUtils.GetProp',
+                    return_value='foo'):
+      backend = android_platform_backend.AndroidPlatformBackend(
+          android_device.AndroidDevice('12345'))
+      self.assertFalse(backend.IsAosp())
+
+  @decorators.Disabled('chromeos', 'mac', 'win')
   def testGetCpuStats(self):
     proc_stat_content = (
         '7702 (.android.chrome) S 167 167 0 0 -1 1077936448 '
@@ -85,19 +101,19 @@ class AndroidPlatformBackendTest(unittest.TestCase):
   @decorators.Disabled('chromeos', 'mac', 'win')
   def testAndroidParseCpuStates(self):
     cstate = {
-      'cpu0': 'C0\nC1\n103203424\n5342040\n300\n500\n1403232500',
-      'cpu1': 'C0\n124361858\n300\n1403232500'
+        'cpu0': 'C0\nC1\n103203424\n5342040\n300\n500\n1403232500',
+        'cpu1': 'C0\n124361858\n300\n1403232500'
     }
     expected_cstate = {
-      'cpu0': {
-        'WFI': 103203424,
-        'C0': 1403232391454536,
-        'C1': 5342040
-      },
-      'cpu1': {
-        'WFI': 124361858,
-        'C0': 1403232375638142
-      }
+        'cpu0': {
+            'WFI': 103203424,
+            'C0': 1403232391454536,
+            'C1': 5342040
+        },
+        'cpu1': {
+            'WFI': 124361858,
+            'C0': 1403232375638142
+        }
     }
     # Use mock start and end times to allow for the test to calculate C0.
     result = android_platform_backend.AndroidPlatformBackend.ParseCStateSample(

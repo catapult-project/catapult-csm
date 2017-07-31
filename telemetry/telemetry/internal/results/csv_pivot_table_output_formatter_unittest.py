@@ -19,10 +19,12 @@ from tracing.trace_data import trace_data
 
 def _MakeStorySet():
   story_set = story.StorySet(base_dir=os.path.dirname(__file__))
-  story_set.AddStory(
-      page_module.Page('http://www.foo.com/', story_set, story_set.base_dir))
-  story_set.AddStory(
-      page_module.Page('http://www.bar.com/', story_set, story_set.base_dir))
+  story_set.AddStory(page_module.Page(
+      'http://www.foo.com/', story_set, story_set.base_dir,
+      name='http://www.foo.com/'))
+  story_set.AddStory(page_module.Page(
+      'http://www.bar.com/', story_set, story_set.base_dir,
+      name='http://www.bar.com/'))
   return story_set
 
 
@@ -82,8 +84,8 @@ class CsvPivotTableOutputFormatterTest(unittest.TestCase):
     self.SimulateBenchmarkRun([
         (self._story_set[0], [
             scalar.ScalarValue(
-              None, 'foo', 'seconds', 4,
-              improvement_direction=improvement_direction.DOWN)]),
+                None, 'foo', 'seconds', 4,
+                improvement_direction=improvement_direction.DOWN)]),
         (self._story_set[1], [
             scalar.ScalarValue(
                 None, 'foo', 'seconds', 3.4,
@@ -105,8 +107,8 @@ class CsvPivotTableOutputFormatterTest(unittest.TestCase):
     self.assertEquals(len(set((v[1] for v in values))), 2)  # 2 pages.
     self.assertEquals(len(set((v[2] for v in values))), 4)  # 4 value names.
     self.assertEquals(values[2],
-        ['story_set', 'http://www.bar.com/', 'trace',
-         'https://cloud_storage_url/foo', '', '1'])
+                      ['story_set', 'http://www.bar.com/', 'trace',
+                       'https://cloud_storage_url/foo', '', '1'])
 
   def testTraceTag(self):
     self.MakeFormatter(trace_tag='date,option')

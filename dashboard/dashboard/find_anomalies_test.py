@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import json
 import sys
 import unittest
 
@@ -13,7 +14,9 @@ from dashboard.common import testing_common
 from dashboard.common import utils
 from dashboard.models import anomaly
 from dashboard.models import graph_data
+from dashboard.models import histogram
 from dashboard.models import sheriff
+from tracing.value.diagnostics import reserved_infos
 
 # Sample time series.
 _TEST_ROW_DATA = [
@@ -375,6 +378,10 @@ class ProcessAlertsTest(testing_common.TestCase):
     self._AddDataForTests()
     test = utils.TestKey(
         'ChromiumGPU/linux-release/scrolling_benchmark/ref').get()
+
+    sheriff.Sheriff(
+        email='a@google.com', id='sheriff', patterns=[test.test_path]).put()
+
     test.last_alerted_revision = 1234567890
     test.put()
     find_anomalies.ProcessTests([test.key])
@@ -479,6 +486,54 @@ class ProcessAlertsTest(testing_common.TestCase):
         list(graph_data.Row.query()))
     self.assertEqual(alert.display_start, 203)
     self.assertEqual(alert.display_end, 302)
+
+  def testMakeAnomalyEntity_AddsOwnership(self):
+    data_samples = [
+        {
+            'type': 'GenericSet',
+            'guid': 'eb212e80-db58-4cbd-b331-c2245ecbb826',
+            'values': ['alice@chromium.org', 'bob@chromium.org']
+        },
+        {
+            'type': 'GenericSet',
+            'guid': 'eb212e80-db58-4cbd-b331-c2245ecbb827',
+            'values': ['abc']
+        }]
+
+    test_key = utils.TestKey('ChromiumPerf/linux/page_cycler_v2/cnn')
+    testing_common.AddTests(
+        ['ChromiumPerf'],
+        ['linux'], {
+            'page_cycler_v2': {
+                'cnn': {},
+                'cnn_ref': {},
+                'yahoo': {},
+                'nytimes': {},
+            },
+        })
+    test = test_key.get()
+    testing_common.AddRows(test.test_path, [100, 200, 300, 400])
+
+    entity = histogram.SparseDiagnostic(
+        data=json.dumps(data_samples[0]), test=test_key, start_revision=1,
+        end_revision=sys.maxint, id=data_samples[0]['guid'],
+        name=reserved_infos.OWNERS.name)
+    entity.put()
+
+    entity = histogram.SparseDiagnostic(
+        data=json.dumps(data_samples[1]), test=test_key, start_revision=1,
+        end_revision=sys.maxint, id=data_samples[1]['guid'],
+        name=reserved_infos.BUG_COMPONENTS.name)
+    entity.put()
+
+    alert = find_anomalies._MakeAnomalyEntity(
+        _MakeSampleChangePoint(10011, 50, 100),
+        test,
+        list(graph_data.Row.query()))
+
+    self.assertEqual(alert.ownership['component'], 'abc')
+    self.assertListEqual(alert.ownership['emails'],
+                         ['alice@chromium.org', 'bob@chromium.org'])
 
 if __name__ == '__main__':
   unittest.main()

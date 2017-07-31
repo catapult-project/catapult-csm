@@ -17,7 +17,8 @@ class TestBase(unittest.TestCase):
   def setUp(self):
     self.story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     self.story_set.AddStory(page_module.Page(
-        'http://www.bar.com/', self.story_set, self.story_set.base_dir))
+        'http://www.bar.com/', self.story_set, self.story_set.base_dir,
+        name='http://www.bar.com/'))
 
   @property
   def pages(self):
@@ -61,10 +62,10 @@ class ValueTest(TestBase):
     except Exception:
       exc_info = sys.exc_info()
     d = {
-      'type': 'failure',
-      'name': exc_info[0].__name__,
-      'units': '',
-      'value': ''.join(traceback.format_exception(*exc_info))
+        'type': 'failure',
+        'name': exc_info[0].__name__,
+        'units': '',
+        'value': ''.join(traceback.format_exception(*exc_info))
     }
     v = value.Value.FromDict(d, {})
 

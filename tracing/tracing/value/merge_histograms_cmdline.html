@@ -12,16 +12,12 @@ found in the LICENSE file.
 'use strict';
 /* eslint-disable no-console */
 
-// TODO(benjhayden): Test after MergedTelemetryInfo.
-
 function findGrouping(key) {
-  for (const grouping of Object.values(tr.v.HistogramSet.GROUPINGS)) {
-    if (grouping.key === key) {
-      return grouping;
-    }
+  const grouping = tr.v.HistogramGrouping.BY_KEY.get(k);
+  if (grouping === undefined) {
+    throw new Error(`Could not find grouping "${k}"`);
   }
-  return new tr.v.HistogramGrouping(key,
-      tr.v.d.TelemetryInfo.makeStoryGroupingKeyLabelGetter(key));
+  return grouping;
 }
 
 function findMergeable(hist, candidates) {
@@ -64,15 +60,16 @@ function mergeLeafHistograms(groupedHistograms, mergedHistograms) {
 
 function stripInternalDiagnostics(mergedHistograms) {
   for (const hist of mergedHistograms) {
-    hist.diagnostics.delete(tr.v.MERGED_FROM_DIAGNOSTIC_KEY);
-    hist.diagnostics.delete(tr.v.MERGED_TO_DIAGNOSTIC_KEY);
-    hist.diagnostics.delete(tr.v.d.GroupingPath.NAME);
+    hist.diagnostics.delete(tr.v.d.RESERVED_NAMES.MERGED_FROM);
+    hist.diagnostics.delete(tr.v.d.RESERVED_NAMES.MERGED_TO);
+    hist.diagnostics.delete(tr.v.d.RESERVED_NAMES.GROUPING_PATH);
   }
 }
 
 if (tr.isHeadless) {
   const histograms = new tr.v.HistogramSet();
   histograms.importDicts(JSON.parse(tr.b.getSync('file://' + sys.argv[1])));
+  histograms.buildGroupingsFromTags([tr.v.d.RESERVED_NAMES.STORY_TAGS]);
   const groupingKeys = sys.argv.slice(2);
   const groupings = groupingKeys.map(findGrouping);
   const groupedHistograms = histograms.groupHistogramsRecursively(groupings);

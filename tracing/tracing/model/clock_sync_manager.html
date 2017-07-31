@@ -95,7 +95,7 @@ tr.exportTo('tr.model', function() {
     addClockSyncMarker(domainId, syncId, startTs, opt_endTs) {
       this.onDomainSeen_(domainId);
 
-      if (tr.b.dictionaryValues(ClockDomainId).indexOf(domainId) < 0) {
+      if (Object.values(ClockDomainId).indexOf(domainId) < 0) {
         throw new Error('"' + domainId + '" is not in the list of known ' +
             'clock domain IDs.');
       }
@@ -410,7 +410,7 @@ tr.exportTo('tr.model', function() {
     this.error = error;
   }
 
-  Transformer.IDENTITY = new Transformer(tr.b.identity, 0);
+  Transformer.IDENTITY = new Transformer((x => x), 0);
 
   /**
    * Given two transformers, creates a third that's a composition of the two.

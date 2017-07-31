@@ -10,8 +10,8 @@ from telemetry.testing import page_test_test_case
 from telemetry.timeline import chrome_trace_category_filter
 from telemetry.util import wpr_modes
 from telemetry.web_perf import timeline_based_measurement as tbm_module
-from telemetry.web_perf.metrics import gpu_timeline
 from telemetry.web_perf.metrics import smoothness
+from tracing.value import histogram
 
 class TestTimelinebasedMeasurementPage(page_module.Page):
 
@@ -19,7 +19,8 @@ class TestTimelinebasedMeasurementPage(page_module.Page):
                trigger_jank=False, trigger_slow=False,
                trigger_scroll_gesture=False):
     super(TestTimelinebasedMeasurementPage, self).__init__(
-        'file://interaction_enabled_page.html', ps, base_dir)
+        'file://interaction_enabled_page.html', ps, base_dir,
+        name='interaction_enabled_page.html')
     self._trigger_animation = trigger_animation
     self._trigger_jank = trigger_jank
     self._trigger_slow = trigger_slow
@@ -43,7 +44,8 @@ class FailedTimelinebasedMeasurementPage(page_module.Page):
 
   def __init__(self, ps, base_dir):
     super(FailedTimelinebasedMeasurementPage, self).__init__(
-        'file://interaction_enabled_page.html', ps, base_dir)
+        'file://interaction_enabled_page.html', ps, base_dir,
+        name='interaction_enabled_page.html')
 
   def RunPageInteractions(self, action_runner):
     action_runner.TapElement('#does-not-exist')
@@ -78,32 +80,6 @@ class TimelineBasedPageTestTest(page_test_test_case.PageTestTestCase):
     v = results.FindAllPageSpecificValuesFromIRNamed(
         'DrawerAnimation', 'frame_time_discrepancy')
     self.assertEquals(len(v), 1)
-
-  # This test should eventually work on all platforms, but currently this
-  # this metric is flaky on desktop: crbug.com/453131
-  # https://github.com/catapult-project/catapult/issues/3099 (Android)
-  @decorators.Disabled('all')
-  def testGPUTimesTimelineBasedMeasurementForSmoke(self):
-    ps = self.CreateEmptyPageSet()
-    ps.AddStory(TestTimelinebasedMeasurementPage(
-        ps, ps.base_dir, trigger_animation=True))
-
-    cat_filter = chrome_trace_category_filter.ChromeTraceCategoryFilter(
-        'disabled-by-default-gpu.service')
-    tbm_option = tbm_module.Options(overhead_level=cat_filter)
-    tbm_option.SetLegacyTimelineBasedMetrics([gpu_timeline.GPUTimelineMetric()])
-    tbm = tbm_module.TimelineBasedMeasurement(tbm_option)
-    results = self.RunMeasurement(tbm, ps, options=self._options)
-
-    self.assertEquals(0, len(results.failures))
-    v = results.FindAllPageSpecificValuesFromIRNamed(
-        'CenterAnimation', 'browser_compositor_max_cpu_time')
-    self.assertEquals(len(v), 1)
-    self.assertGreater(v[0].value, 0)
-    v = results.FindAllPageSpecificValuesFromIRNamed(
-        'DrawerAnimation', 'browser_compositor_max_cpu_time')
-    self.assertEquals(len(v), 1)
-    self.assertGreater(v[0].value, 0)
 
   # win: crbug.com/520781, chromeos: crbug.com/483212.
   @decorators.Disabled('win', 'chromeos')
@@ -154,17 +130,20 @@ class TimelineBasedPageTestTest(page_test_test_case.PageTestTestCase):
     results = self.RunMeasurement(tbm, ps, self._options)
 
     self.assertEquals(0, len(results.failures))
-    self.assertEquals(2, len(results.value_set))
-    diagnostics = results.value_set[1]['diagnostics']
-    self.assertEquals(1, len(diagnostics))
-    telemetry_info = results.value_set[0]
-    self.assertEquals(telemetry_info['guid'], diagnostics['telemetry'])
-    self.assertEqual('TelemetryInfo', telemetry_info['type'])
-    self.assertEqual('', telemetry_info['benchmarkName'])
+
+    self.assertEquals(1, len(results.histograms))
+    telemetry_infos = results.histograms.GetSharedDiagnosticsOfType(
+        histogram.TelemetryInfo)
+    self.assertEquals(1, len(telemetry_infos))
+    telemetry_info = telemetry_infos[0]
+    self.assertEqual('', telemetry_info.benchmark_name)
     self.assertEqual('interaction_enabled_page.html',
-                     telemetry_info['storyDisplayName'])
-    self.assertNotIn('storyGroupingKeys', telemetry_info)
-    self.assertEqual(0, telemetry_info['storysetRepeatCounter'])
+                     telemetry_info.story_display_name)
+    self.assertEqual(0, telemetry_info.storyset_repeat_counter)
+    hist = list(results.histograms)[0]
+    trace_start = hist.diagnostics.get('trace start')
+    self.assertIsInstance(trace_start, histogram.DateRange)
+
     v_foo = results.FindAllPageSpecificValuesNamed('foo_avg')
     self.assertEquals(len(v_foo), 1)
     self.assertEquals(v_foo[0].value, 50)
@@ -197,6 +176,6 @@ class TimelineBasedPageTestTest(page_test_test_case.PageTestTestCase):
     self.assertGreater(v_ttfcp_max[0].value, 0)
 
     v_ttfmp_max = results.FindAllPageSpecificValuesNamed(
-       'timeToFirstMeaningfulPaint_max')
+        'timeToFirstMeaningfulPaint_max')
     self.assertEquals(len(v_ttfmp_max), 1)
     self.assertIsNotNone(v_ttfmp_max[0].page)

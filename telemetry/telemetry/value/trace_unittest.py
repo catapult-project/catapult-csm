@@ -22,11 +22,14 @@ class TestBase(unittest.TestCase):
   def setUp(self):
     story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     story_set.AddStory(
-        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir,
+                         name='http://www.bar.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir,
+                         name='http://www.baz.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir,
+                         name='http://www.foo.com/'))
     self.story_set = story_set
 
     self._cloud_storage_stub = system_stub.Override(trace, ['cloud_storage'])
@@ -70,7 +73,7 @@ class ValueTest(TestBase):
   def testRepr(self):
     v = trace.TraceValue(
         self.pages[0], trace_data.CreateTraceDataFromRawData([{'test': 1}]),
-                         important=True, description='desc')
+        important=True, description='desc')
 
     self.assertEquals('TraceValue(http://www.bar.com/, trace)', str(v))
 
@@ -123,9 +126,9 @@ class ValueTest(TestBase):
 
   def testFindTraceParts(self):
     raw_data = {
-      'powerTraceAsString': 'BattOr Data',
-      'traceEvents': [{'trace': 1}],
-      'tabIds': 'Tab Data',
+        'powerTraceAsString': 'BattOr Data',
+        'traceEvents': [{'trace': 1}],
+        'tabIds': 'Tab Data',
     }
     data = trace_data.CreateTraceDataFromRawData(raw_data)
     v = trace.TraceValue(None, data)

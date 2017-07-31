@@ -49,6 +49,9 @@ class BrowserFinderOptions(optparse.Values):
 
     self.no_performance_mode = False
 
+    # Whether to use the new Golang implementation of web page replay.
+    self.use_wpr_go = False
+
   def __repr__(self):
     return str(sorted(self.__dict__.items()))
 
@@ -60,24 +63,34 @@ class BrowserFinderOptions(optparse.Values):
 
     # Selection group
     group = optparse.OptionGroup(parser, 'Which browser to use')
-    group.add_option('--browser',
+    group.add_option(
+        '--browser',
         dest='browser_type',
         default=None,
         help='Browser type to run, '
-             'in order of priority. Supported values: list,%s' %
-             ','.join(browser_finder.FindAllBrowserTypes(self)))
-    group.add_option('--browser-executable',
+        'in order of priority. Supported values: list,%s' %
+        ','.join(browser_finder.FindAllBrowserTypes(self)))
+    group.add_option(
+        '--browser-executable',
         dest='browser_executable',
         help='The exact browser to run.')
-    group.add_option('--chrome-root',
+    group.add_option(
+        '--chrome-root',
         dest='chrome_root',
         help='Where to look for chrome builds. '
              'Defaults to searching parent dirs by default.')
-    group.add_option('--chromium-output-directory',
+    group.add_option(
+        '--use-wpr-go',
+        dest='use_wpr_go',
+        action='store_true',
+        help='use the format of the new Golang implementation of '
+        'web page replay.')
+    group.add_option(
+        '--chromium-output-directory',
         dest='chromium_output_dir',
         help='Where to look for build artifacts. '
-             'Can also be specified by setting environment variable '
-             'CHROMIUM_OUTPUT_DIR.')
+        'Can also be specified by setting environment variable '
+        'CHROMIUM_OUTPUT_DIR.')
     group.add_option(
         '--remote',
         dest='cros_remote',
@@ -93,7 +106,8 @@ class BrowserFinderOptions(optparse.Values):
         util.GetTelemetryThirdPartyDir(), 'chromite', 'ssh_keys', 'testing_rsa')
     if os.path.exists(testing_rsa):
       identity = testing_rsa
-    group.add_option('--identity',
+    group.add_option(
+        '--identity',
         dest='cros_ssh_identity',
         default=identity,
         help='The identity file to use when ssh\'ing into the ChromeOS device')
@@ -114,26 +128,43 @@ class BrowserFinderOptions(optparse.Values):
     group.add_option('--print-bootstrap-deps',
                      action='store_true',
                      help='Output bootstrap deps list.')
+    group.add_option(
+        '--extra-chrome-categories', dest='extra_chrome_categories', type=str,
+        help='Filter string to enable additional chrome tracing categories. See'
+             ' documentation here: https://cs.chromium.org/chromium/src/base/'
+             'trace_event/trace_config.h?rcl='
+             'c8db6c6371ca047c24d41f3972d5819bc83d83ae&l=125')
+    group.add_option(
+        '--extra-atrace-categories', dest='extra_atrace_categories', type=str,
+        help='Comma-separated list of extra atrace categories. Use atrace'
+             ' --list_categories to get full list.')
     parser.add_option_group(group)
 
     # Platform options
     group = optparse.OptionGroup(parser, 'Platform options')
-    group.add_option('--no-performance-mode', action='store_true',
+    group.add_option(
+        '--no-performance-mode', action='store_true',
         help='Some platforms run on "full performance mode" where the '
         'test is executed at maximum CPU speed in order to minimize noise '
         '(specially important for dashboards / continuous builds). '
         'This option prevents Telemetry from tweaking such platform settings.')
+    group.add_option(
+        '--webview-embedder-apk',
+        help='When running tests on android webview, more than one apk needs to'
+        ' be installed. The apk running the test is said to embed webview.')
     parser.add_option_group(group)
+
 
     # Remote platform options
     group = optparse.OptionGroup(parser, 'Remote platform options')
     group.add_option('--android-blacklist-file',
                      help='Device blacklist JSON file.')
-    group.add_option('--device',
-    help='The device ID to use. '
-         'If not specified, only 0 or 1 connected devices are supported. '
-         'If specified as "android", all available Android devices are '
-         'used.')
+    group.add_option(
+        '--device',
+        help='The device ID to use. '
+        'If not specified, only 0 or 1 connected devices are supported. '
+        'If specified as "android", all available Android devices are '
+        'used.')
     parser.add_option_group(group)
 
     # Browser options.
@@ -184,7 +215,7 @@ class BrowserFinderOptions(optparse.Values):
             possible_browsers = browser_finder.GetAllAvailableBrowsers(self,
                                                                        device)
             browser_types[device.name] = sorted(
-              [browser.browser_type for browser in possible_browsers])
+                [browser.browser_type for browser in possible_browsers])
           except browser_finder_exceptions.BrowserFinderException as ex:
             print >> sys.stderr, 'ERROR: ', ex
             sys.exit(1)
@@ -235,8 +266,10 @@ class BrowserOptions(object):
   NO_LOGGING = 'none'
   NON_VERBOSE_LOGGING = 'non-verbose'
   VERBOSE_LOGGING = 'verbose'
+  SUPER_VERBOSE_LOGGING = 'super-verbose'
 
-  _LOGGING_LEVELS = (NO_LOGGING, NON_VERBOSE_LOGGING, VERBOSE_LOGGING)
+  _LOGGING_LEVELS = (NO_LOGGING, NON_VERBOSE_LOGGING, VERBOSE_LOGGING,
+                     SUPER_VERBOSE_LOGGING)
   _DEFAULT_LOGGING_LEVEL = NO_LOGGING
 
   def __init__(self):
@@ -312,29 +345,35 @@ class BrowserOptions(object):
 
     group = optparse.OptionGroup(parser, 'Browser options')
     profile_choices = profile_types.GetProfileTypes()
-    group.add_option('--profile-type',
+    group.add_option(
+        '--profile-type',
         dest='profile_type',
         type='choice',
         default='clean',
         choices=profile_choices,
         help=('The user profile to use. A clean profile is used by default. '
               'Supported values: ' + ', '.join(profile_choices)))
-    group.add_option('--profile-dir',
+    group.add_option(
+        '--profile-dir',
         dest='profile_dir',
         help='Profile directory to launch the browser with. '
              'A clean profile is used by default')
-    group.add_option('--extra-browser-args',
+    group.add_option(
+        '--extra-browser-args',
         dest='extra_browser_args_as_string',
         help='Additional arguments to pass to the browser when it starts')
-    group.add_option('--extra-wpr-args',
+    group.add_option(
+        '--extra-wpr-args',
         dest='extra_wpr_args_as_string',
         help=('Additional arguments to pass to Web Page Replay. '
               'See third_party/web-page-replay/replay.py for usage.'))
-    group.add_option('--show-stdout',
+    group.add_option(
+        '--show-stdout',
         action='store_true',
         help='When possible, will display the stdout of the process')
 
-    group.add_option('--browser-logging-verbosity',
+    group.add_option(
+        '--browser-logging-verbosity',
         dest='logging_verbosity',
         type='choice',
         choices=cls._LOGGING_LEVELS,
@@ -345,7 +384,8 @@ class BrowserOptions(object):
     parser.add_option_group(group)
 
     group = optparse.OptionGroup(parser, 'Compatibility options')
-    group.add_option('--gtest_output',
+    group.add_option(
+        '--gtest_output',
         help='Ignored argument for compatibility with runtest.py harness')
     parser.add_option_group(group)
 
@@ -369,12 +409,12 @@ class BrowserOptions(object):
 
     if hasattr(self, 'extra_browser_args_as_string'):
       tmp = shlex.split(
-        self.extra_browser_args_as_string)
+          self.extra_browser_args_as_string)
       self.AppendExtraBrowserArgs(tmp)
       delattr(self, 'extra_browser_args_as_string')
     if hasattr(self, 'extra_wpr_args_as_string'):
       tmp = shlex.split(
-        self.extra_wpr_args_as_string)
+          self.extra_wpr_args_as_string)
       self.extra_wpr_args.extend(tmp)
       delattr(self, 'extra_wpr_args_as_string')
     if self.profile_type == 'default':

@@ -5,14 +5,17 @@
 import collections
 import logging
 import numbers
+import os
 
 from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 
+from dashboard.common import utils
 from dashboard.pinpoint import mann_whitney_u
 from dashboard.pinpoint.models import attempt as attempt_module
 from dashboard.pinpoint.models import change as change_module
 from dashboard.pinpoint.models import quest as quest_module
+from dashboard.services import issue_tracker_service
 
 
 # We want this to be fast to minimize overhead while waiting for tasks to
@@ -20,8 +23,9 @@ from dashboard.pinpoint.models import quest as quest_module
 _TASK_INTERVAL = 10
 
 
-_DEFAULT_MAX_ATTEMPTS = 2
-_SIGNIFICANCE_LEVEL = 0.5
+_DEFAULT_REPEAT_COUNT = 10
+_DEFAULT_ATTEMPT_COUNT = 1
+_SIGNIFICANCE_LEVEL = 0.01
 
 
 _DIFFERENT = 'different'
@@ -46,9 +50,13 @@ class Job(ndb.Model):
   created = ndb.DateTimeProperty(required=True, auto_now_add=True)
   updated = ndb.DateTimeProperty(required=True, auto_now=True)
 
-  # The name of the Task Queue task this job is running on. If it's not present,
-  # the job isn't running.
+  # The name of the Task Queue task this job is running on. If it's present, the
+  # job is running. The task is also None for Task Queue retries.
   task = ndb.StringProperty()
+
+  # The string contents of any Exception that was thrown to the top level.
+  # If it's present, the job failed.
+  exception = ndb.StringProperty()
 
   # Request parameters.
   configuration = ndb.StringProperty(required=True)
@@ -60,16 +68,21 @@ class Job(ndb.Model):
   # If False, only run the Changes explicitly added by the user.
   auto_explore = ndb.BooleanProperty(required=True)
 
+  # TODO: The bug id is only used for posting bug comments when a job starts and
+  # completes. This probably should not be the responsibility of Pinpoint.
+  bug_id = ndb.IntegerProperty()
+
   state = ndb.PickleProperty(required=True)
 
   @classmethod
-  def New(cls, configuration, test_suite, test, metric, auto_explore):
+  def New(cls, configuration, test_suite, test, metric, auto_explore, bug_id):
     # Get list of quests.
-    quests = [quest_module.FindIsolated(configuration)]
+    quests = [quest_module.FindIsolate(configuration)]
     if test_suite:
-      quests.append(quest_module.RunTest(configuration, test_suite, test))
+      quests.append(quest_module.RunTest(configuration, test_suite, test,
+                                         _DEFAULT_REPEAT_COUNT))
     if metric:
-      quests.append(quest_module.ReadValue(metric))
+      quests.append(quest_module.ReadValue(metric, test))
 
     # Create job.
     return cls(
@@ -78,41 +91,68 @@ class Job(ndb.Model):
         test=test,
         metric=metric,
         auto_explore=auto_explore,
-        state=_JobState(quests, _DEFAULT_MAX_ATTEMPTS))
+        bug_id=bug_id,
+        state=_JobState(quests, _DEFAULT_ATTEMPT_COUNT))
 
   @property
   def job_id(self):
     return self.key.urlsafe()
 
   @property
-  def running(self):
-    return bool(self.task)
+  def status(self):
+    if self.task:
+      return 'Running'
+
+    if self.exception:
+      return 'Failed'
+
+    return 'Completed'
+
+  @property
+  def url(self):
+    return 'https://%s/job/%s' % (os.environ['HTTP_HOST'], self.job_id)
 
   def AddChange(self, change):
     self.state.AddChange(change)
 
   def Start(self):
+    self.Schedule()
+
+    comment = 'Pinpoint job started.\n' + self.url
+    issue_tracker = issue_tracker_service.IssueTrackerService(
+        utils.ServiceAccountHttp())
+    issue_tracker.AddBugComment(self.bug_id, comment, send_email=False)
+
+  def Complete(self):
+    comment = 'Pinpoint job complete!\n' + self.url
+    issue_tracker = issue_tracker_service.IssueTrackerService(
+        utils.ServiceAccountHttp())
+    issue_tracker.AddBugComment(self.bug_id, comment, send_email=False)
+
+  def Schedule(self):
     task = taskqueue.add(queue_name='job-queue', url='/api/run/' + self.job_id,
                          countdown=_TASK_INTERVAL)
     self.task = task.name
 
   def Run(self):
-    if self.auto_explore:
-      self.state.Explore()
-    work_left = self.state.ScheduleWork()
+    self.exception = None  # In case the Job succeeds on retry.
+    self.task = None  # In case an exception is thrown.
 
-    # Schedule moar task.
-    if work_left:
-      self.Start()
-    else:
-      self.task = None
+    try:
+      if self.auto_explore:
+        self.state.Explore()
+      work_left = self.state.ScheduleWork()
+
+      # Schedule moar task.
+      if work_left:
+        self.Schedule()
+      else:
+        self.Complete()
+    except BaseException as e:
+      self.exception = str(e)
+      raise
 
   def AsDict(self):
-    if self.running:
-      status = 'RUNNING'
-    else:
-      status = 'COMPLETED'
-
     return {
         'job_id': self.job_id,
 
@@ -124,7 +164,7 @@ class Job(ndb.Model):
 
         'created': self.created.strftime('%Y-%m-%d %H:%M:%S %Z'),
         'updated': self.updated.strftime('%Y-%m-%d %H:%M:%S %Z'),
-        'status': status,
+        'status': self.status,
 
         'state': self.state.AsDict(),
     }
@@ -140,12 +180,12 @@ class _JobState(object):
   anyway. Everything queryable should be on the Job object.
   """
 
-  def __init__(self, quests, max_attempts):
+  def __init__(self, quests, attempt_count):
     """Create a _JobState.
 
     Args:
       quests: A sequence of quests to run on each Change.
-      max_attempts: The max number of attempts to automatically run per Change.
+      attempt_count: The max number of attempts to automatically run per Change.
     """
     # _quests is mutable. Any modification should mutate the existing list
     # in-place rather than assign a new list, because every Attempt references
@@ -159,7 +199,7 @@ class _JobState(object):
     # A mapping from a Change to a list of Attempts on that Change.
     self._attempts = {}
 
-    self._max_attempts = max_attempts
+    self._attempt_count = attempt_count
 
   def AddAttempt(self, change):
     assert change in self._attempts
@@ -265,8 +305,8 @@ class _JobState(object):
     # Here, "the same" means that we fail to reject the null hypothesis. We can
     # never be completely sure that the two Changes have the same results, but
     # we've run everything that we planned to, and didn't detect any difference.
-    if (len(attempts_a) >= self._max_attempts and
-        len(attempts_b) >= self._max_attempts):
+    if (len(attempts_a) >= self._attempt_count and
+        len(attempts_b) >= self._attempt_count):
       return _SAME
 
     return _UNKNOWN

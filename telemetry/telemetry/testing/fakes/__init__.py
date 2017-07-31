@@ -26,6 +26,11 @@ class FakePlatform(object):
   def __init__(self):
     self._network_controller = None
     self._tracing_controller = None
+    self._has_battor = False
+    self._os_name = 'FakeOS'
+    self._device_type_name = 'abc'
+    self._is_svelte = False
+    self._is_aosp = True
 
   @property
   def is_host_platform(self):
@@ -55,14 +60,14 @@ class FakePlatform(object):
   def HasBeenThermallyThrottled(self):
     return False
 
-  def GetDeviceTypeName(self):
-    return 'FakeDevice'
-
   def GetArchName(self):
     raise NotImplementedError
 
+  def SetOSName(self, name):
+    self._os_name = name
+
   def GetOSName(self):
-    return 'FakeOS'
+    return self._os_name
 
   def GetOSVersionName(self):
     raise NotImplementedError
@@ -75,6 +80,36 @@ class FakePlatform(object):
 
   def WaitForBatteryTemperature(self, _):
     pass
+
+  def HasBattOrConnected(self):
+    return self._has_battor
+
+  def SetBattOrDetected(self, b):
+    assert isinstance(b, bool)
+    self._has_battor = b
+
+  # TODO(rnephew): Investigate moving from setters to @property.
+  def SetDeviceTypeName(self, name):
+    self._device_type_name = name
+
+  def GetDeviceTypeName(self):
+    return self._device_type_name
+
+  def SetIsSvelte(self, b):
+    assert isinstance(b, bool)
+    self._is_svelte = b
+
+  def IsSvelte(self):
+    if self._os_name != 'android':
+      raise NotImplementedError
+    return self._is_svelte
+
+  def SetIsAosp(self, b):
+    assert isinstance(b, bool)
+    self._is_aosp = b
+
+  def IsAosp(self):
+    return self._is_aosp and self._os_name == 'android'
 
 
 class FakeLinuxPlatform(FakePlatform):
@@ -187,10 +222,10 @@ class FakeSharedPageState(shared_page_state.SharedPageState):
 
 
 class FakeSystemInfo(system_info.SystemInfo):
-  def __init__(self, model_name='', gpu_dict=None):
+  def __init__(self, model_name='', gpu_dict=None, command_line=''):
     if gpu_dict == None:
       gpu_dict = fake_gpu_info.FAKE_GPU_INFO
-    super(FakeSystemInfo, self).__init__(model_name, gpu_dict)
+    super(FakeSystemInfo, self).__init__(model_name, gpu_dict, command_line)
 
 
 class _FakeBrowserFinderOptions(browser_options.BrowserFinderOptions):
@@ -199,16 +234,16 @@ class _FakeBrowserFinderOptions(browser_options.BrowserFinderOptions):
     browser_options.BrowserFinderOptions.__init__(self, *args, **kwargs)
     self.fake_possible_browser = \
       FakePossibleBrowser(
-        execute_on_startup=execute_on_startup,
-        execute_after_browser_creation=execute_after_browser_creation)
+          execute_on_startup=execute_on_startup,
+          execute_after_browser_creation=execute_after_browser_creation)
 
 def CreateBrowserFinderOptions(browser_type=None, execute_on_startup=None,
                                execute_after_browser_creation=None):
   """Creates fake browser finder options for discovering a browser."""
   return _FakeBrowserFinderOptions(
-    browser_type=browser_type,
-    execute_on_startup=execute_on_startup,
-    execute_after_browser_creation=execute_after_browser_creation)
+      browser_type=browser_type,
+      execute_on_startup=execute_on_startup,
+      execute_after_browser_creation=execute_after_browser_creation)
 
 
 # Internal classes. Note that end users may still need to both call
@@ -323,11 +358,13 @@ class _FakeNetworkController(object):
   def InitializeIfNeeded(self, use_live_traffic=False):
     self.use_live_traffic = use_live_traffic
 
-  def UpdateTrafficSettings(self, round_trip_latency_ms=None,
+  def UpdateTrafficSettings(
+      self, round_trip_latency_ms=None,
       download_bandwidth_kbps=None, upload_bandwidth_kbps=None):
     pass
 
-  def Open(self, wpr_mode, extra_wpr_args):
+  def Open(self, wpr_mode, extra_wpr_args, use_wpr_go=False):
+    del use_wpr_go  # Unused.
     self.wpr_mode = wpr_mode
     self.extra_wpr_args = extra_wpr_args
     self.is_open = True

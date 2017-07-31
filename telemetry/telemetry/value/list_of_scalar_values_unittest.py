@@ -37,17 +37,20 @@ class StatisticComputationTest(unittest.TestCase):
         list_of_scalar_values.PooledStandardDeviation([[1], [], [3], []]), 0)
     self.assertAlmostEqual(
         list_of_scalar_values.PooledStandardDeviation([[1], [2], [3], [4]]), 0)
-    self.assertAlmostEqual(list_of_scalar_values.PooledStandardDeviation(
-        [[600, 470, 170, 430, 300],           # variance = 27130, std = 164.7
-        [4000, 4020, 4230],                   # variance = 16233, std = 127.41
-        [260, 700, 800, 900, 0, 120, 150]]),  # variance = 136348, std = 369.2
+    self.assertAlmostEqual(
+        list_of_scalar_values.PooledStandardDeviation(
+            [[600, 470, 170, 430, 300],     # variance = 27130, std = 164.7
+             [4000, 4020, 4230],            # variance = 16233, std = 127.41
+             [260, 700, 800, 900, 0, 120, 150]]),
+        # variance = 136348, std = 369.2
         282.7060,  # SQRT((27130 4 + 16233*2 + 136348*6)/12)
         places=4)
-    self.assertAlmostEqual(list_of_scalar_values.PooledStandardDeviation(
-        [[600, 470, 170, 430, 300],
-         [4000, 4020, 4230],
-         [260, 700, 800, 900, 0, 120, 150]],
-        list_of_variances=[100000, 200000, 300000]),
+    self.assertAlmostEqual(
+        list_of_scalar_values.PooledStandardDeviation(
+            [[600, 470, 170, 430, 300],
+             [4000, 4020, 4230],
+             [260, 700, 800, 900, 0, 120, 150]],
+            list_of_variances=[100000, 200000, 300000]),
         465.47466,  # SQRT((100000*4 + 200000* 2 + 300000*6)/12)
         places=4)
 
@@ -56,11 +59,14 @@ class TestBase(unittest.TestCase):
   def setUp(self):
     story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     story_set.AddStory(
-        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir,
+                         name='http://www.bar.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir,
+                         name='http://www.baz.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir,
+                         name='http://www.foo.com/'))
     self.story_set = story_set
 
   @property
@@ -200,20 +206,18 @@ class ValueTest(TestBase):
         improvement_direction=improvement_direction.UP)
     d = v.AsDictWithoutBaseClassEntries()
 
-    self.assertEquals(d, {
-          'values': None,
-          'none_value_reason': 'n',
-          'std': None
-        })
+    self.assertEquals(
+        d,
+        {'values': None, 'none_value_reason': 'n', 'std': None})
 
   def testFromDictInts(self):
     d = {
-      'type': 'list_of_scalar_values',
-      'name': 'x',
-      'units': 'unit',
-      'values': [1, 2],
-      'std': 0.7071,
-      'improvement_direction': improvement_direction.DOWN
+        'type': 'list_of_scalar_values',
+        'name': 'x',
+        'units': 'unit',
+        'values': [1, 2],
+        'std': 0.7071,
+        'improvement_direction': improvement_direction.DOWN
     }
     v = value.Value.FromDict(d, {})
 
@@ -224,12 +228,12 @@ class ValueTest(TestBase):
 
   def testFromDictFloats(self):
     d = {
-      'type': 'list_of_scalar_values',
-      'name': 'x',
-      'units': 'unit',
-      'values': [1.3, 2.7, 4.5, 2.1, 3.4],
-      'std': 0.901,
-      'improvement_direction': improvement_direction.UP
+        'type': 'list_of_scalar_values',
+        'name': 'x',
+        'units': 'unit',
+        'values': [1.3, 2.7, 4.5, 2.1, 3.4],
+        'std': 0.901,
+        'improvement_direction': improvement_direction.UP
     }
     v = value.Value.FromDict(d, {})
 
@@ -239,11 +243,11 @@ class ValueTest(TestBase):
 
   def testFromDictWithoutImprovementDirection(self):
     d = {
-      'type': 'list_of_scalar_values',
-      'name': 'x',
-      'units': 'unit',
-      'values': [1, 2],
-      'std': 0.7071,
+        'type': 'list_of_scalar_values',
+        'name': 'x',
+        'units': 'unit',
+        'values': [1, 2],
+        'std': 0.7071,
     }
     v = value.Value.FromDict(d, {})
 
@@ -252,13 +256,13 @@ class ValueTest(TestBase):
 
   def testFromDictNoneValue(self):
     d = {
-      'type': 'list_of_scalar_values',
-      'name': 'x',
-      'units': 'unit',
-      'values': None,
-      'std': None,
-      'none_value_reason': 'n',
-      'improvement_direction': improvement_direction.DOWN
+        'type': 'list_of_scalar_values',
+        'name': 'x',
+        'units': 'unit',
+        'values': None,
+        'std': None,
+        'none_value_reason': 'n',
+        'improvement_direction': improvement_direction.DOWN
     }
     v = value.Value.FromDict(d, {})
 

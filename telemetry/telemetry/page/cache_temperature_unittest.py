@@ -43,8 +43,9 @@ class CacheTempeartureTests(browser_test_case.BrowserTestCase):
   def testEnsureAny(self):
     with self.captureTrace():
       story_set = story.StorySet()
-      page = page_module.Page('http://google.com', page_set=story_set,
-          cache_temperature=cache_temperature.ANY)
+      page = page_module.Page(
+          'http://google.com', page_set=story_set,
+          cache_temperature=cache_temperature.ANY, name='http://google.com')
       cache_temperature.EnsurePageCacheTemperature(page, self._browser)
 
     markers = self.traceMarkers()
@@ -56,8 +57,9 @@ class CacheTempeartureTests(browser_test_case.BrowserTestCase):
   def testEnsurePCv1Cold(self):
     with self.captureTrace():
       story_set = story.StorySet()
-      page = page_module.Page('http://google.com', page_set=story_set,
-          cache_temperature=cache_temperature.PCV1_COLD)
+      page = page_module.Page(
+          'http://google.com', page_set=story_set,
+          cache_temperature=cache_temperature.PCV1_COLD, name='http://google.com')
       cache_temperature.EnsurePageCacheTemperature(page, self._browser)
 
     markers = self.traceMarkers()
@@ -68,15 +70,17 @@ class CacheTempeartureTests(browser_test_case.BrowserTestCase):
   def testEnsurePCv1WarmAfterPCv1ColdRun(self):
     with self.captureTrace():
       story_set = story.StorySet()
-      page = page_module.Page('http://google.com', page_set=story_set,
-          cache_temperature=cache_temperature.PCV1_COLD)
+      page = page_module.Page(
+          'http://google.com', page_set=story_set,
+          cache_temperature=cache_temperature.PCV1_COLD, name='http://google.com')
       cache_temperature.EnsurePageCacheTemperature(page, self._browser)
 
       previous_page = page
-      page = page_module.Page('http://google.com', page_set=story_set,
-          cache_temperature=cache_temperature.PCV1_WARM)
-      cache_temperature.EnsurePageCacheTemperature(page, self._browser,
-          previous_page)
+      page = page_module.Page(
+          'http://google.com', page_set=story_set,
+          cache_temperature=cache_temperature.PCV1_WARM, name='http://google.com')
+      cache_temperature.EnsurePageCacheTemperature(
+          page, self._browser, previous_page)
 
     markers = self.traceMarkers()
     self.assertNotIn('telemetry.internal.warmCache.start', markers)
@@ -86,8 +90,9 @@ class CacheTempeartureTests(browser_test_case.BrowserTestCase):
   def testEnsurePCv1WarmFromScratch(self):
     with self.captureTrace():
       story_set = story.StorySet()
-      page = page_module.Page('http://google.com', page_set=story_set,
-          cache_temperature=cache_temperature.PCV1_WARM)
+      page = page_module.Page(
+          'http://google.com', page_set=story_set,
+          cache_temperature=cache_temperature.PCV1_WARM, name='http://google.com')
       cache_temperature.EnsurePageCacheTemperature(page, self._browser)
 
     markers = self.traceMarkers()

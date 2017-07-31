@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 import collections
 import logging
+import time
 from collections import defaultdict
 
 from tracing.metrics import metric_runner
@@ -15,7 +16,6 @@ from telemetry.value import common_value_helpers
 from telemetry.web_perf.metrics import timeline_based_metric
 from telemetry.web_perf.metrics import blob_timeline
 from telemetry.web_perf.metrics import webrtc_rendering_timeline
-from telemetry.web_perf.metrics import gpu_timeline
 from telemetry.web_perf.metrics import indexeddb_timeline
 from telemetry.web_perf.metrics import layout
 from telemetry.web_perf.metrics import smoothness
@@ -32,9 +32,9 @@ DEFAULT_OVERHEAD_LEVEL = 'default-overhead'
 DEBUG_OVERHEAD_LEVEL = 'debug-overhead'
 
 ALL_OVERHEAD_LEVELS = [
-  LOW_OVERHEAD_LEVEL,
-  DEFAULT_OVERHEAD_LEVEL,
-  DEBUG_OVERHEAD_LEVEL,
+    LOW_OVERHEAD_LEVEL,
+    DEFAULT_OVERHEAD_LEVEL,
+    DEBUG_OVERHEAD_LEVEL,
 ]
 
 
@@ -44,7 +44,6 @@ def _GetAllLegacyTimelineBasedMetrics():
   # This cannot be done until crbug.com/460208 is fixed.
   return (smoothness.SmoothnessMetric(),
           layout.LayoutMetric(),
-          gpu_timeline.GPUTimelineMetric(),
           blob_timeline.BlobTimelineMetric(),
           indexeddb_timeline.IndexedDBTimelineMetric(),
           webrtc_rendering_timeline.WebRtcRenderingTimelineMetric())
@@ -101,11 +100,11 @@ def _GetRendererThreadsToInteractionRecordsMap(model):
         threads_to_records_map[curr_thread].append(interaction)
         if interaction.label in interaction_labels_of_previous_threads:
           raise InvalidInteractions(
-            'Interaction record label %s is duplicated on different '
-            'threads' % interaction.label)
+              'Interaction record label %s is duplicated on different '
+              'threads' % interaction.label)
     if curr_thread in threads_to_records_map:
       interaction_labels_of_previous_threads.update(
-        r.label for r in threads_to_records_map[curr_thread])
+          r.label for r in threads_to_records_map[curr_thread])
 
   return threads_to_records_map
 
@@ -146,7 +145,7 @@ class Options(object):
   """A class to be used to configure TimelineBasedMeasurement.
 
   This is created and returned by
-  Benchmark.CreateTimelineBasedMeasurementOptions.
+  Benchmark.CreateCoreTimelineBasedMeasurementOptions.
 
   By default, all the timeline based metrics in telemetry/web_perf/metrics are
   used (see _GetAllLegacyTimelineBasedMetrics above).
@@ -315,11 +314,15 @@ class TimelineBasedMeasurement(story_test.StoryTest):
   def _ComputeTimelineBasedMetrics(self, results, trace_value):
     metrics = self._tbm_options.GetTimelineBasedMetrics()
     extra_import_options = {
-      'trackDetailedModelStats': True
+        'trackDetailedModelStats': True
     }
 
+    start = time.time()
     mre_result = metric_runner.RunMetric(
-        trace_value.filename, metrics, extra_import_options)
+        trace_value.filename, metrics, extra_import_options,
+        report_progress=False)
+    logging.warning('Processing resulting traces took %.3f seconds' % (
+        time.time() - start))
     page = results.current_page
 
     failure_dicts = mre_result.failures
@@ -327,7 +330,8 @@ class TimelineBasedMeasurement(story_test.StoryTest):
       results.AddValue(
           common_value_helpers.TranslateMreFailure(d, page))
 
-    results.value_set.extend(mre_result.pairs.get('histograms', []))
+    results.histograms.ImportDicts(mre_result.pairs.get('histograms', []))
+    results.histograms.ResolveRelatedHistograms()
 
     for d in mre_result.pairs.get('scalars', []):
       results.AddValue(common_value_helpers.TranslateScalarValue(d, page))

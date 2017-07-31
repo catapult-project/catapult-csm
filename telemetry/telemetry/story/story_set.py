@@ -48,18 +48,11 @@ class StorySet(object):
                              for d in serving_dirs or [])
 
   @property
-  def allow_mixed_story_states(self):
-    """True iff Stories are allowed to have different StoryState classes.
-
-    There are no checks in place for determining if SharedStates are
-    being assigned correctly to all Stories in a given StorySet. The
-    majority of test cases should not need the ability to have multiple
-    SharedStates, which usually implies you should be writing multiple
-    benchmarks instead. We provide errors to avoid accidentally assigning
-    or defaulting to the wrong SharedState.
-    Override at your own risk. Here be dragons.
-    """
-    return False
+  def shared_state_class(self):
+    if self._stories:
+      return self._stories[0].shared_state_class
+    else:
+      return None
 
   @property
   def file_path(self):
@@ -103,15 +96,23 @@ class StorySet(object):
 
   def AddStory(self, story):
     assert isinstance(story, story_module.Story)
-    assert self._IsUnique(story), ('Tried to add story with duplicate display '
-                                   'name %s. Story display names should be '
-                                   'unique.' % story.display_name)
+    assert self._IsUnique(story), ('Tried to add story with duplicate '
+                                   'name %s. Story names should be '
+                                   'unique.' % story.name)
+
+    shared_state_class = self.shared_state_class
+    if shared_state_class is not None:
+      assert story.shared_state_class == shared_state_class, (
+          'Story sets with mixed shared states are not allowed. Adding '
+          'story %s with shared state %s, but others have %s.' %
+          (story.name, story.shared_state_class, shared_state_class))
+
     self._stories.append(story)
     self._story_names_and_grouping_keys.add(
-        story.display_name_and_grouping_key_tuple)
+        story.name_and_grouping_key_tuple)
 
   def _IsUnique(self, story):
-    return (story.display_name_and_grouping_key_tuple not in
+    return (story.name_and_grouping_key_tuple not in
             self._story_names_and_grouping_keys)
 
   def RemoveStory(self, story):
@@ -121,7 +122,7 @@ class StorySet(object):
     """
     self._stories.remove(story)
     self._story_names_and_grouping_keys.remove(
-        story.display_name_and_grouping_key_tuple)
+        story.name_and_grouping_key_tuple)
 
   @classmethod
   def Name(cls):

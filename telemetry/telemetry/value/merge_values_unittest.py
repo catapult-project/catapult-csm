@@ -16,11 +16,14 @@ class TestBase(unittest.TestCase):
   def setUp(self):
     story_set = story.StorySet(base_dir=os.path.dirname(__file__))
     story_set.AddStory(
-        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.bar.com/', story_set, story_set.base_dir,
+                         name='http://www.bar.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.baz.com/', story_set, story_set.base_dir,
+                         name='http://www.baz.com/'))
     story_set.AddStory(
-        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir))
+        page_module.Page('http://www.foo.com/', story_set, story_set.base_dir,
+                         name='http://www.foo.com/'))
     self.story_set = story_set
 
   @property
@@ -42,18 +45,19 @@ class MergeValueTest(TestBase):
     page0 = self.pages[0]
     page1 = self.pages[1]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'x', 'units', 4,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page0, 'x', 'units', 2,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'x', 'units', 5,
-                      improvement_direction=improvement_direction.UP)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'x', 'units', 4,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page0, 'x', 'units', 2,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'x', 'units', 5,
+            improvement_direction=improvement_direction.UP)]
 
     merged_values = merge_values.MergeLikeValuesFromSamePage(all_values)
     # Sort the results so that their order is predictable for the subsequent
@@ -74,21 +78,22 @@ class MergeValueTest(TestBase):
     page0 = self.pages[0]
     page1 = self.pages[1]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'x', 'units', 4,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page0, 'y', 'units', 2,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'y', 'units', 5,
-                      improvement_direction=improvement_direction.UP)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'x', 'units', 4,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page0, 'y', 'units', 2,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'y', 'units', 5,
+            improvement_direction=improvement_direction.UP)]
 
     merged_values = merge_values.MergeLikeValuesFromSamePage(
-      all_values, key_func=lambda v: v.page.display_name)
+        all_values, key_func=lambda v: v.page.name)
     # Sort the results so that their order is predictable for the subsequent
     # assertions.
     merged_values.sort(key=lambda x: x.page.url)
@@ -100,9 +105,10 @@ class MergeValueTest(TestBase):
   def testSamePageMergeOneValue(self):
     page0 = self.pages[0]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.DOWN)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.DOWN)]
 
     # Sort the results so that their order is predictable for the subsequent
     # assertions.
@@ -114,12 +120,13 @@ class MergeValueTest(TestBase):
   def testSamePageMergeWithInteractionRecord(self):
     page0 = self.pages[0]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'foo-x', 'units', 1, tir_label='foo',
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page0, 'foo-x', 'units', 4, tir_label='foo',
-                      improvement_direction=improvement_direction.UP)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'foo-x', 'units', 1, tir_label='foo',
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page0, 'foo-x', 'units', 4, tir_label='foo',
+            improvement_direction=improvement_direction.UP)]
 
     merged_values = merge_values.MergeLikeValuesFromSamePage(all_values)
     self.assertEquals(1, len(merged_values))
@@ -140,18 +147,19 @@ class MergeValueTest(TestBase):
     page0 = self.pages[0]
     page1 = self.pages[1]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'x', 'units', 2,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page0, 'y', 'units', 10,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'y', 'units', 20,
-                      improvement_direction=improvement_direction.UP)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'x', 'units', 2,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page0, 'y', 'units', 10,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'y', 'units', 20,
+            improvement_direction=improvement_direction.UP)]
 
     merged_values = merge_values.MergeLikeValuesFromDifferentPages(all_values)
     merged_values.sort(key=lambda x: x.name)
@@ -169,21 +177,22 @@ class MergeValueTest(TestBase):
     page0 = self.pages[0]
     page1 = self.pages[1]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'x', 'units', 2,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page0, 'y', 'units', 10,
-                      improvement_direction=improvement_direction.UP),
-                  scalar.ScalarValue(
-                      page1, 'y', 'units', 20,
-                      improvement_direction=improvement_direction.UP)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'x', 'units', 2,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page0, 'y', 'units', 10,
+            improvement_direction=improvement_direction.UP),
+        scalar.ScalarValue(
+            page1, 'y', 'units', 20,
+            improvement_direction=improvement_direction.UP)]
 
     merged_values = merge_values.MergeLikeValuesFromDifferentPages(
-      all_values, key_func=lambda v: True)
+        all_values, key_func=lambda v: True)
 
     self.assertEquals(1, len(merged_values))
     self.assertEquals([1, 2, 10, 20], merged_values[0].values)
@@ -191,9 +200,10 @@ class MergeValueTest(TestBase):
   def testDifferentPageMergeSingleValueStillMerges(self):
     page0 = self.pages[0]
 
-    all_values = [scalar.ScalarValue(
-                      page0, 'x', 'units', 1,
-                      improvement_direction=improvement_direction.DOWN)]
+    all_values = [
+        scalar.ScalarValue(
+            page0, 'x', 'units', 1,
+            improvement_direction=improvement_direction.DOWN)]
 
     # Sort the results so that their order is predictable for the subsequent
     # assertions.
@@ -218,11 +228,11 @@ class MergeValueTest(TestBase):
     all_values = [v0, v1, v2, v3]
 
     merged_x = list_of_scalar_values.ListOfScalarValues(
-      None, 'x', 'units', [1, 2], tir_label='foo')
+        None, 'x', 'units', [1, 2], tir_label='foo')
     merged_y_bar = list_of_scalar_values.ListOfScalarValues(
-      None, 'y', 'units', [30], tir_label='bar')
+        None, 'y', 'units', [30], tir_label='bar')
     merged_y_baz = list_of_scalar_values.ListOfScalarValues(
-      None, 'y', 'units', [40], tir_label='baz')
+        None, 'y', 'units', [40], tir_label='baz')
 
     merged_values = merge_values.MergeLikeValuesFromDifferentPages(all_values)
     merged_values.sort(key=lambda x: x.tir_label)
