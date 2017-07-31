@@ -2,6 +2,13 @@ import csv
 import json
 import sys
 
+# Cluster telemetry produced data sometimes have important missing fields or
+# has strange failures. Turning this flag to True will print out the objects at
+# various steps that could not be processed. However, as long as the number of
+# failures are relatively low, it may not be worth the effort to debug all
+# these failures.
+VERBOSE_ERRORS = False
+
 def load_json_results_from_file(filename):
   results = [];
   with open(filename) as f:
@@ -9,9 +16,10 @@ def load_json_results_from_file(filename):
       try:
         results.append(json.loads(line))
       except:
-        print "Could not parse json: "
-        print line
-        print "######################"
+        if VERBOSE_ERRORS:
+          print "Could not parse json: "
+          print line
+          print "######################"
   print "Loaded " + filename
   return results
 
@@ -34,7 +42,7 @@ def get_unique_histogram_value(histogram):
     if running_min == running_max:
       return running_min
     else:
-      return "Not Unique. {count: {count}, sampleValues: {samples}}".format(
+      return "Not Unique. count: {count}, sampleValues: {sampleValues}".format(
         count=running_stats[0], sampleValues=histogram.get('sampleValues', []))
   return ''
 
@@ -48,17 +56,28 @@ def parse_results_json_list(result_json_list):
   }
   """
   results = []
+  failures = 0
   for result_json in result_json_list:
-    trace_data = {}
-    metrics_dict = {}
-    trace_data['metrics'] = metrics_dict
-    histograms = result_json['pairs']['histograms']
-    for histogram in histograms:
-      if histogram.get('type', '') == 'TelemetryInfo':
-        trace_data['telemetry_info'] = histogram
-      if 'name' in histogram:
-        metrics_dict[histogram['name']] = get_unique_histogram_value(histogram)
-    results.append(trace_data)
+    try:
+      trace_data = {}
+      metrics_dict = {}
+      trace_data['metrics'] = metrics_dict
+      histograms = result_json['pairs']['histograms']
+      for histogram in histograms:
+        if histogram.get('type', '') == 'TelemetryInfo':
+          trace_data['telemetry_info'] = histogram
+        if 'name' in histogram:
+          metrics_dict[histogram['name']] = get_unique_histogram_value(histogram)
+      results.append(trace_data)
+    except Exception as e:
+      failures += 1
+      if VERBOSE_ERRORS:
+        print "Could not process result json"
+        print e
+        print result_json
+        print "XXXXXXXXXXXXX"
+  if failures > 0:
+    print "Total processing failures: ", failures
   return results
 
 def get_csv_dicts(trace_data_list):
@@ -67,14 +86,25 @@ def get_csv_dicts(trace_data_list):
   be written out to the csv file.
   """
   csv_dicts = []
+  failures = 0
   for trace_data in trace_data_list:
-    csv_dict = {}
-    csv_dict['site'] = trace_data['telemetry_info']['storyDisplayName']
-    csv_dict['cache_temperature'] = (trace_data['telemetry_info']
-                                     ['storyGroupingKeys']
-                                     ['cache_temperature'])
-    csv_dict.update(trace_data['metrics'])
-    csv_dicts.append(csv_dict)
+    try:
+      csv_dict = {}
+      csv_dict['site'] = trace_data['telemetry_info']['storyDisplayName']
+      csv_dict['cache_temperature'] = (trace_data['telemetry_info']
+                                       ['storyGroupingKeys']
+                                       ['cache_temperature'])
+      csv_dict.update(trace_data['metrics'])
+      csv_dicts.append(csv_dict)
+    except Exception as e:
+      failures += 1
+      if VERBOSE_ERRORS:
+        print "Could not extract csv dict"
+        print e
+        print trace_data
+        print "@@@@@@@@@@@@@@@@@@@@@@@@"
+  if failures > 0:
+    print "Total csv data extraction failures: ", failures
   return csv_dicts
 
 
@@ -98,6 +128,7 @@ def main():
     print "Usage: {0} <ctp-results> [output-filename]".format(sys.argv[0])
     print "<ctp-results> is the results file produced by chrome trace processor."
     print "[output-filename] is the produced csv file. Defaults to out.csv."
+    sys.exit(1)
 
   input_filename = sys.argv[1]
   if len(sys.argv) > 2:
