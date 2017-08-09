@@ -134,6 +134,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
 
     self._browser_directory = browser_directory
     self._port = None
+    self._browser_target = None
     self._tmp_minidump_dir = tempfile.mkdtemp()
     if self.is_logging_enabled:
       self._log_file_path = os.path.join(tempfile.mkdtemp(), 'chrome.log')
@@ -181,7 +182,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     if os.path.isfile(port_file):
       try:
         os.remove(port_file)
-      except Exception as e:
+      except IOError as e:
         logging.critical('Unable to remove DevToolsActivePort file: %s' % e)
         sys.exit(1)
 
@@ -234,11 +235,14 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
     try:
       if os.stat(port_file).st_size > 0:
         with open(port_file) as f:
-          port_string = f.read()
-          self._port = int(port_string)
+          port_target = f.read().split('\n')
+          self._port = int(port_target[0])
+          if len(port_target) > 1 and port_target[1]:
+            self._browser_target = port_target[1]
           logging.info('Discovered ephemeral port %s', self._port)
+          logging.info('Browser target: %s', self._browser_target)
           got_port = True
-    except Exception:
+    except IOError:
       # Both stat and open can throw exceptions.
       pass
     if not got_port:
@@ -301,6 +305,7 @@ class DesktopBrowserBackend(chrome_browser_backend.ChromeBrowserBackend):
           'Chrome log file will be saved in %s\n' % self.log_file_path)
       env['CHROME_LOG_FILE'] = self.log_file_path
     logging.info('Starting Chrome %s', args)
+
     if not self.browser_options.show_stdout:
       self._tmp_output_file = tempfile.NamedTemporaryFile('w', 0)
       self._proc = subprocess.Popen(

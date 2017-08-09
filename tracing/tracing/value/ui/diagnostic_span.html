@@ -13,12 +13,10 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/value/ui/date_range_span.html">
 <link rel="import" href="/tracing/value/ui/generic_set_span.html">
 <link rel="import" href="/tracing/value/ui/merged_buildbot_info_span.html">
-<link rel="import" href="/tracing/value/ui/merged_revision_info_span.html">
 <link rel="import" href="/tracing/value/ui/merged_telemetry_info_span.html">
 <link rel="import" href="/tracing/value/ui/related_event_set_span.html">
 <link rel="import" href="/tracing/value/ui/related_histogram_map_span.html">
 <link rel="import" href="/tracing/value/ui/related_histogram_set_span.html">
-<link rel="import" href="/tracing/value/ui/revision_info_span.html">
 <link rel="import" href="/tracing/value/ui/scalar_diagnostic_span.html">
 <link rel="import" href="/tracing/value/ui/tag_map_span.html">
 <link rel="import" href="/tracing/value/ui/telemetry_info_span.html">
@@ -63,11 +61,13 @@ tr.exportTo('tr.v.ui', function() {
    * Create a visualization for |diagnostic|.
    *
    * @param {!tr.v.d.Diagnostic} diagnostic
+   * @param {!tr.v.Histogram=} opt_histogram
    * @return {Element}
    */
-  function createDiagnosticSpan(diagnostic) {
+  function createDiagnosticSpan(diagnostic, opt_histogram) {
     const tagName = findElementNameForDiagnostic(diagnostic);
     const span = document.createElement(tagName);
+    span.histogram = opt_histogram;
     span.diagnostic = diagnostic;
     return span;
   }

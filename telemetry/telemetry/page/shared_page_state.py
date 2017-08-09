@@ -157,17 +157,22 @@ class SharedPageState(story.SharedState):
       if self._current_tab and self._current_tab.IsAlive():
         self._current_tab.CloseConnections()
       self._previous_page = self._current_page
-    except Exception:
+    except Exception: # pylint: disable=broad-except
       if self._current_tab:
         self._current_tab.Close()
     finally:
       if self._current_page.credentials and self._did_login_for_current_page:
         self.browser.credentials.LoginNoLongerNeeded(
             self._current_tab, self._current_page.credentials)
-      if self._test.StopBrowserAfterPage(self.browser, self._current_page):
+      if self.ShouldStopBrowserAfterStoryRun():
         self._StopBrowser()
       self._current_page = None
       self._current_tab = None
+
+  def ShouldStopBrowserAfterStoryRun(self):
+    # TODO(crbug.com/748566): Provide a suitable implementation when not made
+    # redundant by the current tear down state after each story behavior.
+    return False
 
   @property
   def platform(self):
@@ -204,13 +209,11 @@ class SharedPageState(story.SharedState):
 
     page_set = page.page_set
     self._current_page = page
-    if self._browser and (self._test.RestartBrowserBeforeEachPage()
-                          or page.startup_url):
+    if self._browser and page.startup_url:
       assert not self.platform.tracing_controller.is_tracing_running, (
           'Should not restart browser when tracing is already running. For '
           'TimelineBasedMeasurement (TBM) benchmarks, you should not use '
-          'startup_url. Use benchmark.ShouldTearDownStateAfterEachStoryRun '
-          'instead.')
+          'startup_url.')
       self._StopBrowser()
     started_browser = not self.browser
 

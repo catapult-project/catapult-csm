@@ -83,6 +83,7 @@ type ReplayCommand struct {
 
 type RootCACommand struct {
 	certConfig CertConfig
+	installer  webpagereplay.Installer
 	cmd        cli.Command
 }
 
@@ -160,16 +161,18 @@ func (common *CommonConfig) CheckArgs(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("error opening cert or key files: %v", err)
 	}
-	for _, scriptFile := range strings.Split(common.injectScripts, ",") {
-		log.Printf("Loading script from %v\n", scriptFile)
-		// Replace {{WPR_TIME_SEED_TIMESTAMP}} with current timestamp.
-		current_time_ms := time.Now().Unix() * 1000
-		replacements := map[string]string{"{{WPR_TIME_SEED_TIMESTAMP}}": strconv.FormatInt(current_time_ms, 10)}
-		si, err := webpagereplay.NewScriptInjectorFromFile(scriptFile, replacements)
-		if err != nil {
-			return fmt.Errorf("error opening script %s: %v", scriptFile, err)
+	if common.injectScripts != "" {
+		for _, scriptFile := range strings.Split(common.injectScripts, ",") {
+			log.Printf("Loading script from %v\n", scriptFile)
+			// Replace {{WPR_TIME_SEED_TIMESTAMP}} with current timestamp.
+			current_time_ms := time.Now().Unix() * 1000
+			replacements := map[string]string{"{{WPR_TIME_SEED_TIMESTAMP}}": strconv.FormatInt(current_time_ms, 10)}
+			si, err := webpagereplay.NewScriptInjectorFromFile(scriptFile, replacements)
+			if err != nil {
+				return fmt.Errorf("error opening script %s: %v", scriptFile, err)
+			}
+			common.transformers = append(common.transformers, si)
 		}
-		common.transformers = append(common.transformers, si)
 	}
 
 	return nil
@@ -186,6 +189,22 @@ func (r *ReplayCommand) Flags() []cli.Flag {
 			Value:       "",
 			Usage:       "File containing rules to apply to responses during replay",
 			Destination: &r.rulesFile,
+		})
+}
+
+func (r *RootCACommand) Flags() []cli.Flag {
+	return append(r.certConfig.Flags(),
+		cli.StringFlag{
+			Name:        "android_device_id",
+			Value:       "",
+			Usage:       "Device id of an android device. Only relevant for Android",
+			Destination: &r.installer.AndroidDeviceId,
+		},
+		cli.StringFlag{
+			Name:        "adb_binary_path",
+			Value:       "adb",
+			Usage:       "Path to adb binary. Only relevant for Android",
+			Destination: &r.installer.AdbBinaryPath,
 		})
 }
 
@@ -356,21 +375,14 @@ func (r *ReplayCommand) Run(c *cli.Context) {
 }
 
 func (r *RootCACommand) Install(c *cli.Context) {
-	log.Printf("Loading cert from %v\n", r.certConfig.certFile)
-	log.Printf("Loading key from %v\n", r.certConfig.keyFile)
-	root_cert, err := tls.LoadX509KeyPair(r.certConfig.certFile, r.certConfig.keyFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error opening cert or key files: %v", err)
-		os.Exit(1)
-	}
-	err = webpagereplay.InstallRoot(root_cert.Certificate[0])
-	if err != nil {
+	if err := r.installer.InstallRoot(r.certConfig.certFile, r.certConfig.keyFile); err != nil {
 		fmt.Fprintf(os.Stderr, "Install root failed: %v", err)
+		os.Exit(1)
 	}
 }
 
 func (r *RootCACommand) Remove(c *cli.Context) {
-	webpagereplay.RemoveRoot()
+	r.installer.RemoveRoot()
 }
 
 func main() {
@@ -400,13 +412,14 @@ func main() {
 	installroot.cmd = cli.Command{
 		Name:   "installroot",
 		Usage:  "Install a test root CA",
-		Flags:  installroot.certConfig.Flags(),
+		Flags:  installroot.Flags(),
 		Action: installroot.Install,
 	}
 
 	removeroot.cmd = cli.Command{
 		Name:   "removeroot",
 		Usage:  "Remove a test root CA",
+		Flags:  removeroot.Flags(),
 		Action: removeroot.Remove,
 	}
 

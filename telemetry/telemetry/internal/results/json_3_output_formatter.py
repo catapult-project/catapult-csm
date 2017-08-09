@@ -32,7 +32,7 @@ def ResultsAsDict(page_test_results):
       'interrupted': telemetry_info.benchmark_interrupted,
       'path_delimiter': '/',
       'version': 3,
-      'seconds_since_epoch': telemetry_info.benchmark_start_ms,
+      'seconds_since_epoch': telemetry_info.benchmark_start_epoch,
       'tests': {},
   }
   status_counter = collections.Counter()
@@ -60,6 +60,11 @@ def ResultsAsDict(page_test_results):
       if expected not in test['expected']:
         test['expected'] += (' ' + expected)
 
+    if 'is_unexpected' not in test:
+      test['is_unexpected'] = status != expected
+    else:
+      test['is_unexpected'] = test['is_unexpected'] or status != expected
+
   result_dict['num_failures_by_type'] = dict(status_counter)
   return result_dict
 
@@ -77,3 +82,10 @@ class JsonOutputFormatter(output_formatter.OutputFormatter):
         ResultsAsDict(page_test_results),
         self.output_stream, indent=2, sort_keys=True, separators=(',', ': '))
     self.output_stream.write('\n')
+
+  def FormatDisabled(self, page_test_results):
+    """Serialize disabled benchmark in JSON Test Results format.
+
+    See: https://www.chromium.org/developers/the-json-test-results-format
+    """
+    self.Format(page_test_results)
