@@ -13,11 +13,19 @@ found in the LICENSE file.
  * @type {!Object}
  * @const
  */
-const global = this.window || this.global;
+// var global = this.window || this.global;
+var global = this;
+var performance = {
+  now: () => 0,
+  mark: () => {},
+  measure: () => {}
+};
 
 /** Platform, package, object property, and Event support. */
 this.tr = (function() {
+  // STRIP_FOR_CLOSURE
   if (global.tr) return global.tr;
+  // END_STRIP_FOR_CLOSURE
 
   /**
    * Builds an object structure for the provided namespace path,
