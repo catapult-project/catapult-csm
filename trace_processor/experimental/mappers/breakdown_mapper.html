@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+!--
+Copyright 2016 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file.
+-->
+
+<link rel="import" href="/tracing/metrics/system_health/loading_metric.html">
+<link rel="import" href="/tracing/value/histogram_set.html">
+
+<script>
+'use strict';
+
+tr.exportTo('pi.m', function() {
+  function breakdownMapper(result, model) {
+    // Run loading metric, produce histograms as usual, and then grab data from
+    // all the histograms.
+    const histogramSet = new tr.v.HistogramSet();
+    tr.metrics.sh.loadingMetric(histogramSet, model);
+
+    for (const histogram of histogramSet) {
+      if (histogram.running.count == 1) {
+        result.addPair(histogram.name, histogram.running.mean);
+      } else if (histogram.running.count == 0) {
+        result.addPair(histogram.name, "No samples");
+      } else if (histogram.running.count > 1) {
+        result.addPair(histogram.name, "Not unique. Count: " + histogram.running.count);
+      }
+    }
+
+  }
+
+
+  tr.mre.FunctionRegistry.register(breakdownMapper);
+
+  return {
+    breakdownMapper: breakdownMapper
+  };
+
+  function iterateRendererMainThreads(model, cb, opt_this) {
+    var modelHelper = model.getOrCreateHelper(
+        tr.model.helpers.ChromeModelHelper);
+    Object.values(modelHelper.rendererHelpers).forEach(
+        function(rendererHelper) {
+          if (!rendererHelper.mainThread)
+            return;
+          cb.call(opt_this, rendererHelper.mainThread);
+        });
+  }
+
+  function getScriptURL(slice) {
+    var url = undefined;
+
+    if (slice.title === 'v8.run') {
+      url = slice.args['fileName'];
+    } else if (slice.title === 'v8.compile') {
+      url = slice.args['fileName'];
+    } else if (slice.title === 'FunctionCall') {
+      url = slice.args['data']['scriptName'];
+    } else if (slice.title === 'EvaluateScript') {
+      url = slice.args['data']['url'];
+    } else if (slice.title === 'HTMLScriptRunner ExecuteScript') {
+      url = slice.args['data']['url'];
+    }
+
+    return url;
+  }
+
+  function findLongestInterestingSlice(slice) {
+    if (UNINTERESTING_TASKS.indexOf(slice.title) >= 0) {
+      var longestSlice = undefined;
+      var subSlices = slice.subSlices;
+      for (var i = 0; i < subSlices.length; ++i) {
+        if (longestSlice === undefined ||
+            longestSlice.duration < subSlices[i].duration) {
+          longestSlice = subSlices[i];
+        }
+      }
+
+      if (longestSlice !== undefined)
+        return findLongestInterestingSlice(longestSlice);
+    }
+
+    return slice;
+  }
+
+  function extractDomain(url) {
+      var domain;
+      //find & remove protocol (http, ftp, etc.) and get domain
+      if (url.indexOf('://') > -1) {
+          domain = url.split('/')[2];
+      }
+      else {
+          domain = url.split('/')[0];
+      }
+
+      //find & remove port number
+      domain = domain.split(':')[0];
+
+      return domain;
+  }
+});
+
+</script>

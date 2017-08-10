@@ -484,6 +484,15 @@ tr.exportTo('tr.metrics.sh', function() {
     const firstMeaningfulPaintMarkers = findFirstMeaningfulPaintMarkers(
         rendererHelper, navigationStartFinder);
 
+    // We're hoping there's a single FMP sample, and we're grabbing its frameId.
+    let frameIdOfInterest;
+    if (firstMeaningfulPaintMarkers.length === 1) {
+      frameIdOfInterest = firstMeaningfulPaintMarkers[0].frameIdRef;
+    } else {
+      // No point continuing.
+      return [];
+    }
+
     const firstInteractiveMarkers = findFirstInteractiveMarker(
         rendererHelper, firstMeaningfulPaintMarkers);
 
@@ -516,35 +525,33 @@ tr.exportTo('tr.metrics.sh', function() {
     const navStartsByFrame =
         navigationStartFinder.findAllNavigationStartsForFrame();
     const endTime = getTraceEnd(rendererHelper);
-    for (const frameIdRef in navStartsByFrame) {
-      const navStarts = navStartsByFrame[frameIdRef];
-      const perSecondRanges = getPerSecondRanges(navStarts, endTime);
-      for (const range of perSecondRanges) {
-        const perSecondSamples = [];
-        addBreakdownSamples(perSecondSamples, rendererHelper,
-            { start: range.absoluteRange.min },
-            { start: range.absoluteRange.max }, frameIdRef, null);
-        samplesObjectsArray.push({
-          histogramName: 'nav' + range.relativeRange.min + 'secTo' +
-              range.relativeRange.max + 'secBreakdown',
-          histogramDescription: range.relativeRange.min + ' second to ' +
-              range.relativeRange.max +
-              ' second from navigation start breakdown',
-          samples: perSecondSamples
-        });
-        const perSecondCpuTimeSamples = [];
-        addCpuBreakdownSamples(perSecondCpuTimeSamples, rendererHelper,
-            { start: range.absoluteRange.min },
-            { start: range.absoluteRange.max }, frameIdRef, null);
-        samplesObjectsArray.push({
-          histogramName: 'nav' + range.relativeRange.min + 'secTo' +
-              range.relativeRange.max + 'secBreakdownCpuTime',
-          histogramDescription: range.relativeRange.min + ' second to ' +
-              range.relativeRange.max +
-              ' second from navigation start breakdown in CPU time',
-          samples: perSecondCpuTimeSamples
-        });
-      }
+    const navStarts = navStartsByFrame[frameIdOfInterest];
+    const perSecondRanges = getPerSecondRanges(navStarts, endTime);
+    for (const range of perSecondRanges) {
+      const perSecondSamples = [];
+      addBreakdownSamples(perSecondSamples, rendererHelper,
+          { start: range.absoluteRange.min },
+          { start: range.absoluteRange.max }, frameIdOfInterest, null);
+      samplesObjectsArray.push({
+        histogramName: 'nav' + range.relativeRange.min + 'secTo' +
+            range.relativeRange.max + 'secBreakdown',
+        histogramDescription: range.relativeRange.min + ' second to ' +
+            range.relativeRange.max +
+            ' second from navigation start breakdown',
+        samples: perSecondSamples
+      });
+      const perSecondCpuTimeSamples = [];
+      addCpuBreakdownSamples(perSecondCpuTimeSamples, rendererHelper,
+          { start: range.absoluteRange.min },
+          { start: range.absoluteRange.max }, frameIdOfInterest, null);
+      samplesObjectsArray.push({
+        histogramName: 'nav' + range.relativeRange.min + 'secTo' +
+            range.relativeRange.max + 'secBreakdownCpuTime',
+        histogramDescription: range.relativeRange.min + ' second to ' +
+            range.relativeRange.max +
+            ' second from navigation start breakdown in CPU time',
+        samples: perSecondCpuTimeSamples
+      });
     }
 
     return samplesObjectsArray;
