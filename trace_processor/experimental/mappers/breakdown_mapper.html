@@ -28,6 +28,14 @@ tr.exportTo('pi.m', function() {
       }
     }
 
+    for (const metadata of model.metadata) {
+      if (!metadata.value) continue;
+
+      if (metadata.value.telemetry) {
+        result.addPair("TelemetryInfo", metadata.value.telemetry);
+        break;
+      }
+    }
   }
 
 

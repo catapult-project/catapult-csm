@@ -473,11 +473,11 @@ tr.exportTo('tr.metrics.sh', function() {
         'loading', 'firstContentfulPaint',
         rendererHelper, navigationStartFinder);
 
-    const onLoadMarkers = collectTimeMarkers(
+    const onLoadMarkersFromAllFrames = collectTimeMarkers(
         'blink.user_timing', 'loadEventStart',
         rendererHelper, navigationStartFinder);
 
-    const firstPaintMarkers = collectTimeMarkers(
+    const firstPaintMarkersFromAllFrames = collectTimeMarkers(
         'loading', 'firstPaint',
         rendererHelper, navigationStartFinder);
 
@@ -492,6 +492,12 @@ tr.exportTo('tr.metrics.sh', function() {
       // No point continuing.
       return [];
     }
+
+    const onLoadMarkers = onLoadMarkersFromAllFrames.filter(
+        event => event.frameIdRef === frameIdOfInterest);
+
+    const firstPaintMarkers = firstPaintMarkersFromAllFrames.filter(
+        event => event.frameIdRef === frameIdOfInterest);
 
     const firstInteractiveMarkers = findFirstInteractiveMarker(
         rendererHelper, firstMeaningfulPaintMarkers);
