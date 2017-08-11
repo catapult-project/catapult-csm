@@ -162,6 +162,7 @@ def RunFile(file_path, source_paths=None, js_args=None, v8_args=None,
      A RunResult containing the program's output.
   """
   assert os.path.isfile(file_path)
+  print "File path: ", file_path
   _ValidateSourcePaths(source_paths)
 
   _, extension = os.path.splitext(file_path)
@@ -179,13 +180,16 @@ def RunFile(file_path, source_paths=None, js_args=None, v8_args=None,
     with open(temp_boostrap_file, 'w') as f:
       f.write(_GetBootStrapJsContent(source_paths))
       if extension == '.html':
+        print "Abs file path: ", abs_file_path_str
         f.write('\nHTMLImportsLoader.loadHTMLFile(%s, %s);' %
                 (abs_file_path_str, abs_file_path_str))
       else:
         f.write('\nHTMLImportsLoader.loadFile(%s);' % abs_file_path_str)
+    print "Running with D8"
     return _RunFileWithD8(temp_boostrap_file, js_args, v8_args, stdout, stdin)
   finally:
-    shutil.rmtree(temp_dir)
+    # shutil.rmtree(temp_dir)
+    pass
 
 
 def ExecuteJsString(js_string, source_paths=None, js_args=None, v8_args=None,
@@ -241,6 +245,7 @@ def _RunFileWithD8(js_file_path, js_args, v8_args, stdout, stdin):
   args += ['--js_arguments'] + full_js_args
 
   # Set stderr=None since d8 doesn't write into stderr anyway.
+  print "Args: ", " ".join(args)
   sp = subprocess.Popen(args, stdout=stdout, stderr=None, stdin=stdin)
   out, _ = sp.communicate()
 
@@ -258,6 +263,7 @@ def _RunFileWithD8(js_file_path, js_args, v8_args, stdout, stdin):
   # logic here in order to raise/return the right thing.
   returncode = sp.returncode
   if returncode == 0:
+    print "Everything going ok. Here is out: ", out
     return RunResult(0, out)
   elif returncode == 1:
     if out:

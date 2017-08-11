@@ -98,7 +98,7 @@ var UNINTERESTING_TASKS = [
   function iterateRendererMainThreads(model, cb, opt_this) {
     var modelHelper = model.getOrCreateHelper(
         tr.model.helpers.ChromeModelHelper);
-    tr.b.dictionaryValues(modelHelper.rendererHelpers).forEach(
+    Object.values(modelHelper.rendererHelpers).forEach(
         function(rendererHelper) {
           if (!rendererHelper.mainThread)
             return;

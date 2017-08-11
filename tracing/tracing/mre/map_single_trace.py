@@ -102,12 +102,16 @@ def MapSingleTrace(trace_handle,
     else:
       v8_args = ['--max-old-space-size=8192']
 
+    print "Running with vinn"
     res = vinn.RunFile(
         _MAP_SINGLE_TRACE_CMDLINE_PATH,
         source_paths=all_source_paths,
         js_args=js_args,
         v8_args=v8_args)
 
+  print "Return code: ", res.returncode
+  sys.stderr.write(res.stdout)
+  print "###############"
   if res.returncode != 0:
     sys.stderr.write(res.stdout)
     result.AddFailure(failure.Failure(

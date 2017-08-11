@@ -13,12 +13,17 @@ found in the LICENSE file.
 
 tr.exportTo('pi.m', function() {
   function breakdownMapper(result, model) {
+    console.log("Hello this is me");
     // Run loading metric, produce histograms as usual, and then grab data from
     // all the histograms.
     const histogramSet = new tr.v.HistogramSet();
     tr.metrics.sh.loadingMetric(histogramSet, model);
 
     for (const histogram of histogramSet) {
+      // if (histogram.running === undefined ||
+      //     histogram.running.count === undefined) {
+      //   continue;
+      // }
       if (histogram.running.count == 1) {
         result.addPair(histogram.name, histogram.running.mean);
       } else if (histogram.running.count == 0) {
