@@ -12,24 +12,47 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('pi.m', function() {
+  /**
+   * Returns the diagnostic map from the bin that contains the value of the
+   * histograms. Obviously, only works for histograms that have exactly one
+   * sample.
+   */
+  function getBreakdownFromSingleValuedHistogram(histogram) {
+    for (const bin of histogram.allBins) {
+      if (bin.count === 1 && bin.diagnosticMaps.length === 1) {
+        const diagnosticMap = bin.diagnosticMaps[0];
+        const breakdown = diagnosticMap.get('Breakdown');
+        if (breakdown) {
+          return breakdown.asDict().values;
+        }
+      }
+    }
+  }
+
   function breakdownMapper(result, model) {
-    console.log("Hello this is me");
     // Run loading metric, produce histograms as usual, and then grab data from
     // all the histograms.
     const histogramSet = new tr.v.HistogramSet();
     tr.metrics.sh.loadingMetric(histogramSet, model);
 
     for (const histogram of histogramSet) {
-      // if (histogram.running === undefined ||
-      //     histogram.running.count === undefined) {
-      //   continue;
-      // }
+      if (histogram.running === undefined ||
+          histogram.running.count === undefined) {
+        continue;
+      }
       if (histogram.running.count == 1) {
-        result.addPair(histogram.name, histogram.running.mean);
+        result.addPair(histogram.name, {
+          value: histogram.running.mean,
+          breakdown: getBreakdownFromSingleValuedHistogram(histogram)
+        });
       } else if (histogram.running.count == 0) {
-        result.addPair(histogram.name, "No samples");
+        result.addPair(histogram.name, {
+          error: "No samples"
+        });
       } else if (histogram.running.count > 1) {
-        result.addPair(histogram.name, "Not unique. Count: " + histogram.running.count);
+        result.addPair(histogram.name, {
+          error: "Not unique. Count: " + histogram.running.count
+        });
       }
     }
 
