@@ -9,6 +9,7 @@ found in the LICENSE file.
 <link rel="import" href="/tracing/base/math/statistics.html">
 <link rel="import" href="/tracing/metrics/metric_registry.html">
 <link rel="import" href="/tracing/metrics/system_health/breakdown_tree_helpers.html">
+<link rel="import" href="/tracing/metrics/system_health/time_to_interactive.html">
 <link rel="import" href="/tracing/metrics/system_health/utils.html">
 <link rel="import" href="/tracing/model/helpers/chrome_model_helper.html">
 <link rel="import" href="/tracing/model/helpers/chrome_thread_helper.html">
@@ -19,7 +20,7 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('tr.metrics.sh', function() {
-  const RESPONSIVENESS_THRESHOLD_MS = 50;
+  const LONG_TASK_THRESHOLD_MS = 50;
   const INTERACTIVE_WINDOW_SIZE_MS = 5 * 1000;
   const timeDurationInMs_smallerIsBetter =
       tr.b.Unit.byName.timeDurationInMs_smallerIsBetter;
@@ -43,6 +44,21 @@ tr.exportTo('tr.metrics.sh', function() {
       }
     }
     return networkEvents;
+  }
+
+  /**
+   * Returns ResourceLoad async slices for a renderer. They are available in the
+   * a trace when disabled-by-default-network category is enabled.
+   *
+   * TODO: Fill in these params
+   * @param{rendererHelper}
+   * @returns{some async slice group}
+   */
+  function getResourceLoadEventsForRenderer(rendererHelper) {
+    const mainThreadAsyncSlices =
+          [...rendererHelper.mainThread.asyncSliceGroup.getDescendantEvents()];
+    return mainThreadAsyncSlices.filter(
+      slice => slice.title === 'ResourceLoad');
   }
 
   // TODO(ksakamoto): This should be a method of tr.model.Event or one of its
@@ -100,15 +116,15 @@ tr.exportTo('tr.metrics.sh', function() {
       return undefined;
     },
 
-    // Assuming navigationStarts has been sorted in descending order.
     findNextNavigationStartEventForFrameAfterTimestamp(frameIdRef, ts) {
       const list = this.navigationStartsForFrameId_[frameIdRef];
       if (list === undefined) return undefined;
+
       for (let i = list.length - 1; i >= 0; i--) {
         const ev = list[i];
-        if (ev.start < ts) continue;
-        return ev;
+        if (ev.start > ts) return ev;
       }
+
       return undefined;
     },
 
@@ -305,6 +321,60 @@ tr.exportTo('tr.metrics.sh', function() {
     return fmpMarkers;
   }
 
+  function addTimeToInteractiveMarkers(firstInteractiveMarkers,
+      consistentlyInteractiveMarkers, rendererHelper, navigationStart,
+      firstMeaningfulPaintTime, url, searchWindowEnd,
+      domContentLoadedEnd, frameIdRef) {
+    if (shouldIgnoreURL(url)) return;
+
+    const domContentLoadedEndTime = domContentLoadedEnd.start;
+
+    const mainThreadTasks =
+        [...rendererHelper.mainThread.findTopmostSlicesNamed(
+            'TaskQueueManager::ProcessTaskFromWorkQueue')]
+    const longTasks = mainThreadTasks.filter(
+        task => task.duration >= LONG_TASK_THRESHOLD_MS);
+    const longTasksInWindow = longTasks.filter(
+        task => task.range.intersectsExplicitRangeInclusive(
+            firstMeaningfulPaintTime, searchWindowEnd));
+
+    const resourceLoadEvents = getResourceLoadEventsForRenderer(rendererHelper);
+
+    const firstInteractiveTime =
+          tr.metrics.sh.findFirstInteractiveTimestamp(
+            firstMeaningfulPaintTime, searchWindowEnd, domContentLoadedEndTime,
+            longTasksInWindow);
+    const consistentlyInteractiveTime =
+        tr.metrics.sh.findConsistentlyInteractiveTimestamp(
+            firstMeaningfulPaintTime, searchWindowEnd, domContentLoadedEndTime,
+            longTasksInWindow, resourceLoadEvents);
+
+    // Like this
+    firstInteractiveMarkers.push({
+      eventName: 'firstInteractive',
+      // maxlg: FI is an computed event without cpuStart/end.
+      event: {
+        start: firstInteractiveTime,
+        end: firstInteractiveTime
+      },
+      navigationStart: navigationStart,
+      frameIdRef: frameIdRef,
+      url: url,
+    });
+
+    consistentlyInteractiveMarkers.push({
+      eventName: 'consistentlyInteractive',
+      // maxlg: FI is an computed event without cpuStart/end.
+      event: {
+        start: consistentlyInteractiveTime,
+        end: consistentlyInteractiveTime
+      },
+      navigationStart: navigationStart,
+      frameIdRef: frameIdRef,
+      url: url,
+    });
+  }
+
   /**
    * Find the first interactive(FI) for a renderer represented by
    * |rendererHelper| and returns them as markers indicating the time, frame,
@@ -317,53 +387,109 @@ tr.exportTo('tr.metrics.sh', function() {
    *
    * Design doc: https://goo.gl/ISWndc
    */
-  function findFirstInteractiveMarker(rendererHelper, fmpMarkers) {
-    const markers = [];
+  function findInteractiveMarkers(rendererHelper, fmpMarkers,
+      navigationStartFinder, domContentLoadedEndFinder) {
+
+    const firstInteractiveMarkers = [];
+    const consistentlyInteractiveMarkers = [];
+
     for (const fmpMarker of fmpMarkers) {
-      const navigationStartTime = fmpMarker.navigationStart.start;
-      let firstInteractive = Infinity;
-      let firstInteractiveCandidate = fmpMarker.event.start;
-      let lastLongTaskEvent = undefined;
-      // Find the first interactive point X after firstMeaningfulPaint so that
-      // range [X, X + INTERACTIVE_WINDOW_SIZE_MS] contains no
-      // 'TaskQueueManager::ProcessTaskFromWorkQueues' slice which takes more
-      // than RESPONSIVENESS_THRESHOLD_MS.
-      // For more details on why TaskQueueManager::ProcessTaskFromWorkQueue is
-      // chosen as a proxy for all un-interruptable task on renderer thread, see
-      // https://github.com/GoogleChrome/lighthouse/issues/489
-      // TODO(nedn): replace this with just "const ev of rendererHelper..." once
-      // canary binary is updated.
-      // (https://github.com/catapult-project/catapult/issues/2586)
-      for (const ev of
-          [...rendererHelper.mainThread.sliceGroup.childEvents()]) {
-        if (ev.start < firstInteractiveCandidate) continue;
-        const interactiveDurationSoFar = ev.start - firstInteractiveCandidate;
-        if (interactiveDurationSoFar >= INTERACTIVE_WINDOW_SIZE_MS) {
-          firstInteractive = firstInteractiveCandidate;
-          break;
-        }
-        if (ev.title === 'TaskQueueManager::ProcessTaskFromWorkQueue' &&
-            ev.duration > RESPONSIVENESS_THRESHOLD_MS) {
-          firstInteractiveCandidate = ev.end - 50;
-          lastLongTaskEvent = ev;
-        }
-      }
-      markers.push({
-        eventName: 'firstInteractive',
-        // maxlg: FI is an computed event without cpuStart/end.
-        event: {
-          start: firstInteractive,
-          end: firstInteractive
-        },
-        navigationStart: fmpMarker.navigationStart,
-        frameIdRef: fmpMarker.frameIdRef,
-        url: fmpMarker.url,
-        // maxlg: special for FI.
-        lastLongTaskEvent
-      });
+      const currNavigationStart = fmpMarker.navigationStart;
+      const frameIdRef = fmpMarker.frameIdRef;
+      const firstMeaningfulPaintTime = fmpMarker.event.start;
+      const nextNavigationStart = navigationStartFinder.
+          findNextNavigationStartEventForFrameAfterTimestamp(
+              frameIdRef, firstMeaningfulPaintTime);
+
+      const searchWindowEnd = nextNavigationStart !== undefined ?
+          nextNavigationStart.start :
+              // If no next navigationStart, search for quiet windows until
+              // the end of trace.
+              rendererHelper.modelHelper.chromeBounds.max;
+
+      const dclTsInWindow =
+          domContentLoadedEndFinder.findDclEndEventsForFrameInWindow(
+              frameIdRef, currNavigationStart.start, searchWindowEnd);
+
+      // Cannot determine TTI if DomContentLoadedEnd was never reached.
+      if (dclTsInWindow.length === 0) return;
+
+      // TODO(catapult:#3796): Ideally a frame should reach
+      // DomContentLoadedEnd at most once within two navigationStarts, but
+      // sometimes there is a strange DclEnd event immediately following the
+      // navigationStart, and then the 'real' dclEnd happens later. For now,
+      // if there are multiple DclEnd events in the window, we just pick the
+      // last one.
+      const domContentLoadedEnd = dclTsInWindow[dclTsInWindow.length - 1];
+
+      addTimeToInteractiveMarkers(firstInteractiveMarkers,
+          consistentlyInteractiveMarkers, rendererHelper, currNavigationStart,
+          firstMeaningfulPaintTime, fmpMarker.url, searchWindowEnd,
+          domContentLoadedEnd, frameIdRef);
+
+      return {firstInteractiveMarkers, consistentlyInteractiveMarkers};
     }
 
-    return markers;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //   const navigationStartTime = fmpMarker.navigationStart.start;
+
+    //   let firstInteractive = Infinity;
+    //   let firstInteractiveCandidate = fmpMarker.event.start;
+    //   let lastLongTaskEvent = undefined;
+    //   // Find the first interactive point X after firstMeaningfulPaint so that
+    //   // range [X, X + INTERACTIVE_WINDOW_SIZE_MS] contains no
+    //   // 'TaskQueueManager::ProcessTaskFromWorkQueues' slice which takes more
+    //   // than RESPONSIVENESS_THRESHOLD_MS.
+    //   // For more details on why TaskQueueManager::ProcessTaskFromWorkQueue is
+    //   // chosen as a proxy for all un-interruptable task on renderer thread, see
+    //   // https://github.com/GoogleChrome/lighthouse/issues/489
+    //   // TODO(nedn): replace this with just "const ev of rendererHelper..." once
+    //   // canary binary is updated.
+    //   // (https://github.com/catapult-project/catapult/issues/2586)
+    //   for (const ev of
+    //       [...rendererHelper.mainThread.sliceGroup.childEvents()]) {
+    //     if (ev.start < firstInteractiveCandidate) continue;
+    //     const interactiveDurationSoFar = ev.start - firstInteractiveCandidate;
+    //     if (interactiveDurationSoFar >= INTERACTIVE_WINDOW_SIZE_MS) {
+    //       firstInteractive = firstInteractiveCandidate;
+    //       break;
+    //     }
+    //     if (ev.title === 'TaskQueueManager::ProcessTaskFromWorkQueue' &&
+    //         ev.duration > RESPONSIVENESS_THRESHOLD_MS) {
+    //       firstInteractiveCandidate = ev.end - 50;
+    //       lastLongTaskEvent = ev;
+    //     }
+    //   }
+    //   markers.push({
+    //     eventName: 'firstInteractive',
+    //     // maxlg: FI is an computed event without cpuStart/end.
+    //     event: {
+    //       start: firstInteractive,
+    //       end: firstInteractive
+    //     },
+    //     navigationStart: fmpMarker.navigationStart,
+    //     frameIdRef: fmpMarker.frameIdRef,
+    //     url: fmpMarker.url,
+    //     // maxlg: special for FI.
+    //     lastLongTaskEvent
+    //   });
+    // }
+
+    // return markers;
   }
 
   function addTimeToSamples(samples, markers) {
@@ -465,8 +591,50 @@ tr.exportTo('tr.metrics.sh', function() {
     return result;
   }
 
+  class DomContentLoadedEndFinder {
+    constructor(rendererHelper) {
+      const dclEventsByFrame = new Map();
+
+      for (const ev of rendererHelper.process.getDescendantEvents()) {
+        if (rendererHelper.isTelemetryInternalEvent(ev)) continue;
+        if (!hasCategoryAndName(ev,
+            'blink.user_timing', 'domContentLoadedEventEnd')) {
+          continue;
+        }
+
+        var frameIdRef = ev.args['frame'];
+        if (frameIdRef === undefined) continue;
+        if (!dclEventsByFrame.has(frameIdRef)) {
+          dclEventsByFrame.set(frameIdRef, []);
+        }
+        const dclEvents = dclEventsByFrame.get(frameIdRef);
+        dclEvents.push(ev);
+      }
+
+      this.dclEventsByFrame_ = dclEventsByFrame;
+    }
+
+    /**
+     * Returns array of DOMContentLoadedEnd event timestamps for |frameIdRef| in
+     * the range [windowStart, windowEnd].
+     *
+     * @param{string} frameIdRef
+     * @param{number} windowStart
+     * @param{number} windowEnd
+     * @returns{Array<!number>}
+     */
+    findDclEndEventsForFrameInWindow(frameIdRef, windowStart, windowEnd) {
+      const dclEndEventsForFrame = this.dclEventsByFrame_.get(frameIdRef);
+      if (dclEndEventsForFrame === undefined) return [];
+      return dclEndEventsForFrame.filter(ev =>
+          windowStart <= ev.start && ev.start <= windowEnd);
+    }
+  }
+
   function collectLoadingMetricsForRenderer(rendererHelper) {
     const navigationStartFinder = new NavigationStartFinder(rendererHelper);
+    const domContentLoadedEndFinder =
+        new DomContentLoadedEndFinder(rendererHelper);
 
     // Collect or find event markers.
     const firstContentfulPaintMarkers = collectTimeMarkers(
@@ -499,15 +667,17 @@ tr.exportTo('tr.metrics.sh', function() {
     const firstPaintMarkers = firstPaintMarkersFromAllFrames.filter(
         event => event.frameIdRef === frameIdOfInterest);
 
-    const firstInteractiveMarkers = findFirstInteractiveMarker(
-        rendererHelper, firstMeaningfulPaintMarkers);
+    const {firstInteractiveMarkers, consistentlyInteractiveMarkers} =
+        findInteractiveMarkers(rendererHelper, firstMeaningfulPaintMarkers,
+            navigationStartFinder, domContentLoadedEndFinder);
 
     // Pairwise breakdown:
     const markersByFrameAndNavStart = organizeMarkersByFrameAndNavStart([
       firstPaintMarkers,
       firstContentfulPaintMarkers,
       firstMeaningfulPaintMarkers,
-      firstInteractiveMarkers
+      firstInteractiveMarkers,
+      consistentlyInteractiveMarkers,
     ]);
 
     const samplesObjectsArray = [];
@@ -641,7 +811,11 @@ tr.exportTo('tr.metrics.sh', function() {
 
       // Add X to Y breakdown samples.
       for (const marker2 of markers) {
-        if (marker1.event.start < marker2.event.start) {
+        if (marker1.eventName === marker2.eventName) continue;
+        // dproy: Changing this to less *or equal*. Sometimes, FI, CI, and FMP
+        // can all be the same timestamp. We'd like the histograms to be present
+        // even if the value is 0 - makes post processing easier.
+        if (marker1.event.start <= marker2.event.start) {
           const markerAToBSamples = [];
           addBreakdownSamples(markerAToBSamples,
               rendererHelper, marker1.event, marker2.event,
@@ -672,11 +846,13 @@ tr.exportTo('tr.metrics.sh', function() {
 
   function addSamplesToHistogram(samples, histogram) {
     for (const sample of samples) {
+      debugger;
       histogram.addSample(sample.value, sample.diagnostics);
     }
   }
 
   function loadingMetric(histograms, model) {
+    try {
     const histogramMap = new Map();
 
     const chromeHelper = model.getOrCreateHelper(
@@ -704,6 +880,9 @@ tr.exportTo('tr.metrics.sh', function() {
     for (const histogram of histogramMap.values()) {
       histograms.addHistogram(histogram);
     }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   tr.metrics.MetricRegistry.register(loadingMetric);
@@ -712,7 +891,7 @@ tr.exportTo('tr.metrics.sh', function() {
     loadingMetric,
     getNetworkEventsInRange,
     collectLoadingMetricsForRenderer,
-    RESPONSIVENESS_THRESHOLD_MS,
+    LONG_TASK_THRESHOLD_MS,
     INTERACTIVE_WINDOW_SIZE_MS,
   };
 });
