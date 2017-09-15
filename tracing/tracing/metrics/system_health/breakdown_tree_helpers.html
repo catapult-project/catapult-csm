@@ -17,6 +17,18 @@ found in the LICENSE file.
 'use strict';
 
 tr.exportTo('tr.metrics.sh', function() {
+
+  function getSelfTimeRanges(event) {
+    const selfTimeRanges = [event.range];
+    for (const subSlice of event.subSlices) {
+      if (selfTimeRanges.length === 0) return [];
+      const lastRange = selfTimeRanges.pop();
+      selfTimeRanges.push.apply(selfTimeRanges,
+        tr.b.math.Range.findDifference(lastRange, subSlice.range));
+    }
+    return selfTimeRanges;
+  }
+
   /**
   * @callback getEventAttributeCallback
   * @param {!tr.b.Event} event The event to read an attribute from.
@@ -69,12 +81,12 @@ tr.exportTo('tr.metrics.sh', function() {
       if (eventSelfTime === undefined) continue;
       const title =
           tr.e.chrome.ChromeUserFriendlyCategoryDriver.fromEvent(event);
-      let timeIntersectionRatio = 0;
-      if (eventDuration > 0) {
-        timeIntersectionRatio =
-            rangeOfInterest.findExplicitIntersectionDuration(
-                eventStart, eventEnd) / eventDuration;
-      }
+      // let timeIntersectionRatio = 0;
+      // if (eventDuration > 0) {
+      //   timeIntersectionRatio =
+      //       rangeOfInterest.findExplicitIntersectionDuration(
+      //           eventStart, eventEnd) / eventDuration;
+      // }
 
       const v8Runtime = event.args['runtime-call-stat'];
       if (v8Runtime !== undefined) {
@@ -108,14 +120,19 @@ tr.exportTo('tr.metrics.sh', function() {
       // this should rarely happen, and when it does, the overlapped range
       // is relative small so that using approximation here should be good
       // enough.
-      const approximatedSelfTimeContribution =
-          eventSelfTime * timeIntersectionRatio;
-      breakdownTree[title].total += approximatedSelfTimeContribution;
+      // Parts of the event that is not
+      const selfTimeRanges  = getSelfTimeRanges(event);
+      // TODO: Add a non-explicit version of findIntersectionDuration
+      const selfTimesInRangeOfInterest = selfTimeRanges.map(
+          range => rangeOfInterest.findExplicitIntersectionDuration(range.min, range.max));
+      const selfTimeContribution =
+          tr.b.math.Statistics.sum(selfTimesInRangeOfInterest);
+      breakdownTree[title].total += selfTimeContribution
       if (breakdownTree[title].events[event.title] === undefined) {
         breakdownTree[title].events[event.title] = 0;
       }
       breakdownTree[title].events[event.title] +=
-          approximatedSelfTimeContribution;
+          selfTimeContribution;
     }
     return breakdownTree;
   }
@@ -140,8 +157,7 @@ tr.exportTo('tr.metrics.sh', function() {
     let idleRanges = [rangeOfInterest];
     const mainThreadEventRanges = tr.b.math.convertEventsToRanges(
         mainThreadEvents);
-    const networkEventRanges = tr.b.math.convertEventsToRanges(
-        networkEvents);
+    const networkEventRanges = tr.b.math.convertEventsToRanges(networkEvents);
     const eventRanges = mainThreadEventRanges.concat(networkEventRanges);
     eventRanges.sort((a, b) => a.min - b.min);
     for (const eventRange of eventRanges) {
@@ -171,6 +187,18 @@ tr.exportTo('tr.metrics.sh', function() {
     for (const component of Object.values(breakdownTree)) {
       totalBlockedDuration -= component.total;
     }
+
+    if (totalBlockedDuration < -5) {
+      // dproy: Sometimes there are floating point errors can make totalBlockedDuration
+      // negative, but we try to detect here if it that negative value is too
+      // large. If it is lower than -5, it is highly likely this is due to a bug
+      // and we should complain loudly.
+      throw Error("Blocked on network has negative value");
+    } else {
+      // Compensate for floating point errors.
+      totalBlockedDuration = Math.max(totalBlockedDuration, 0);
+    }
+
     breakdownTree.blocked_on_network = {
       total: totalBlockedDuration,
       events: {}

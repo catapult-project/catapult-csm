@@ -19,7 +19,7 @@ def get_csv_dicts(result_json_list):
   samples_without_breakdown = 0
   mapper_failures = 0
   unhandled_errors = 0
-  insufficient_telemetry_info = 0
+  telemetry_info_error = 0
 
   for results_json in result_json_list:
     pairs = results_json['pairs']
@@ -28,13 +28,27 @@ def get_csv_dicts(result_json_list):
       # all. Print the raw json and give up.
       print 'Ignoring result: No TelemetryInfo found'
       print results_json
-      insufficient_telemetry_info += 1
+      telemetry_info_error += 1
       continue
     telemetry_info = pairs['TelemetryInfo']
-    if 'storyDisplayName' not in telemetry_info:
-      print 'Ignoring result: storyDisplayName not in TelemetryInfo'
-      insufficient_telemetry_info += 1
+    if 'stories' not in telemetry_info:
+      print 'Ignoring result: stories not in TelemetryInfo'
+      telemetry_info_error += 1
       continue
+
+    storyTags = telemetry_info['storyTags']
+    cache_temperature_tags = [t for t in storyTags if 'cache_temperature' in t]
+    if len(cache_temperature_tags) == 0:
+      print 'Ignoring result: cache temperature not in TelemetryInfo'
+      telemetry_info_error += 1
+      continue
+
+    if len(cache_temperature_tags) > 1:
+      print "Internal Error: More than one cache-temperature in story tags"
+      unhandled_errors += 1
+      continue
+
+    cache_temperature_tag = cache_temperature_tags[0]
 
     failures = results_json['failures']
     for f in failures:
@@ -49,9 +63,11 @@ def get_csv_dicts(result_json_list):
       x_to_y_dict = {}
       per_second_dict = {}
 
-      metadata_dict['site'] = telemetry_info['storyDisplayName']
-      metadata_dict['cache_temperature'] = (telemetry_info['storyGroupingKeys']
-                                       ['cache_temperature'])
+      stories = telemetry_info['stories']
+      assert len(stories) == 1
+      metadata_dict['site'] = stories[0]
+      cache_temperature = cache_temperature_tag.split(':')[1]
+      metadata_dict['cache_temperature'] = cache_temperature
       mapper_errors = set()
 
       for key, data in pairs.iteritems():
@@ -120,10 +136,10 @@ def get_csv_dicts(result_json_list):
   print "Total input data rows: ", len(result_json_list)
   print "Successful data extraction: ", success_count
   print "Mapper failures: ", mapper_failures
-  print "Insufficient telemetry info: ", insufficient_telemetry_info
+  print "Telemetry info error: ", telemetry_info_error
   print "Unhandled errors: ", unhandled_errors
   assert len(result_json_list) == (success_count +
-      mapper_failures + insufficient_telemetry_info + unhandled_errors)
+      mapper_failures + telemetry_info_error + unhandled_errors)
   print "Samples without breakdown: ", samples_without_breakdown
   return {
     'x_to_y': x_to_y_csv_dicts,
@@ -143,6 +159,20 @@ def write_csv(csv_dicts, output_filename):
     writer.writerows(csv_dicts)
   print "Wrote csv output to " + output_filename
 
+def validate_dicts(input_dict_list):
+  negative_values = 0;
+  for d in input_dict_list:
+    for k, v in d.iteritems():
+      try:
+        floatv = float(v)
+        if floatv < 0:
+          print "WARNING: Negative value found: "
+          print k, v
+          print "Site: ", d['site']
+          negative_values += 1
+      except:
+        pass
+  print "Num negative values found: ", negative_values
 
 def main():
   # TODO(dproy): It may eventually make sense to use a real argument parser.
@@ -163,6 +193,11 @@ def main():
   csv_dicts = get_csv_dicts(result_json_list)
   x_to_y_csv_dicts = csv_dicts['x_to_y']
   per_second_csv_dicts = csv_dicts['per_second']
+  print "Validating x to y dicts for negative values..."
+  validate_dicts(x_to_y_csv_dicts)
+  print  "Validating per second dicts for negative values..."
+  validate_dicts(per_second_csv_dicts)
+  import IPython; IPython.embed()
   write_csv(x_to_y_csv_dicts, output_filename_prefix + '_x-to-y.csv')
   write_csv(per_second_csv_dicts, output_filename_prefix + '_per-sec.csv')
 

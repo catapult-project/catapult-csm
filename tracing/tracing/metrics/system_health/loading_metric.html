@@ -349,7 +349,6 @@ tr.exportTo('tr.metrics.sh', function() {
             firstMeaningfulPaintTime, searchWindowEnd, domContentLoadedEndTime,
             longTasksInWindow, resourceLoadEvents);
 
-    // Like this
     firstInteractiveMarkers.push({
       eventName: 'firstInteractive',
       // maxlg: FI is an computed event without cpuStart/end.
@@ -412,7 +411,7 @@ tr.exportTo('tr.metrics.sh', function() {
               frameIdRef, currNavigationStart.start, searchWindowEnd);
 
       // Cannot determine TTI if DomContentLoadedEnd was never reached.
-      if (dclTsInWindow.length === 0) return;
+      if (dclTsInWindow.length === 0) continue;
 
       // TODO(catapult:#3796): Ideally a frame should reach
       // DomContentLoadedEnd at most once within two navigationStarts, but
@@ -426,24 +425,9 @@ tr.exportTo('tr.metrics.sh', function() {
           consistentlyInteractiveMarkers, rendererHelper, currNavigationStart,
           firstMeaningfulPaintTime, fmpMarker.url, searchWindowEnd,
           domContentLoadedEnd, frameIdRef);
-
-      return {firstInteractiveMarkers, consistentlyInteractiveMarkers};
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return {firstInteractiveMarkers, consistentlyInteractiveMarkers};
 
     //   const navigationStartTime = fmpMarker.navigationStart.start;
 
@@ -510,11 +494,11 @@ tr.exportTo('tr.metrics.sh', function() {
         rendererHelper.process, range);
     const breakdownTree = tr.metrics.sh.generateWallClockTimeBreakdownTree(
         rendererHelper.mainThread, networkEvents, range);
-    const breakdownDiagnostic = createBreakdownDiagnostic(breakdownTree);
+    // const breakdownDiagnostic = createBreakdownDiagnostic(breakdownTree);
     samples.push({
       value: range.duration,
       diagnostics: {
-        'Breakdown': breakdownDiagnostic,
+        'Breakdown': new tr.v.d.Generic(breakdownTree),
         'Start': new RelatedEventSet(startEvent),
         'End': new RelatedEventSet(endEvent),
         'Navigation infos': new tr.v.d.Generic({
@@ -532,15 +516,20 @@ tr.exportTo('tr.metrics.sh', function() {
     const range = tr.b.math.Range.fromExplicitRange(
         startEvent.start, endEvent.start);
     // maxlg: change to use natural time
-    const mainThreadCpuTime = getMainThreadCpuTime(
-        rendererHelper, range);
     const breakdownTree = tr.metrics.sh.generateCpuTimeBreakdownTree(
         rendererHelper.mainThread, range);
-    const breakdownDiagnostic = createBreakdownDiagnostic(breakdownTree);
+
+    // dproy: Summing up the breakdown values gives a more accurate value for
+    // cpu time in range.
+    const mainThreadCpuTime = Object.values(breakdownTree)
+        .map(v => v.total)
+        .reduce((acc, curr) => acc + curr, 0);
+
+    // const breakdownDiagnostic = createBreakdownDiagnostic(breakdownTree);
     samples.push({
       value: mainThreadCpuTime,
       diagnostics: {
-        'Breakdown': breakdownDiagnostic,
+        'Breakdown': new tr.v.d.Generic(breakdownTree),
         'Start': new RelatedEventSet(startEvent),
         'End': new RelatedEventSet(endEvent),
         'Navigation infos': new tr.v.d.Generic({
@@ -564,6 +553,31 @@ tr.exportTo('tr.metrics.sh', function() {
       mainThreadCpuTime +=
           slice.cpuDuration * intersection.duration / sliceRange.duration;
     }
+
+    // for (const topSlice of rendererHelper.mainThread.sliceGroup.topLevelSlices) {
+    //   // Hack to get around never closed content::Start slice that eats up all
+    //   // top level slices.
+
+    //   // Add self time, but only if the slice actually finished.
+    //   // Validate by asserting that the total is the sum of breakdowns.
+    //   if (!topSlice.didNotFinish && topSlice.cpuSelfTime) {
+    //     const intersection =
+    //           wallClockRangeOfInterest.findIntersection(topSlice.range);
+    //     mainThreadCpuTime +=
+    //         topSlice.cpuSelfTime * intersection.duration / topSlice.duration;
+    //   }
+
+    //   // Add next level, but now use total time.
+    //   for (const slice of topSlice.subSlices) {
+    //     if (!slice.cpuDuration) continue;
+    //     const sliceRange = tr.b.math.Range.fromExplicitRange(slice.start,
+    //         slice.start + slice.duration);
+    //     const intersection =
+    //         wallClockRangeOfInterest.findIntersection(sliceRange);
+    //     mainThreadCpuTime +=
+    //         slice.cpuDuration * intersection.duration / sliceRange.duration;
+    //   }
+    // }
 
     return mainThreadCpuTime;
   }
@@ -846,7 +860,6 @@ tr.exportTo('tr.metrics.sh', function() {
 
   function addSamplesToHistogram(samples, histogram) {
     for (const sample of samples) {
-      debugger;
       histogram.addSample(sample.value, sample.diagnostics);
     }
   }
@@ -877,11 +890,40 @@ tr.exportTo('tr.metrics.sh', function() {
             samplesObject.samples, histogram);
       }
     }
+
+    // function validateBreakdown(histogram) {
+    //   try {
+    //     if (histogram.running.count !== 1) {
+    //       throw new Error("Histogram count = ", histogram.running.count);
+    //     }
+    //     const bin = histogram.allBins.filter(b => b.count === 1)[0];
+    //     const diagnosticsMap = bin.diagnosticMaps[0];
+    //     const breakdownTree = diagnosticsMap.get("Breakdown").value;
+    //     const breakdownSum = Object.values(breakdownTree)
+    //         .map(v => v.total)
+    //         .reduce((acc, curr) => acc + curr, 0);
+    //     const histogramSum = histogram.running.sum;
+    //     if (Math.abs(breakdownSum - histogram.running.sum) > 1e-3) {
+    //       throw new Error(`Breakdown sum is ${breakdownSum} but histogram sum is ${histogram.running.sum}`);
+    //     }
+    //     console.log("Validated histogram: ", histogram.name)
+    //     console.log("blocked_on_network: ", breakdownTree["blocked_on_network"] && breakdownTree['blocked_on_network'].total);
+    //     console.log("idle: ", breakdownTree["idle"] && breakdownTree['idle'].total);
+    //   } catch (e) {
+    //     console.error("Error validating this histogram: ", histogram);
+    //     console.error(e);
+    //   }
+
+    // }
     for (const histogram of histogramMap.values()) {
+      // validateBreakdown(histogram);
       histograms.addHistogram(histogram);
     }
+    debugger;
     } catch (e) {
-      console.error(e);
+      // console.error(e);
+      // CTP chokes on console.error
+      console.log(e);
     }
   }
 

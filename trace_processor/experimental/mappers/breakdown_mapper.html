@@ -21,11 +21,21 @@ tr.exportTo('pi.m', function() {
     for (const bin of histogram.allBins) {
       if (bin.count === 1 && bin.diagnosticMaps.length === 1) {
         const diagnosticMap = bin.diagnosticMaps[0];
-        const breakdown = diagnosticMap.get('Breakdown');
-        if (breakdown) {
-          return breakdown.asDict().values;
+        const breakdownGeneric = diagnosticMap.get('Breakdown');
+        if (breakdownGeneric) {
+          const breakdown = breakdownGeneric.value;
+          const categoryBreakdown = {};
+          for (const key of Object.keys(breakdown)) {
+            categoryBreakdown[key] = breakdown[key]['total'];
+          }
+          const otherEventsBreakdown = breakdown['other']['events'];
+          return {categoryBreakdown, otherEventsBreakdown};
         }
       }
+    }
+    return {
+      categoryBreakdown: undefined,
+      otherEventsBreakdown: undefined
     }
   }
 
@@ -41,9 +51,14 @@ tr.exportTo('pi.m', function() {
         continue;
       }
       if (histogram.running.count == 1) {
+        breakdownInfo = getBreakdownFromSingleValuedHistogram(histogram);
+        categoryBreakdown = breakdownInfo.categoryBreakdown;
+        otherEventsBreakdown = breakdownInfo.otherEventsBreakdown;
+
         result.addPair(histogram.name, {
           value: histogram.running.mean,
-          breakdown: getBreakdownFromSingleValuedHistogram(histogram)
+          breakdown: categoryBreakdown,
+          otherEvents: otherEventsBreakdown
         });
       } else if (histogram.running.count == 0) {
         result.addPair(histogram.name, {
@@ -75,32 +90,38 @@ tr.exportTo('pi.m', function() {
 
   function iterateRendererMainThreads(model, cb, opt_this) {
     var modelHelper = model.getOrCreateHelper(
-        tr.model.helpers.ChromeModelHelper);
+      tr.model.helpers.ChromeModelHelper);
     Object.values(modelHelper.rendererHelpers).forEach(
-        function(rendererHelper) {
-          if (!rendererHelper.mainThread)
-            return;
-          cb.call(opt_this, rendererHelper.mainThread);
-        });
+      function(rendererHelper) {
+        if (!rendererHelper.mainThread) return;
+        cb.call(opt_this, rendererHelper.mainThread);
+
+      });
+
   }
 
   function getScriptURL(slice) {
     var url = undefined;
-
     if (slice.title === 'v8.run') {
       url = slice.args['fileName'];
+
     } else if (slice.title === 'v8.compile') {
       url = slice.args['fileName'];
+
     } else if (slice.title === 'FunctionCall') {
       url = slice.args['data']['scriptName'];
+
     } else if (slice.title === 'EvaluateScript') {
       url = slice.args['data']['url'];
+
     } else if (slice.title === 'HTMLScriptRunner ExecuteScript') {
       url = slice.args['data']['url'];
-    }
 
+    }
     return url;
+
   }
+
 
   function findLongestInterestingSlice(slice) {
     if (UNINTERESTING_TASKS.indexOf(slice.title) >= 0) {
