@@ -2,20 +2,33 @@
 now, and also contains lots of copy pasta. Consider refactoring.
 """
 
-from parse_ctp_results import load_json_results_from_file
+from parse_ctp_results import load_json_results_from_file, log_debug
 import csv
 import sys
 import traceback
 
+
+def filter_numeric_dict_top_k(k, d):
+  sorted_keys = sorted(d.keys(), key=lambda x: d[x], reverse=True)
+  top_k_keys = sorted_keys[:k]
+  return {x: d[x] for x in top_k_keys}
+
+def validate_breakdowns(breakdown_dict, total, metadata, metric_name):
+  if abs(sum(breakdown_dict.values()) - total) > 1e-3:
+    print "Breakdowns do not add up! Dropping into IPython for debugging"
+    import IPython; IPython.embed()
+    sys.exit(1)
+
 def get_csv_dicts(result_json_list):
   """
   Converts list of trace_data to list of csv_dict, a flat dictionary that will
-  be written out to the csv file.
+  be written out to the csv file
 
   This function is truly a hallmark of defensive programming.
   """
   x_to_y_csv_dicts = []
   per_second_csv_dicts = []
+  other_events_map = {}
   samples_without_breakdown = 0
   mapper_failures = 0
   unhandled_errors = 0
@@ -26,13 +39,13 @@ def get_csv_dicts(result_json_list):
     if 'TelemetryInfo' not in pairs:
       # This result was a probably total failure and it cannot be processed at
       # all. Print the raw json and give up.
-      print 'Ignoring result: No TelemetryInfo found'
-      print results_json
+      log_debug('Ignoring result: No TelemetryInfo found')
+      log_debug(results_json)
       telemetry_info_error += 1
       continue
     telemetry_info = pairs['TelemetryInfo']
     if 'stories' not in telemetry_info:
-      print 'Ignoring result: stories not in TelemetryInfo'
+      log_debug('Ignoring result: stories not in TelemetryInfo')
       telemetry_info_error += 1
       continue
 
@@ -52,11 +65,11 @@ def get_csv_dicts(result_json_list):
 
     failures = results_json['failures']
     for f in failures:
-      print "Result contains failures:"
+      log_debug("Result contains failures:")
       # Some results have partial failures. There are lot of edge cases that
       # may not be worth fixing, so print the failures and carry on processing
       # whatever possible.
-      print f
+      log_debug(f)
 
     try:
       metadata_dict = {}
@@ -78,6 +91,10 @@ def get_csv_dicts(result_json_list):
         #     breakdownName: number
         #     ...
         #   }
+        #   otherEvents: {
+        #     sliceName: number
+        #     ...
+        #   }
         # }
         if key == 'TelemetryInfo':
           continue
@@ -93,7 +110,8 @@ def get_csv_dicts(result_json_list):
         else:
           target_dict = x_to_y_dict
 
-        # We have metric_name-total and metric_name-breakdown-$breakdownName
+        # We have metric_name-total and metric_name-
+        # breakdown-$breakdownName
         if 'error' in data:
           mapper_errors.add(data['error'])
           continue
@@ -104,8 +122,17 @@ def get_csv_dicts(result_json_list):
           for breakdown_type in breakdown:
             columnName = metric_name + '-' + breakdown_type
             target_dict[columnName] = breakdown[breakdown_type]
+          validate_breakdowns(breakdown, data['value'], metadata_dict, metric_name)
         else:
           samples_without_breakdown += 1
+
+
+        if 'otherEvents' in data:
+          other_events = data['otherEvents']
+          for k, v in other_events.items():
+            curr_value = other_events_map.get(k, 0)
+            new_value = curr_value + v
+            other_events_map[k] = new_value
 
       if len(mapper_errors) > 0:
         # Do not add the record if there are any mapper errors.
@@ -143,7 +170,8 @@ def get_csv_dicts(result_json_list):
   print "Samples without breakdown: ", samples_without_breakdown
   return {
     'x_to_y': x_to_y_csv_dicts,
-    'per_second': per_second_csv_dicts
+    'per_second': per_second_csv_dicts,
+    'other_events_map': other_events_map
   }
 
 def write_csv(csv_dicts, output_filename):
@@ -193,13 +221,15 @@ def main():
   csv_dicts = get_csv_dicts(result_json_list)
   x_to_y_csv_dicts = csv_dicts['x_to_y']
   per_second_csv_dicts = csv_dicts['per_second']
-  print "Validating x to y dicts for negative values..."
+  other_events_map = csv_dicts['other_events_map']
+
   validate_dicts(x_to_y_csv_dicts)
   print  "Validating per second dicts for negative values..."
   validate_dicts(per_second_csv_dicts)
   import IPython; IPython.embed()
   write_csv(x_to_y_csv_dicts, output_filename_prefix + '_x-to-y.csv')
   write_csv(per_second_csv_dicts, output_filename_prefix + '_per-sec.csv')
+  # write_csv(other_events_csv_dicts, output_filename_prefix + '_other-events.csv')
 
   print "Total results processed:", len(result_json_list)
 

@@ -2,6 +2,15 @@ import csv
 import json
 import sys
 
+# Quick and dirty debug logging.
+debug_mode = False
+def log_debug(*args, **kwargs):
+  if debug_mode:
+    for arg in args:
+      print args
+    for k, v in kwargs.items():
+      print v
+
 def load_json_results_from_file(filename):
   results = [];
   with open(filename) as f:
@@ -9,9 +18,10 @@ def load_json_results_from_file(filename):
       try:
         results.append(json.loads(line))
       except:
-        print "Could not parse json: "
-        print line
-        print "######################"
+        log_debug("----------------------")
+        log_debug("Could not parse json: ")
+        log_debug(line)
+        log_debug("----------------------")
   print "Loaded " + filename
   return results
 

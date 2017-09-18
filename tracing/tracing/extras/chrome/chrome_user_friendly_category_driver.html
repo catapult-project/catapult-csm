@@ -62,7 +62,13 @@ tr.exportTo('tr.e.chrome', function() {
       'Layout',
       'LayoutView::hitTest',
       'ResourceLoadPriorityOptimizer::updateAllImageResourcePriorities',
-      'WebViewImpl::layout'
+      'WebViewImpl::layout',
+      'LocalFrameView::invalidateTree',
+      'LocalFrameView::layout',
+      'LocalFrameView::performLayout',
+      'LocalFrameView::performPostLayoutTasks',
+      'LocalFrameView::performPreLayoutTasks',
+      'Document::rebuildLayoutTree'
     ],
 
     parseHTML: [
@@ -70,6 +76,8 @@ tr.exportTo('tr.e.chrome', function() {
       'HTMLDocumentParser::didReceiveParsedChunkFromBackgroundParser',
       'HTMLDocumentParser::processParsedChunkFromBackgroundParser',
       'HTMLDocumentParser::processTokenizedChunkFromBackgroundParser',
+      'BackgroundHTMLParser::pumpTokenizer',
+      'BackgroundHTMLParser::sendTokensToMainThread',
     ],
 
     raster: [
@@ -104,12 +112,18 @@ tr.exportTo('tr.e.chrome', function() {
       'StyleElement::processStyleSheet',
       'StyleEngine::createResolver',
       'StyleSheetContents::parseAuthorStyleSheet',
-      'UpdateLayoutTree'
+      'UpdateLayoutTree',
+      'Document::recalcStyle'
     ],
 
     script_parse_and_compile: [
       'v8.parseOnBackground',
-      'V8.ScriptCompiler'
+      'V8.ScriptCompiler',
+      'V8.CompileFullCode',
+      'V8.Parse',
+      'V8.ParseLazy',
+      'V8.RecompileSynchronous',
+      'V8.ScriptCompiler',
     ],
 
     script_execute: [
@@ -122,7 +136,17 @@ tr.exportTo('tr.e.chrome', function() {
       'ResourceDispatcher::OnReceivedData',
       'ResourceDispatcher::OnRequestComplete',
       'ResourceDispatcher::OnReceivedResponse',
-      'Resource::appendData'
+      'Resource::appendData',
+      'Resource::appendData',
+      'ResourceDispatcher::OnRequestComplete',
+      'ResourceFetcher::requestResource',
+      'WebURLLoaderImpl::Context::OnCompletedRequest',
+      'WebURLLoaderImpl::Context::OnReceivedData',
+      'WebURLLoaderImpl::Context::OnReceivedResponse',
+      'WebURLLoaderImpl::Context::Start',
+      'WebURLLoaderImpl::Context::Cancel',
+      'WebURLLoaderImpl::loadAsynchronously',
+      'WebURLLoaderImpl::loadSynchronously',
     ],
 
     // Where do these go?

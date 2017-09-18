@@ -891,30 +891,30 @@ tr.exportTo('tr.metrics.sh', function() {
       }
     }
 
-    // function validateBreakdown(histogram) {
-    //   try {
-    //     if (histogram.running.count !== 1) {
-    //       throw new Error("Histogram count = ", histogram.running.count);
-    //     }
-    //     const bin = histogram.allBins.filter(b => b.count === 1)[0];
-    //     const diagnosticsMap = bin.diagnosticMaps[0];
-    //     const breakdownTree = diagnosticsMap.get("Breakdown").value;
-    //     const breakdownSum = Object.values(breakdownTree)
-    //         .map(v => v.total)
-    //         .reduce((acc, curr) => acc + curr, 0);
-    //     const histogramSum = histogram.running.sum;
-    //     if (Math.abs(breakdownSum - histogram.running.sum) > 1e-3) {
-    //       throw new Error(`Breakdown sum is ${breakdownSum} but histogram sum is ${histogram.running.sum}`);
-    //     }
-    //     console.log("Validated histogram: ", histogram.name)
-    //     console.log("blocked_on_network: ", breakdownTree["blocked_on_network"] && breakdownTree['blocked_on_network'].total);
-    //     console.log("idle: ", breakdownTree["idle"] && breakdownTree['idle'].total);
-    //   } catch (e) {
-    //     console.error("Error validating this histogram: ", histogram);
-    //     console.error(e);
-    //   }
+    function validateBreakdown(histogram) {
+      try {
+        if (histogram.running.count !== 1) {
+          throw new Error("Histogram count = ", histogram.running.count);
+        }
+        const bin = histogram.allBins.filter(b => b.count === 1)[0];
+        const diagnosticsMap = bin.diagnosticMaps[0];
+        const breakdownTree = diagnosticsMap.get("Breakdown").value;
+        const breakdownSum = Object.values(breakdownTree)
+            .map(v => v.total)
+            .reduce((acc, curr) => acc + curr, 0);
+        const histogramSum = histogram.running.sum;
+        if (Math.abs(breakdownSum - histogram.running.sum) > 1e-3) {
+          throw new Error(`Breakdown sum is ${breakdownSum} but histogram sum is ${histogram.running.sum}`);
+        }
+        console.log("Validated histogram: ", histogram.name)
+        console.log("blocked_on_network: ", breakdownTree["blocked_on_network"] && breakdownTree['blocked_on_network'].total);
+        console.log("idle: ", breakdownTree["idle"] && breakdownTree['idle'].total);
+      } catch (e) {
+        console.error("Error validating this histogram: ", histogram);
+        console.error(e);
+      }
+    }
 
-    // }
     for (const histogram of histogramMap.values()) {
       // validateBreakdown(histogram);
       histograms.addHistogram(histogram);
